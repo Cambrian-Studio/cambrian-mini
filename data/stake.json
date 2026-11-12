@@ -1,0 +1,29 @@
+{
+  "v": 1,
+  "placeholder": true,
+  "note": "The stake transaction has not been recorded here yet. Each line below is a separate fact with its own source; none of them says the stake alone paid for the builds.",
+  "stake": {
+    "amount_near": null,
+    "account": null,
+    "tx": null,
+    "tx_url": null,
+    "network": null,
+    "recorded_at": null
+  },
+  "credit_rate": {
+    "text": "NEAR AI publishes a formula, not a fixed rate: one credit is one US dollar of usage; staking rewards (not the staked NEAR) pay for inference; monthly usage covered = staked NEAR × NEAR price × reward rate ÷ 12. The calculator's reward rate of 4.78% a year is labelled an illustrative default, not a live quote.",
+    "source_url": "https://docs.near.ai/cloud/staking-for-inference/overview.md",
+    "calculator_url": "https://docs.near.ai/cloud/staking-for-inference/calculator",
+    "read_at": "2026-11-12"
+  },
+  "credits": {
+    "earned_from_stake_usd": null,
+    "bought_usd": null,
+    "source": null,
+    "read_at": null
+  },
+  "inference_spend": {
+    "source": "sum of the receipts in this repository",
+    "note": "computed by the app from data/runs, not stored here"
+  }
+}
