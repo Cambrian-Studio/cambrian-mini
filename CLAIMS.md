@@ -1,0 +1,101 @@
+# Claims
+
+Every claim this repository makes, where the code is, and the test that proves it.
+`test/docs/claims.test.mjs` fails if a `file:line` below does not exist or a named test is not in its file.
+
+Status words:
+- **tested** — tests in this repository prove it in both directions (the good case is accepted, the bad one refused). The test named in a row is the sharpest one; an independent audit broke the claimed behaviour row by row and re-ran these tests (its three misses were rows 37, 46 and 48, since rewritten).
+- **tested, CI** — as above, and the Linux half only runs in CI (bubblewrap).
+- **rehearsed** — seen working on the build machine against the real service, but no recorded run in `data/` shows it yet.
+- **pending** — not true yet. Listed so nobody has to find out the hard way.
+
+## The council
+
+| # | Claim | Where | Test | Status |
+|---|---|---|---|---|
+| 1 | A ticket is built only after 2 of 3 council members sign its hash with a passkey. | `approvals/release.mjs:55` | `test/line/release.test.mjs` › "two of three: the run proceeds — and a ticket id runs once" | tested |
+| 2 | No approval, or one approval, releases nothing. | `approvals/release.mjs:55` | `test/line/release.test.mjs` › "one of three: refused" | tested |
+| 3 | Changing a ticket after it was signed voids every signature. | `approvals/release.mjs:17` | `test/approvals/release.test.mjs` › "an altered ticket with the hash field rewritten to match still fails (the signature is over the old challenge)" | tested |
+| 4 | A passkey signature is checked in full: challenge, origin, site, user presence, P-256 signature. | `approvals/webauthn.mjs:27` | `test/approvals/release.test.mjs` › "a signature by a key that is not the member\'s: refused" | tested |
+| 5 | The line checks the release itself, at the start of a run and again before the push. | `line/run.mjs:481` | `test/line/release.test.mjs` › "the release is checked again right before the push: withdrawn mid-run → refused, nothing pushed" | tested |
+| 6 | A member enrols one passkey through a one-time invite link; only the public key is stored. | `approvals/council.mjs:64` | `test/approvals/council.test.mjs` › "an invite enrols one passkey for its member, once" | tested |
+| 7 | The app releases a ticket at exactly the second valid signature. | `app/live.mjs:264` | `test/app/live.test.mjs` › "approve: one signature does not release; a forged one is refused; the second valid one releases and the line runs" | tested |
+| 8 | Three real council members have enrolled passkeys and approved a real build. | `data/council.json:1` | — | pending |
+| 9 | Approval is also a Sputnik DAO vote on NEAR. | `approvals/dao.mjs:15` | — | pending |
+
+## The line
+
+| # | Claim | Where | Test | Status |
+|---|---|---|---|---|
+| 10 | The line pushes exactly `build/<ticket-id>`: never main, never forced, never a `+` refspec. | `line/github.mjs:95` | `test/line/push-guard.test.mjs` › "the push guard: one shape is accepted, every other is refused" | tested |
+| 11 | After a push, main is read back unchanged, and a ticket id cannot be used twice. | `line/run.mjs:836` | `test/line/push-guard.test.mjs` › "a real push to a local bare repository: build/<id> lands, main is untouched, the id cannot be used twice" | tested |
+| 12 | The agent runs behind walls: it writes only inside its worktree and reaches only the model bridge and the npm registry. | `line/kit/sandbox.mjs:38` | `test/line/sandbox.test.mjs` › "the probe, inside the wall: every allowed thing works, every forbidden thing is refused" | tested, CI |
+| 13 | The wall probe really detects a hole: run without a wall, it fails. | `line/kit/line-probe.sh:10` | `test/line/sandbox.test.mjs` › "the probe, with NO wall around it, fails: it really detects a hole" | tested |
+| 14 | With no sandbox on the machine the line refuses to execute anything. | `line/kit/sandbox.mjs:38` | `test/line/sandbox.test.mjs` › "with no sandbox the line refuses to run agent or product code: blocked, replay only" | tested |
+| 15 | A ticket cannot name a repository or a host, and its paths cannot leave the repository. | `tickets/ticket.mjs:145` | `test/line/ticket.test.mjs` › "paths in checks stay inside the repository: no .., no absolute path, no backslash" | tested |
+| 16 | A ticket's budget can never parse above the daily cap ($5 unless the operator raises it), and the app never releases a build above $2. | `tickets/ticket.mjs:145` | `test/line/ticket.test.mjs` › "the budget is bounded: at most the daily cap of $5, 120 calls, 45 minutes" | tested |
+| 17 | A ticket that would carry the day past the cap is blocked before anything starts. Briefs and lesson drafts are paid from the same cap. | `line/budget.mjs:16` | `test/line/budget.test.mjs` › "a ticket that would pass the ceiling is blocked before anything starts; with room again it can be started, once" | tested |
+| 18 | The bridge stops forwarding once the ticket's call budget or dollar budget is reached. The check is before each call, so the last call in flight can pass the dollar figure by its own cost. | `line/kit/bridge.mjs:35` | `test/line/bridge.test.mjs` › "the dollar budget: once the computed spend reaches --max-usd the next call is refused" | tested |
+| 19 | A model with no published price is not guessed: the run refuses to start when the configured model has no price, and the bridge closes after the first call it cannot price. | `line/kit/bridge.mjs:214` | `test/line/bridge.test.mjs` › "a model with no price fails closed: the call is counted unpriced and every later call is refused" | tested |
+| 20 | The agent never sees the NEAR AI key, and the key is in no log. | `line/kit/bridge.mjs:199` | `test/line/bridge.test.mjs` › "the agent's secret is swapped for the real key; the key never reaches the agent side or any log" | tested |
+| 21 | A run goes end to end offline with a stand-in agent: walls, commit, checks, push, receipt. | `line/run.mjs:292` | `test/line/e2e-offline.test.mjs` › "a released ticket runs to GREEN: pushed to build/<id>, main untouched, output kept, receipt hashed, recheck agrees" | tested |
+| 22 | A GREEN build is deployed to Vercel and called a preview only after an anonymous GET returns 200. | `line/vercel.mjs:44` | `test/line/vercel.test.mjs` › "a preview that still asks for a sign-in is NOT reported as a preview" | tested; rehearsed against Vercel |
+| 23 | Build branches are also pushed to this GitHub repository as `build/<ticket-id>`. | `line/run.mjs:904` | — | pending (first live build) |
+| 24 | The line has built a product with a real council's approval. | `data/runs` | — | pending (first live build) |
+
+## NEAR
+
+| # | Claim | Where | Test | Status |
+|---|---|---|---|---|
+| 25 | Every model call is priced from NEAR AI Cloud's own `/v1/models` prices and the usage the call reports. | `near/nearai.mjs:118` | `test/near/nearai.test.mjs` › "priceCall prices by exact id, by an unambiguous provider prefix, and refuses the rest" | tested |
+| 26 | Each build call is sent so that NEAR AI signs it inside the model's TEE (non-streaming, no aliasing). | `line/kit/bridge.mjs:199` | `test/line/bridge.test.mjs` › "a streamed request goes upstream NON-streamed, and the agent still receives a well-formed event stream" | tested |
+| 27 | A NEAR AI response signature is verified offline: the signature, the request and response hashes it binds, and the Intel TDX quote chain to a pinned root. | `near/nearai.mjs:557` | `test/near/nearai-attestation.test.mjs` › "a real completion by a TEE-hosted model verifies offline (ed25519)" | tested (on recorded real responses) |
+| 28 | One changed character in the signed text, the signature or either hash fails verification. | `near/nearai.mjs:557` | `test/near/nearai-attestation.test.mjs` › "one changed character in the text, the signature or either hash fails" | tested |
+| 29 | Signatures are captured per call into the run record and the receipt. | `line/run.mjs:234` | — | rehearsed (4 of 4 calls); pending a recorded run |
+| 30 | Intel TCB status, GPU evidence and image provenance of the TEE are verified. | `near/nearai.mjs:557` | — | pending (needs online verifiers; reported as skipped) |
+| 31 | The receipt contract is log-only: given exactly 32 bytes and no deposit it emits one event line with the hash, and it keeps no state. Anything else traps and logs nothing. | `contracts/receipts/src/lib.rs:75` | `test/near/verify-wasm.test.mjs` › "31, 33, 0, 64 bytes and the hex text of a hash: the call traps and logs nothing" | tested (by executing the committed wasm with stub host functions; never run on a NEAR node) |
+| 32 | The committed wasm is the one `contracts/SHA256SUMS` names. | `scripts/check-wasm.mjs:15` | `test/near/rpc-codehash.test.mjs` › "the committed wasm matches SHA256SUMS, and its code hash is that sha256 in base58" | tested |
+| 33 | The recorder signs with a function-call-only key limited to `record_receipt`; a full-access key is refused. | `near/record.mjs:165` | `test/near/record.test.mjs` › "cli: refuses a FullAccess key and a key for other methods or contracts; nothing is sent" | tested (against a stub node) |
+| 34 | Mainnet is refused without an explicit human flag. | `near/record.mjs:23` | `test/near/record.test.mjs` › "cli: refuses mainnet without the human flag, with no request made; with the flag it goes on" | tested |
+| 35 | The contract is deployed and receipts are recorded on NEAR. | `scripts/verify-receipt.mjs:74` | — | pending (not deployed; receipts say "hash computed, not yet on chain") |
+| 36 | Members' staked NEAR is shown with its transaction. | `data/stake.json:3` | — | pending (placeholder until the stake transaction is recorded) |
+
+## Receipts and lessons
+
+| # | Claim | Where | Test | Status |
+|---|---|---|---|---|
+| 37 | A receipt is a pure function of the run record. It carries the ticket, the approvals, every attempt, every call, the commit, main before and after, the checks and the preview; changing any of those changes its hash. Working state (notifications, stations) is left out. | `receipts/receipt.mjs:31` | `test/receipts/receipt.test.mjs` › "what the receipt carries, and what it leaves out" | tested |
+| 38 | The browser's Verify button computes the same hash with the same serialiser file. | `web/screens/receipts.js:4` | `test/web/verify.test.mjs` › "every receipt in the record verifies the way the Verify button does, and a changed one does not" | tested |
+| 39 | The browser verifies recorded approvals to the same verdict as the line. | `web/lib/webauthn.mjs:1` | `test/web/verify.test.mjs` › "the browser accepts what the line accepts and refuses what it refuses" | tested |
+| 40 | The ticket that failed on the private line is caught by the lessons it taught; the one that passed is not. | `lessons/lessons.mjs:204` | `test/lessons/lessons.test.mjs` › "the real RED ticket is fixed and refused by exactly the lessons that came from it" | tested |
+| 41 | An accepted lesson is appended, never rewrites an earlier one, and fires on a later brief. | `lessons/store.mjs:35` | `test/lessons/store-and-draft.test.mjs` › "acceptLesson appends, keeps who accepted, and the new lesson fires in a later lintBrief" | tested |
+| 42 | On RED, one lesson is drafted; a GREEN run drafts nothing. | `lessons/draft.mjs:138` | `test/lessons/store-and-draft.test.mjs` › "draftLesson: a GREEN run drafts nothing, with or without a model" | tested |
+| 43 | A model-drafted brief is clamped to the budget rules and linted against the lessons before anyone sees it. | `tickets/brief.mjs:68` | `test/app/live.test.mjs` › "brief: the budget is clamped whatever the model asks for; garbage is redrafted once, then refused" | tested (stub model) |
+| 44 | A lesson drafted from a real RED run was accepted by a council member and fired on a later brief. | `lessons/lessons.json:1` | — | pending (first live builds) |
+
+## The app and the record
+
+| # | Claim | Where | Test | Status |
+|---|---|---|---|---|
+| 45 | Without a key the app is in REPLAY: every route that would spend or sign answers 409. | `app/server.mjs:42` | `test/app/server.test.mjs` › "REPLAY: every route that would spend or sign answers 409 and says why" | tested |
+| 46 | The server never serves a file outside `web/`. | `app/server.mjs:23` | `test/app/hardening.test.mjs` › "path escape, on the wire: targets a browser would never send are still held inside web/" | tested |
+| 47 | The hosted demo is built from the same snapshot the server answers with. | `app/static-build.mjs:13` | `test/app/server.test.mjs` › "the static build is the same record, in replay mode, with no fixtures and no private state" | tested |
+| 48 | The app listens on 127.0.0.1 only. | `app/config.mjs:23` | `test/app/hardening.test.mjs` › "the app binds loopback only, whatever the environment says" | tested |
+| 49 | The three Upread runs in the record carry no machine path, private address, id or credential shape, and their figures are the ones the lessons quote. | `data/runs/upread-v1-open-pdf/run.json:1` | `test/import/committed-runs.test.mjs` › "the three Upread runs are there and pass the deny-list" | tested |
+| 50 | The imported runs carry no approval signature; they say where the approval lives. | `data/runs/upread-v1-reader-shell/run.json:1` | `test/web/verify.test.mjs` › "an imported run carries a note in place of signatures, so nothing verifiable-looking is drawn" | tested |
+| 51 | When the app is reachable from outside its machine, a guest cannot propose an idea; only an enrolled council member can, with a passkey signature over the idea's exact text. | `app/live.mjs:170` | `test/app/live.test.mjs` › "exposed: a guest cannot propose an idea; nothing is sent to a model" | tested |
+| 52 | The runs imported from the private line show a preview only as "behind sign-in": their previews were never public, and their dollars come from the private line's rate table. | `data/runs/upread-v1-open-pdf/run.json:1` | `test/web/verify.test.mjs` › "an imported run carries a note in place of signatures, so nothing verifiable-looking is drawn" | tested (the labels); the private figures cannot be re-derived here |
+| 53 | The contract imports no storage or promise function at all, and exports only `record_receipt`. | `contracts/receipts/src/lib.rs:1` | `test/near/verify-wasm.test.mjs` › "imports: only the six expected host functions from "env"; no storage or promise function exists in it" | tested |
+| 54 | A recorded receipt can be checked without a key: the transaction was signed by the expected recorder, called `record_receipt` with exactly that hash and no deposit, succeeded, logged the event, and the contract account runs the committed wasm. | `scripts/verify-receipt.mjs:74` | `test/near/verify-receipt.test.mjs` › "a correct record passes every check, using only read-only requests" | tested (against stubbed node answers; no real record exists yet) |
+| 55 | The contract does not stop a stranger logging any hash. A record means something only when its transaction was signed by the recorder account named in `data/chain.json`; the verify script checks exactly that. | `contracts/README.md:1` | `test/near/verify-receipt.test.mjs` › "a correct record passes every check, using only read-only requests" | tested (the check); a limit, stated |
+| 56 | A model-drafted ticket names the call its text came from: model, completion id, request hash and response hash. | `tickets/ticket.mjs:117` | `test/line/ticket.test.mjs` › "drafted: an optional record of the model call the text came from; four strings, two of them sha256 hex, nothing else" | tested |
+| 57 | The ticket hash covers that response hash, so every passkey approval signs it: change the response hash and the earlier approvals are void. | `tickets/ticket.mjs:145` | `test/line/ticket.test.mjs` › "drafted is inside the hash: changing the response hash changes the ticket hash and voids approvals made before" | tested |
+| 58 | The ticket is DERIVED from the model's response by code (budget clamped, a lesson may add a line); it is not byte-identical to it. The exact response is kept beside the ticket so anyone can compare. | `tickets/brief.mjs:98` | `test/app/live.test.mjs` › "brief: the ticket names the call whose answer became it (the accepted draft), and its hash covers that response hash" | tested |
+| 59 | A brief is drafted by an open model NEAR AI hosts inside a TEE; one report is taken before the call, and the exact request, response, report and signature are kept beside the ticket. | `app/live.mjs:216` | `test/app/live.test.mjs` › "the brief is drafted by the TEE-hosted model; its exact bytes, report and signature are kept beside the ticket" | tested (stub model); pending a real recorded brief |
+| 60 | The judge re-checks a drafted ticket offline: the kept response hashes to the ticket's response hash, the model-TEE signature binds those hashes and that model, and the approvals are over the ticket hash. | `tickets/provenance.mjs:27` | `test/app/live.test.mjs` › "the judge\'s check of a drafted ticket: a real recorded model signature holds; a changed response, hash or approval does not" | tested (on a recorded real NEAR AI signature) |
+| 61 | A build asking for more than $2 is refused at approval and never released. | `app/live.mjs:249` | `test/app/live.test.mjs` › "the build cap: a ticket that asks for more than $2 is refused at approval and never released" | tested |
+| 62 | A total cap of $15 covers every dollar this app has caused: all builds, briefs and lesson drafts. At the cap an idea is refused, and so is a release that would pass it. | `app/live.mjs:260` | `test/app/live.test.mjs` › "the total cap: every dollar ever spent counts; at the cap an idea is refused, and a release that would pass it is refused" | tested |
+| 63 | A proposer's passkey signature is recorded with the ticket and can never count as an approval. | `approvals/release.mjs:22` | `test/approvals/release.test.mjs` › "proposing an idea is its own purpose: the signature holds over that exact idea and can never count as an approval" | tested |
+| 64 | Build calls on a model NEAR AI routes to an outside provider are gateway-signed, not model-signed: NEAR AI's attested gateway signs sha256(request):sha256(response) for each call, and the gateway's report is taken before the first call. | `line/run.mjs:584` | — | rehearsed (3 of 3 calls verified on an Anthropic-routed build); pending a recorded run |
+| 65 | The council's size and threshold are parameters of the council file: a 7-member council with a threshold of 4 releases at 4 signatures, refuses at 3, and refuses an altered brief. A threshold below 2 is never accepted. | `approvals/release.mjs:55` | `test/approvals/release.test.mjs` › "a council of seven with a threshold of four: four signatures release, three do not, an altered brief does not" | tested |
+| 66 | A collective larger than the founding council of 3 decides what gets built (quorum by role, weighting, an on-chain council). | `data/council.json:1` | — | pending (today: 3 members, threshold 2) |
