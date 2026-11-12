@@ -1,0 +1,59 @@
+{
+  "kind": "build-ticket",
+  "v": 1,
+  "id": "upread-v1-one-word-at-a-time-reader-for",
+  "product": "upread",
+  "title": "Upread v1: one-word-at-a-time reader for PDFs and pasted links",
+  "task": "Build Upread, a Vite + TypeScript Home Screen web app (manifest name \"Upread\", display standalone). Dark screen shows one word at a time, large and centred, with one red pivot letter about 35% into each word held at a fixed position. Speed slider 150–900 wpm, default 300, remembered in localStorage. Pauses: 1.5x after commas, 2x after sentence ends, longer for words over 8 letters. Tap to pause, swipe left to go back one sentence, draggable progress bar, reading position saved per document. PDFs: text extracted on the phone with a bundled pdf.js (no upload); scanned PDFs with no text show a clear \"no text found\" message. Links: a Vercel function at api/extract.ts fetches a pasted URL server-side and returns only the article text (Readability-style), and passes PDF links through the same PDF extraction; the PBS Commanding Heights site (https://www.pbs.org/wgbh/commandingheights/) must work, including its story and interview pages. Tests (npm test, offline): tokenizer, pause timing, article extraction on a bundled sample HTML page, and the opening words of a bundled sample PDF. The built dist loads nothing from external hosts.",
+  "green": [
+    {
+      "id": "install",
+      "kind": "run",
+      "run": "npm ci",
+      "network": "registry",
+      "timeout_s": 600
+    },
+    {
+      "id": "build",
+      "kind": "run",
+      "run": "npm run build",
+      "network": "none",
+      "timeout_s": 600
+    },
+    {
+      "id": "test",
+      "kind": "run",
+      "run": "npm test",
+      "network": "none",
+      "timeout_s": 600
+    },
+    {
+      "id": "manifest",
+      "kind": "file",
+      "path": "public/manifest.webmanifest",
+      "exists": true,
+      "contains": [
+        "Upread",
+        "standalone"
+      ]
+    },
+    {
+      "id": "extract-fn",
+      "kind": "file",
+      "path": "api/extract.ts",
+      "exists": true
+    },
+    {
+      "id": "no-external",
+      "kind": "no_external_hosts",
+      "dir": "dist"
+    }
+  ],
+  "budget": {
+    "usd": 15,
+    "calls": 120,
+    "minutes": 45
+  },
+  "base": "main",
+  "branch": "build/upread-v1-one-word-at-a-time-reader-for"
+}

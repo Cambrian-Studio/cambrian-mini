@@ -1,0 +1,534 @@
+{
+ "v": 1,
+ "origin": "private-line",
+ "mode": "live",
+ "ticket": {
+  "id": "upread-v1-one-word-at-a-time-reader-for",
+  "title": "Upread v1: one-word-at-a-time reader for PDFs and pasted links",
+  "product": "upread",
+  "branch": "build/upread-v1-one-word-at-a-time-reader-for",
+  "budget": {
+   "usd": 15,
+   "calls": 120,
+   "minutes": 45
+  },
+  "checks": [
+   "install",
+   "build",
+   "test",
+   "manifest",
+   "extract-fn",
+   "no-external"
+  ]
+ },
+ "ticket_sha256": null,
+ "approvals": [],
+ "release": {
+  "ok": null,
+  "valid": [],
+  "threshold": null,
+  "note": "approved by one council member's passkey on Cambrian's private line; that signature lives in the private record and is not verifiable from this repository"
+ },
+ "state": "red",
+ "waiting_on": "RED after one attempt (build, test, manifest, extract-fn, no-external) and the ticket's budget is spent — no second attempt, nothing pushed.",
+ "started": "2026-11-09T01:27:52.581Z",
+ "finished": "2026-11-09T02:14:23.946Z",
+ "stations": {
+  "brief": {
+   "at": null
+  },
+  "approved": {
+   "at": "2026-11-09T01:27:52.572Z"
+  },
+  "build": {
+   "at": "2026-11-09T01:27:56.851Z",
+   "done": "2026-11-09T02:13:02.168Z"
+  },
+  "test": {
+   "at": "2026-11-09T02:13:02.168Z",
+   "done": "2026-11-09T02:13:57.270Z",
+   "green": false
+  },
+  "preview": {
+   "at": null,
+   "url": null
+  },
+  "receipt": {
+   "at": "2026-11-09T02:14:23.946Z",
+   "sha256": null
+  }
+ },
+ "budget": {
+  "day": "2026-11-09",
+  "ceiling_usd": 30,
+  "spent_usd_at_start": 0,
+  "committed_usd": 0,
+  "ticket_usd": 15,
+  "spent_usd_after": null,
+  "decision": "ok",
+  "detail": "today (UTC 2026-11-09) $0.00 spent + $0.00 committed by running tickets + this ticket's $15.00 = $15.00 of the $30.00 line ceiling"
+ },
+ "attempts": [
+  {
+   "n": 1,
+   "started": "2026-11-09T01:27:56.851Z",
+   "finished": "2026-11-09T02:13:57.270Z",
+   "agent_stopped": "2026-11-09T02:13:02.168Z",
+   "walls": "sandbox probe: 28 passed, 0 failed",
+   "sandbox": {
+    "kind": "macos-sandbox",
+    "kernel_refusals": 5
+   },
+   "agent": {
+    "kind": "OpenCode",
+    "exit": 142,
+    "seconds": 2701,
+    "model": "anthropic/claude-opus-5-5"
+   },
+   "bridge": {
+    "forwarded": 22,
+    "refused": 1,
+    "computed_usd": 3.910366,
+    "unpriced_calls": 1
+   },
+   "calls": [
+    {
+     "seq": 2,
+     "at": "2026-11-09T01:28:10.631Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 10138,
+     "cached_tokens": 0,
+     "cache_write_tokens": 10134,
+     "completion_tokens": 149,
+     "usd": 0.043532,
+     "ms": 2079,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 3,
+     "at": "2026-11-09T01:29:13.153Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 11529,
+     "cached_tokens": 10134,
+     "cache_write_tokens": 1393,
+     "completion_tokens": 5515,
+     "usd": 0.1179068,
+     "ms": 62096,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 4,
+     "at": "2026-11-09T01:31:02.500Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 11882,
+     "cached_tokens": 11527,
+     "cache_write_tokens": 353,
+     "completion_tokens": 9717,
+     "usd": 0.1980654,
+     "ms": 108255,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 5,
+     "at": "2026-11-09T01:32:47.798Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 12652,
+     "cached_tokens": 11880,
+     "cache_write_tokens": 770,
+     "completion_tokens": 9907,
+     "usd": 0.203604,
+     "ms": 105164,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 6,
+     "at": "2026-11-09T01:34:01.701Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 12848,
+     "cached_tokens": 12650,
+     "cache_write_tokens": 196,
+     "completion_tokens": 5578,
+     "usd": 0.114882,
+     "ms": 62542,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 7,
+     "at": "2026-11-09T01:35:08.768Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 15222,
+     "cached_tokens": 12846,
+     "cache_write_tokens": 2374,
+     "completion_tokens": 5704,
+     "usd": 0.1261532,
+     "ms": 62243,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 8,
+     "at": "2026-11-09T01:36:32.402Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 15387,
+     "cached_tokens": 15220,
+     "cache_write_tokens": 165,
+     "completion_tokens": 7219,
+     "usd": 0.148092,
+     "ms": 79023,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 9,
+     "at": "2026-11-09T01:41:34.646Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 15688,
+     "cached_tokens": 0,
+     "cache_write_tokens": 15686,
+     "completion_tokens": 111,
+     "usd": 0.064972,
+     "ms": 2060,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 10,
+     "at": "2026-11-09T01:41:37.594Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 16273,
+     "cached_tokens": 15686,
+     "cache_write_tokens": 585,
+     "completion_tokens": 225,
+     "usd": 0.0099852,
+     "ms": 2822,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 11,
+     "at": "2026-11-09T01:43:10.206Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 17474,
+     "cached_tokens": 16271,
+     "cache_write_tokens": 1201,
+     "completion_tokens": 151,
+     "usd": 0.0110862,
+     "ms": 2298,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 12,
+     "at": "2026-11-09T01:45:06.803Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 18348,
+     "cached_tokens": 17472,
+     "cache_write_tokens": 874,
+     "completion_tokens": 10717,
+     "usd": 0.2213384,
+     "ms": 116453,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 13,
+     "at": "2026-11-09T01:46:33.848Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 19323,
+     "cached_tokens": 18346,
+     "cache_write_tokens": 975,
+     "completion_tokens": 7795,
+     "usd": 0.1634772,
+     "ms": 86475,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 14,
+     "at": "2026-11-09T01:49:40.178Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 21903,
+     "cached_tokens": 19321,
+     "cache_write_tokens": 2580,
+     "completion_tokens": 17272,
+     "usd": 0.3596322,
+     "ms": 185858,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 15,
+     "at": "2026-11-09T01:52:28.416Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 22251,
+     "cached_tokens": 21901,
+     "cache_write_tokens": 348,
+     "completion_tokens": 15750,
+     "usd": 0.3207802,
+     "ms": 168075,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 16,
+     "at": "2026-11-09T01:57:04.035Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 22891,
+     "cached_tokens": 22249,
+     "cache_write_tokens": 640,
+     "completion_tokens": 26175,
+     "usd": 0.5305178,
+     "ms": 275473,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 17,
+     "at": "2026-11-09T02:00:30.736Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 24043,
+     "cached_tokens": 22889,
+     "cache_write_tokens": 1152,
+     "completion_tokens": 19029,
+     "usd": 0.3897738,
+     "ms": 206379,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 18,
+     "at": "2026-11-09T02:02:15.640Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 24547,
+     "cached_tokens": 24041,
+     "cache_write_tokens": 504,
+     "completion_tokens": 9890,
+     "usd": 0.2046322,
+     "ms": 104661,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 19,
+     "at": "2026-11-09T02:04:03.770Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 25383,
+     "cached_tokens": 24545,
+     "cache_write_tokens": 836,
+     "completion_tokens": 9850,
+     "usd": 0.205261,
+     "ms": 107971,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 20,
+     "at": "2026-11-09T02:06:11.356Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 25578,
+     "cached_tokens": 25381,
+     "cache_write_tokens": 195,
+     "completion_tokens": 11932,
+     "usd": 0.2445042,
+     "ms": 127165,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 21,
+     "at": "2026-11-09T02:08:53.568Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": null,
+     "cached_tokens": null,
+     "cache_write_tokens": null,
+     "completion_tokens": null,
+     "usd": null,
+     "ms": 162029,
+     "status": 200,
+     "finish": null,
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 22,
+     "at": "2026-11-09T02:10:56.158Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 26011,
+     "cached_tokens": 26009,
+     "cache_write_tokens": 0,
+     "completion_tokens": 11348,
+     "usd": 0.2321698,
+     "ms": 122547,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    }
+   ],
+   "commit": "9ca5cf13f82ca1726f6b7ac6c329f31c10aa7fb5",
+   "green": false,
+   "failing": [
+    "build",
+    "test",
+    "manifest",
+    "extract-fn",
+    "no-external"
+   ],
+   "checks": [
+    {
+     "id": "install",
+     "name": "install",
+     "kind": "run",
+     "pass": true,
+     "detail": "exit 0 (registry.npmjs.org reachable)",
+     "exit": 0
+    },
+    {
+     "id": "build",
+     "name": "build",
+     "kind": "run",
+     "pass": false,
+     "detail": "exit 1, wanted 0: npm error Missing script: \"build\" npm error npm error To see a list of scripts, run: npm error npm run npm error A complete log of this run can be found in: <scratch>/check-a1/clone/.oc/npm-cache/_logs/2026-11-09T02_13_56_350Z-debug-0.log",
+     "exit": 1
+    },
+    {
+     "id": "test",
+     "name": "test",
+     "kind": "run",
+     "pass": false,
+     "detail": "exit 1, wanted 0: > wt@1.0.0 test > echo \"Error: no test specified\" && exit 1 Error: no test specified",
+     "exit": 1
+    },
+    {
+     "id": "manifest",
+     "name": "manifest",
+     "kind": "file",
+     "pass": false,
+     "detail": "public/manifest.webmanifest does not exist"
+    },
+    {
+     "id": "extract-fn",
+     "name": "extract-fn",
+     "kind": "file",
+     "pass": false,
+     "detail": "api/extract.ts does not exist"
+    },
+    {
+     "id": "no-external",
+     "name": "no-external",
+     "kind": "no_external_hosts",
+     "pass": false,
+     "detail": "dist/ does not exist — nothing was built there"
+    },
+    {
+     "id": "outside-untouched",
+     "name": "no file outside the worktree touched",
+     "kind": "harness",
+     "pass": true,
+     "detail": "35 files beside the worktree under the run's scratch directory are unchanged since before the agent started (size, mtime, mode)",
+     "files_compared": 35
+    }
+   ],
+   "calls_note": "the trace holds 21 finished calls; the run's meter counted 22 forwarded. The difference is calls that left no finished line in the trace."
+  }
+ ],
+ "main": {
+  "before": "9d6b17921163c0c214f0bd25fdbd5edea95c2787",
+  "after": null,
+  "untouched": null
+ },
+ "push": {
+  "pushed": false
+ },
+ "preview": null,
+ "cost": {
+  "usd": 3.977314,
+  "calls": 22,
+  "priced_from": "the private line's rate table × the token usage each call reported",
+  "run_meter": {
+   "usd": 3.910366,
+   "calls": 22
+  },
+  "billing_record": {
+   "usd": 3.977314,
+   "calls": 22,
+   "statuses": [
+    "cancelled",
+    "ok",
+    "upstream_error"
+   ]
+  },
+  "figures_differ": true,
+  "note": "usd and calls are the billing record: what the model calls were booked at, whatever their outcome. run_meter is what the run's own meter added up from the calls that came back with a usage count; the two differ for this run."
+ },
+ "lessons": {
+  "fired": [],
+  "drafted": null,
+  "learned": [
+   "one-feature-per-ticket",
+   "write-files-early",
+   "no-dependency-auditing",
+   "checks-must-be-passable"
+  ]
+ },
+ "notifications": [
+  {
+   "ts": "2026-11-09T02:14:24.199Z",
+   "kind": "RED",
+   "text": "RED · build upread-v1-one-word-at-a-time-reader-for (upread): RED after one attempt (build, test, manifest, extract-fn, no-external) and the ticket's budget is spent — no second attempt, nothing pushed."
+  }
+ ],
+ "receipt_sha256": null,
+ "attestation_note": "The private line did not capture attestations for its model calls; every call here has attestation null.",
+ "imported": {
+  "from": "Cambrian's private line",
+  "imported_at": "2026-11-12T13:48:04.165Z",
+  "scrubbed": true,
+  "product_repo": "Cambrian-Studio/Upread",
+  "text_lines_dropped": 1,
+  "note": "An earlier run on Cambrian's private line, rebuilt field by field from its record. Internal ids, machine paths, credentials, share links and names of people were left out; no number was changed. The ticket keeps the budget it had there, which may be above this repository's daily cap. The trace held no message text, so calls carry counts and prices only. stations.approved is when the line picked the approved ticket up; stations.brief was not recorded. text_lines_dropped counts lines of message or check text left out because they spoke of internal things."
+ }
+}

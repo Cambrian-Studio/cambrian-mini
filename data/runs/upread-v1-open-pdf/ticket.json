@@ -1,0 +1,86 @@
+{
+  "kind": "build-ticket",
+  "v": 1,
+  "id": "upread-v1-open-pdf",
+  "product": "upread",
+  "title": "Upread v1 (2 of 3): open a PDF from the phone",
+  "task": "Add opening a PDF from the phone to the existing Upread reader (part 1, merged to main: reader, manifest, article extraction). One feature only. Add an \"Open PDF\" button that opens the file picker (input type=file, accept application/pdf; on iPhone this offers Files and iCloud Drive). Bundle pdf.js (pdfjs-dist) as a dependency and serve its worker from the built app, never from an external host. Extract the text on the phone (no upload), join words hyphenated across line breaks, and feed the text into the same one-word reader used for articles. If the PDF yields no text, show exactly: \"No text found in this PDF. It may be a scanned image.\" and do not start the reader. Remember where the reader stopped in each document: a module src/positions.ts saves the current word index in localStorage, keyed by a document id (for a PDF: file name, size and a hash of its first bytes; for a pasted link: its URL); reopening the same document resumes there, with a small \"Start over\" button. Tests (npm test, offline): the opening words extracted from a bundled sample PDF, a bundled PDF with no text routed to the \"no text found\" message, and positions save/load, separate documents kept apart, and Start over. Out of scope, for later tickets: pasted PDF links and server-side fetching (part 3), OCR, EPUB, the iOS share sheet, syncing positions across devices, and any change to the reader's look or timing.\n\nWrite files early; do not audit dependency source.",
+  "green": [
+    {
+      "id": "install",
+      "kind": "run",
+      "run": "npm ci",
+      "network": "registry",
+      "timeout_s": 600
+    },
+    {
+      "id": "build",
+      "kind": "run",
+      "run": "npm run build",
+      "network": "none",
+      "timeout_s": 600
+    },
+    {
+      "id": "test",
+      "kind": "run",
+      "run": "npm test",
+      "network": "none",
+      "timeout_s": 600
+    },
+    {
+      "id": "pdfjs-dep",
+      "kind": "file",
+      "path": "package.json",
+      "contains": [
+        "pdfjs-dist"
+      ]
+    },
+    {
+      "id": "positions",
+      "kind": "file",
+      "path": "src/positions.ts",
+      "exists": true,
+      "contains": [
+        "localStorage"
+      ]
+    },
+    {
+      "id": "bundled-worker",
+      "kind": "run",
+      "run": "ls dist/assets | grep -qi worker",
+      "network": "none",
+      "timeout_s": 60
+    },
+    {
+      "id": "no-text-message",
+      "kind": "run",
+      "run": "grep -rq \"No text found in this PDF\" dist",
+      "network": "none",
+      "timeout_s": 60
+    },
+    {
+      "id": "pdf-picker",
+      "kind": "run",
+      "run": "grep -rq \"application/pdf\" dist",
+      "network": "none",
+      "timeout_s": 60
+    },
+    {
+      "id": "manifest",
+      "kind": "file",
+      "path": "public/manifest.webmanifest",
+      "exists": true,
+      "contains": [
+        "Upread",
+        "standalone"
+      ]
+    }
+  ],
+  "budget": {
+    "usd": 6,
+    "calls": 120,
+    "minutes": 45
+  },
+  "base": "main",
+  "branch": "build/upread-v1-open-pdf"
+}

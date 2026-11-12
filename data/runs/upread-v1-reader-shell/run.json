@@ -1,0 +1,474 @@
+{
+ "v": 1,
+ "origin": "private-line",
+ "mode": "live",
+ "ticket": {
+  "id": "upread-v1-reader-shell",
+  "title": "Upread v1 (1 of 2): reader, manifest and article extraction",
+  "product": "upread",
+  "branch": "build/upread-v1-reader-shell",
+  "budget": {
+   "usd": 8,
+   "calls": 60,
+   "minutes": 45
+  },
+  "checks": [
+   "install",
+   "build",
+   "test",
+   "manifest",
+   "extract-fn",
+   "gitignore"
+  ]
+ },
+ "ticket_sha256": null,
+ "approvals": [],
+ "release": {
+  "ok": null,
+  "valid": [],
+  "threshold": null,
+  "note": "approved by one council member's passkey on Cambrian's private line; that signature lives in the private record and is not verifiable from this repository"
+ },
+ "state": "green-preview",
+ "waiting_on": null,
+ "started": "2026-11-09T13:16:05.598Z",
+ "finished": "2026-11-09T13:25:52.252Z",
+ "stations": {
+  "brief": {
+   "at": null
+  },
+  "approved": {
+   "at": "2026-11-09T13:16:05.590Z"
+  },
+  "build": {
+   "at": "2026-11-09T13:16:09.933Z",
+   "done": "2026-11-09T13:23:49.054Z"
+  },
+  "test": {
+   "at": "2026-11-09T13:23:49.054Z",
+   "done": "2026-11-09T13:25:10.907Z",
+   "green": true
+  },
+  "preview": {
+   "at": "2026-11-09T13:25:51.081Z",
+   "url": null
+  },
+  "receipt": {
+   "at": "2026-11-09T13:25:52.252Z",
+   "sha256": null
+  }
+ },
+ "budget": {
+  "day": "2026-11-09",
+  "ceiling_usd": 30,
+  "spent_usd_at_start": 3.977314,
+  "committed_usd": 0,
+  "ticket_usd": 8,
+  "spent_usd_after": 4.601659,
+  "decision": "ok",
+  "detail": "today (UTC 2026-11-09) $3.98 spent + $0.00 committed by running tickets + this ticket's $8.00 = $11.98 of the $30.00 line ceiling"
+ },
+ "attempts": [
+  {
+   "n": 1,
+   "started": "2026-11-09T13:16:09.933Z",
+   "finished": "2026-11-09T13:25:10.907Z",
+   "agent_stopped": "2026-11-09T13:23:49.054Z",
+   "walls": "sandbox probe: 28 passed, 0 failed",
+   "sandbox": {
+    "kind": "macos-sandbox",
+    "kernel_refusals": 9
+   },
+   "agent": {
+    "kind": "OpenCode",
+    "exit": 0,
+    "seconds": 455,
+    "model": "anthropic/claude-opus-5-5"
+   },
+   "bridge": {
+    "forwarded": 17,
+    "refused": 1,
+    "computed_usd": 0.624346,
+    "unpriced_calls": 0
+   },
+   "calls": [
+    {
+     "seq": 2,
+     "at": "2026-11-09T13:16:23.303Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 10111,
+     "cached_tokens": 0,
+     "cache_write_tokens": 10107,
+     "completion_tokens": 82,
+     "usd": 0.042084,
+     "ms": 1908,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 3,
+     "at": "2026-11-09T13:16:24.765Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 11204,
+     "cached_tokens": 10107,
+     "cache_write_tokens": 1095,
+     "completion_tokens": 70,
+     "usd": 0.0078094,
+     "ms": 1332,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 4,
+     "at": "2026-11-09T13:16:32.488Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 11517,
+     "cached_tokens": 11202,
+     "cache_write_tokens": 313,
+     "completion_tokens": 568,
+     "usd": 0.0148604,
+     "ms": 6193,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 5,
+     "at": "2026-11-09T13:18:00.455Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 11995,
+     "cached_tokens": 11515,
+     "cache_write_tokens": 478,
+     "completion_tokens": 1074,
+     "usd": 0.025703,
+     "ms": 8962,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 6,
+     "at": "2026-11-09T13:18:14.806Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 13108,
+     "cached_tokens": 11993,
+     "cache_write_tokens": 1113,
+     "completion_tokens": 1297,
+     "usd": 0.0327986,
+     "ms": 14312,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 7,
+     "at": "2026-11-09T13:18:40.593Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 13600,
+     "cached_tokens": 13106,
+     "cache_write_tokens": 492,
+     "completion_tokens": 2959,
+     "usd": 0.0637772,
+     "ms": 25606,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 8,
+     "at": "2026-11-09T13:19:44.204Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 15724,
+     "cached_tokens": 13598,
+     "cache_write_tokens": 2124,
+     "completion_tokens": 3194,
+     "usd": 0.0751036,
+     "ms": 63469,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 9,
+     "at": "2026-11-09T13:19:50.538Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 18363,
+     "cached_tokens": 15722,
+     "cache_write_tokens": 2639,
+     "completion_tokens": 403,
+     "usd": 0.0217684,
+     "ms": 6256,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 10,
+     "at": "2026-11-09T13:20:32.007Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 18671,
+     "cached_tokens": 18361,
+     "cache_write_tokens": 308,
+     "completion_tokens": 2392,
+     "usd": 0.0527522,
+     "ms": 41391,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 11,
+     "at": "2026-11-09T13:21:41.243Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 21133,
+     "cached_tokens": 18669,
+     "cache_write_tokens": 2462,
+     "completion_tokens": 3334,
+     "usd": 0.0802698,
+     "ms": 69178,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 12,
+     "at": "2026-11-09T13:21:53.717Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 24260,
+     "cached_tokens": 21131,
+     "cache_write_tokens": 3127,
+     "completion_tokens": 723,
+     "usd": 0.0312022,
+     "ms": 12424,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 13,
+     "at": "2026-11-09T13:23:08.492Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 24591,
+     "cached_tokens": 24258,
+     "cache_write_tokens": 331,
+     "completion_tokens": 4404,
+     "usd": 0.0942636,
+     "ms": 74553,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 14,
+     "at": "2026-11-09T13:23:11.413Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 29044,
+     "cached_tokens": 24589,
+     "cache_write_tokens": 4453,
+     "completion_tokens": 99,
+     "usd": 0.0247178,
+     "ms": 2869,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 15,
+     "at": "2026-11-09T13:23:19.629Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 29345,
+     "cached_tokens": 29042,
+     "cache_write_tokens": 301,
+     "completion_tokens": 153,
+     "usd": 0.0100804,
+     "ms": 2539,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 16,
+     "at": "2026-11-09T13:23:27.685Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 29689,
+     "cached_tokens": 29343,
+     "cache_write_tokens": 344,
+     "completion_tokens": 455,
+     "usd": 0.0163526,
+     "ms": 5259,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 17,
+     "at": "2026-11-09T13:23:40.092Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 30087,
+     "cached_tokens": 29687,
+     "cache_write_tokens": 398,
+     "completion_tokens": 145,
+     "usd": 0.0104374,
+     "ms": 2458,
+     "status": 200,
+     "finish": "tool_calls",
+     "chat_id": null,
+     "attestation": null
+    },
+    {
+     "seq": 18,
+     "at": "2026-11-09T13:23:48.889Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 30247,
+     "cached_tokens": 30085,
+     "cache_write_tokens": 160,
+     "completion_tokens": 685,
+     "usd": 0.020365,
+     "ms": 7518,
+     "status": 200,
+     "finish": "stop",
+     "chat_id": null,
+     "attestation": null
+    }
+   ],
+   "commit": "11c83f869406789c1dfecb9b8d410925e2dc4bae",
+   "green": true,
+   "failing": [],
+   "checks": [
+    {
+     "id": "install",
+     "name": "install",
+     "kind": "run",
+     "pass": true,
+     "detail": "exit 0 (registry.npmjs.org reachable)",
+     "exit": 0
+    },
+    {
+     "id": "build",
+     "name": "build",
+     "kind": "run",
+     "pass": true,
+     "detail": "exit 0 with no network",
+     "exit": 0
+    },
+    {
+     "id": "test",
+     "name": "test",
+     "kind": "run",
+     "pass": true,
+     "detail": "exit 0 with no network",
+     "exit": 0
+    },
+    {
+     "id": "manifest",
+     "name": "manifest",
+     "kind": "file",
+     "pass": true,
+     "detail": "public/manifest.webmanifest (388 characters) meets every condition"
+    },
+    {
+     "id": "extract-fn",
+     "name": "extract-fn",
+     "kind": "file",
+     "pass": true,
+     "detail": "api/extract.ts (6074 characters) meets every condition"
+    },
+    {
+     "id": "gitignore",
+     "name": "gitignore",
+     "kind": "file",
+     "pass": true,
+     "detail": ".gitignore (30 characters) meets every condition"
+    },
+    {
+     "id": "outside-untouched",
+     "name": "no file outside the worktree touched",
+     "kind": "harness",
+     "pass": true,
+     "detail": "35 files beside the worktree under the run's scratch directory are unchanged since before the agent started (size, mtime, mode)",
+     "files_compared": 35
+    }
+   ]
+  }
+ ],
+ "main": {
+  "before": "9d6b17921163c0c214f0bd25fdbd5edea95c2787",
+  "after": "9d6b17921163c0c214f0bd25fdbd5edea95c2787",
+  "untouched": true
+ },
+ "push": {
+  "pushed": true,
+  "ref": "refs/heads/build/upread-v1-reader-shell",
+  "commit": "11c83f869406789c1dfecb9b8d410925e2dc4bae",
+  "remote_sha": "11c83f869406789c1dfecb9b8d410925e2dc4bae",
+  "at": "2026-11-09T13:25:38.144Z"
+ },
+ "preview": {
+  "state": "success",
+  "url": null,
+  "deployment_id": null,
+  "public": false,
+  "read_at": "2026-11-09T13:25:51.081Z",
+  "waited_s": 12,
+  "why": "preview was behind sign-in; its address is not kept"
+ },
+ "cost": {
+  "usd": 0.624346,
+  "calls": 17,
+  "priced_from": "the private line's rate table × the token usage each call reported",
+  "run_meter": {
+   "usd": 0.624346,
+   "calls": 17
+  },
+  "billing_record": {
+   "usd": 0.624346,
+   "calls": 17,
+   "statuses": [
+    "ok"
+   ]
+  },
+  "figures_differ": false,
+  "note": "usd and calls are the billing record: what the model calls were booked at, whatever their outcome. run_meter is what the run's own meter added up from the calls that came back with a usage count; the two agree for this run."
+ },
+ "lessons": {
+  "fired": [],
+  "drafted": null,
+  "learned": [
+   "after-red-a-smaller-ticket"
+  ]
+ },
+ "notifications": [
+  {
+   "ts": "2026-11-09T13:25:52.481Z",
+   "kind": "GREEN",
+   "text": "GREEN · build upread-v1-reader-shell (upread) is GREEN\n[preview link not kept: the preview was behind sign-in]\nbranch build/upread-v1-reader-shell @ 11c83f8, 7 checks, attempt 1; main untouched: yes"
+  }
+ ],
+ "receipt_sha256": null,
+ "attestation_note": "The private line did not capture attestations for its model calls; every call here has attestation null.",
+ "imported": {
+  "from": "Cambrian's private line",
+  "imported_at": "2026-11-12T13:48:04.169Z",
+  "scrubbed": true,
+  "product_repo": "Cambrian-Studio/Upread",
+  "text_lines_dropped": 1,
+  "note": "An earlier run on Cambrian's private line, rebuilt field by field from its record. Internal ids, machine paths, credentials, share links and names of people were left out; no number was changed. The ticket keeps the budget it had there, which may be above this repository's daily cap. The trace held no message text, so calls carry counts and prices only. stations.approved is when the line picked the approved ticket up; stations.brief was not recorded. text_lines_dropped counts lines of message or check text left out because they spoke of internal things."
+ }
+}
