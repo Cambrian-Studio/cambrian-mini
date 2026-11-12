@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Cambrian: a collective that ships products</title>
+<meta name="description"
+  content="Machines build. The collective decides. The collective signs, agents build, every run leaves a receipt.">
+<link rel="icon" href="assets/cambrian-mark-white.png" type="image/png">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<link rel="stylesheet" href="styles.css">
+<script type="module" src="app.js"></script>
+</head>
+<body class="cb-cross">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <a class="brand" href="#/" aria-label="Cambrian, home">
+    <img src="assets/cambrian-mark-white.png" alt="" width="24" height="24">
+    <span>Cambrian</span>
+  </a>
+  <span class="grow"></span>
+  <span class="badge" id="mode-badge" title=""><b id="mode-name">…</b></span>
+  <a class="iconbtn" id="bell" href="#/notifications" aria-label="Notifications">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16Z"/><path d="M10 20.5h4"/></svg>
+    <i class="count" id="bell-count" hidden></i>
+  </a>
+</header>
+<p class="modeline" id="mode-line"></p>
+
+<main id="main" tabindex="-1"><p class="plain">Loading…</p></main>
+
+<nav class="cb-card cb-card2 cb-nav nav" aria-label="Screens">
+  <a class="cb-nav-btn cb-nav-mark" href="#/talk" data-route="talk" aria-label="Talk to Cambrian" title="Talk to Cambrian">
+    <img src="assets/cambrian-mark-white.png" alt="" width="30" height="30">
+  </a>
+  <i class="cb-nav-div" aria-hidden="true"></i>
+  <div class="nav-input" id="nav-input" hidden></div>
+  <div class="nav-glyphs">
+    <a class="cb-nav-btn" href="#/" data-route="" aria-label="Home" title="Home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10.5 12 5l7 5.5V19H5z"/><path d="M10 19v-5h4v5"/></svg>
+    </a>
+    <a class="cb-nav-btn" href="#/approvals" data-route="approvals" aria-label="Approvals" title="Approvals">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+    </a>
+    <a class="cb-nav-btn" href="#/line" data-route="line" aria-label="The line" title="The line">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><path d="M7 12h3M14 12h3"/></svg>
+    </a>
+    <a class="cb-nav-btn" href="#/products" data-route="products" aria-label="Products" title="Products">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
+    </a>
+    <a class="cb-nav-btn" href="#/receipts" data-route="receipts" aria-label="Receipts" title="Receipts">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6"/></svg>
+    </a>
+    <a class="cb-nav-btn" href="#/lessons" data-route="lessons" aria-label="Lessons" title="Lessons">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-2-1.5-5-2-8-1.5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5v-13C17 4 14 4.500 12 6Z"/><path d="M12 6v13"/></svg>
+    </a>
+    <a class="cb-nav-btn" href="#/stake" data-route="stake" aria-label="Stake" title="Stake">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v5c0 1.700 3.100 3 7 3s7-1.300 7-3V7"/><path d="M5 12v5c0 1.700 3.100 3 7 3s7-1.300 7-3v-5"/></svg>
+    </a>
+  </div>
+</nav>
+
+<div id="sheet-root"></div>
+<div id="toasts" role="status" aria-live="polite"></div>
+<noscript><p class="plain">This page needs JavaScript to read the record.</p></noscript>
+</body>
+</html>
