@@ -1,0 +1,36 @@
+;; agent.sb — the coding agent's wall on macOS, applied with sandbox-exec to the agent, to every process it
+;; starts, and to the checks that later run the code it wrote. Default deny.
+;;   WRITE   only inside WT (the git worktree), except WT/.git (the link file git reads; the agent may not repoint it)
+;;   READ    WT, TOOLS (the agent runtime), GITDIR (the repository behind the worktree, read-only),
+;;           NODE_PREFIX (where this machine's node lives), the system's and Homebrew's programs
+;;   NETWORK only loopback TCP to BRIDGE_PORT (the model bridge) and PROXY_PORT (the allow-list tunnel);
+;;           no DNS, no unix socket
+;; Parameters are REAL paths (on macOS /tmp is /private/tmp; the sandbox matches the real path only).
+(version 1)
+(deny default)
+(import "system.sb")
+(allow process-fork)
+(allow process-exec*
+       (subpath "/opt/homebrew/bin") (subpath "/opt/homebrew/Cellar") (subpath "/opt/homebrew/opt") (subpath "/opt/homebrew/lib")
+       (subpath "/usr/local/bin") (subpath "/usr/local/Cellar") (subpath "/usr/local/opt") (subpath "/usr/local/lib")
+       (subpath "/usr/bin") (subpath "/bin") (subpath "/usr/lib") (subpath "/usr/libexec") (subpath "/System/Library")
+       (subpath (param "NODE_PREFIX")) (subpath (param "TOOLS")) (subpath (param "WT")))
+(allow signal (target same-sandbox))
+(allow sysctl-read)
+(allow file-read-metadata)
+(allow file-read*
+       (subpath (param "WT")) (subpath (param "TOOLS")) (subpath (param "GITDIR")) (subpath (param "NODE_PREFIX"))
+       (subpath "/opt/homebrew/bin") (subpath "/opt/homebrew/Cellar") (subpath "/opt/homebrew/opt") (subpath "/opt/homebrew/lib")
+       (subpath "/opt/homebrew/share") (subpath "/opt/homebrew/etc")
+       (subpath "/usr") (subpath "/bin") (subpath "/sbin") (subpath "/System") (subpath "/Library/Preferences/Logging")
+       (subpath "/private/etc") (subpath "/private/var/db/timezone") (subpath "/private/var/select")
+       (literal "/") (literal "/private") (literal "/private/tmp") (literal "/opt") (literal "/opt/homebrew")
+       (literal "/dev/null") (literal "/dev/urandom") (literal "/dev/random") (literal "/dev/zero") (literal "/dev/tty")
+       (subpath "/dev/fd"))
+(allow file-write* (subpath (param "WT")) (literal "/dev/null") (literal "/dev/tty"))
+(deny file-write* (literal (string-append (param "WT") "/.git")))
+(allow file-ioctl (literal "/dev/null") (literal "/dev/tty"))
+(allow ipc-posix-sem)
+(allow network-outbound
+       (remote ip (string-append "localhost:" (param "BRIDGE_PORT")))
+       (remote ip (string-append "localhost:" (param "PROXY_PORT"))))

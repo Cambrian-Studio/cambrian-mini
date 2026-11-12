@@ -1,0 +1,11 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const facts = JSON.parse(readFileSync(new URL('./facts.json', import.meta.url), 'utf8'));
+const html = readFileSync(new URL('./dist/index.html', import.meta.url), 'utf8');
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+test('every fact is on the page with its badge', () => {
+  for (const f of facts) assert.ok(html.includes(`data-fact-id="${esc(f.id)}"`) && html.includes(esc(f.text)), f.id);
+  assert.equal(html.split('Market: 50%').length - 1, facts.length);
+});
+test('the page names no other host', () => { assert.ok(!/https?:\/\//.test(html)); });
