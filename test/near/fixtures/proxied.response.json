@@ -1,0 +1,1 @@
+{"id":"msg_011Cgy4u5Rkhf5tJ7EeF9mD6","object":"chat.completion","created":1794488056,"model":"claude-haiku-5-5","choices":[{"index":0,"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":12,"completion_tokens":4,"total_tokens":16}}

@@ -1,0 +1,1 @@
+{"model":"deepseek-ai/DeepSeek-V4.1-Flash-1017","messages":[{"role":"user","content":"Say ok"}],"max_tokens":40,"temperature":0,"stream":true,"stream_options":{"include_usage":true}}

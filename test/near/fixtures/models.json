@@ -1,0 +1,139 @@
+{
+ "object": "list",
+ "data": [
+  {
+   "id": "anthropic/claude-haiku-5-5",
+   "object": "model",
+   "owned_by": "anthropic",
+   "pricing": {
+    "input": 0.1,
+    "output": 0.5,
+    "prompt": "0.0000001",
+    "completion": "0.0000005",
+    "image": "0",
+    "request": "0",
+    "input_cache_read": "0.00000001"
+   },
+   "context_length": 1000000,
+   "supported_features": [
+    "tools",
+    "structured_outputs",
+    "reasoning"
+   ]
+  },
+  {
+   "id": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+   "object": "model",
+   "owned_by": "nearai",
+   "pricing": {
+    "input": 0.3,
+    "output": 1.2,
+    "prompt": "0.0000003",
+    "completion": "0.0000012",
+    "image": "0",
+    "request": "0",
+    "input_cache_read": "0.000000006"
+   },
+   "context_length": 1048576,
+   "supported_features": [
+    "tools",
+    "reasoning"
+   ]
+  },
+  {
+   "id": "deepseek/deepseek-v4.1-flash-1017",
+   "object": "model",
+   "owned_by": "deepseek",
+   "pricing": {
+    "input": 0.3,
+    "output": 1.2,
+    "prompt": "0.0000003",
+    "completion": "0.0000012",
+    "image": "0",
+    "request": "0",
+    "input_cache_read": "0.000000006"
+   },
+   "context_length": 1048576,
+   "supported_features": [
+    "tools",
+    "json_mode",
+    "reasoning"
+   ]
+  },
+  {
+   "id": "google/gemini-2.5-flash",
+   "object": "model",
+   "owned_by": "google",
+   "pricing": {
+    "input": 0.3,
+    "output": 2.5,
+    "prompt": "0.0000003",
+    "completion": "0.0000025",
+    "image": "0",
+    "request": "0"
+   },
+   "context_length": 1000000,
+   "supported_features": [
+    "tools",
+    "structured_outputs",
+    "json_mode"
+   ]
+  },
+  {
+   "id": "openai/whisper-large-v3",
+   "object": "model",
+   "owned_by": "nearai",
+   "pricing": {
+    "input": 0.01,
+    "output": 0.01,
+    "prompt": "0.00000001",
+    "completion": "0.00000001",
+    "image": "0",
+    "request": "0"
+   },
+   "context_length": 448,
+   "supported_features": []
+  },
+  {
+   "id": "Qwen/Qwen3.8-27B",
+   "object": "model",
+   "owned_by": "nearai",
+   "pricing": {
+    "input": 0.04,
+    "output": 1.35,
+    "prompt": "0.00000004",
+    "completion": "0.00000135",
+    "image": "0",
+    "request": "0",
+    "input_cache_read": "0.000000018"
+   },
+   "context_length": 262144,
+   "supported_features": [
+    "tools",
+    "structured_outputs",
+    "reasoning"
+   ]
+  },
+  {
+   "id": "z-ai/glm-5.3-flash",
+   "object": "model",
+   "owned_by": "nearai",
+   "pricing": {
+    "input": 0.08,
+    "output": 0.5,
+    "prompt": "0.00000008",
+    "completion": "0.0000005",
+    "image": "0",
+    "request": "0",
+    "input_cache_read": "0.000000012"
+   },
+   "context_length": 1048576,
+   "supported_features": [
+    "tools",
+    "structured_outputs",
+    "reasoning",
+    "json_mode"
+   ]
+  }
+ ]
+}

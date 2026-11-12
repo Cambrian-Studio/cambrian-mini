@@ -1,0 +1,31 @@
+{
+  "what": "Real, public responses recorded from NEAR AI Cloud (https://cloud-api.near.ai/v1). No key or Authorization header is stored.",
+  "recorded": "2026-11-12",
+  "report": {
+    "files": ["report.ed25519.json", "report.ecdsa.json"],
+    "request": "GET /v1/attestation/report?model=deepseek-ai/DeepSeek-V4.1-Flash-1017&provider=near&signing_algo=<algo>&nonce=<nonce>",
+    "nonce": "1a22cde73b1ae2392e4f60d2f0f011134ecd7b455808aef05b51c494cb553ac0",
+    "fetched_at": "2026-11-12T12:55:33Z",
+    "note": "Unmodified response bodies. Fetched before the tool and stream completions below, after the proxied one."
+  },
+  "chats": {
+    "tool": {
+      "what": "Non-streaming tool-call completion by a model NEAR AI hosts in a TEE. Signature kind: provider_tee.",
+      "chat_id": "chatcmpl-b81d43d3-3e81-4843-9823-241b81baaf89",
+      "files": ["tool.request.json", "tool.response.json", "tool.sig.ed25519.json", "tool.sig.ecdsa.json"]
+    },
+    "stream": {
+      "what": "Streamed completion by the same model. Signature kind: gateway.",
+      "chat_id": "chatcmpl-1b81d9ce-fcfa-440d-b474-aa3494dd66a3",
+      "files": ["stream.request.json", "stream.response.sse", "stream.sig.ed25519.json", "stream.sig.ecdsa.json"]
+    },
+    "proxied": {
+      "what": "Non-streaming completion by a model proxied to an outside provider. Signature kind: gateway.",
+      "chat_id": "msg_011Cgy4u5Rkhf5tJ7EeF9mD6",
+      "files": ["proxied.request.json", "proxied.response.json", "proxied.sig.ed25519.json"]
+    }
+  },
+  "signature_request": "GET /v1/signature/<chat_id>?signing_algo=<algo>",
+  "bytes": "Request and response files are the exact bytes sent and received (no trailing newline added). Do not reformat them.",
+  "models": "models.json is a 7-model excerpt of GET /v1/models (id, owned_by, pricing, context_length, supported_features)."
+}
