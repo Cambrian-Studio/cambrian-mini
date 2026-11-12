@@ -1,0 +1,105 @@
+{
+  "v": 1,
+  "_meta": {
+    "what": "Rules the line learned from its own runs, one entry each: the rule in plain words, the failure it came from, and (where a machine can check it) the name of the check that is run over every new brief before a council member sees it.",
+    "how_it_grows": "A RED run drafts one lesson; a council member accepts it with a passkey and it is appended here. Earlier lessons are never reworded or dropped. `fired` lists where a lesson later changed or refused a brief."
+  },
+  "lessons": [
+    {
+      "id": "product-from-record",
+      "learned": "2026-11-09",
+      "from_run": null,
+      "from_product": "upread",
+      "applies_to": ["brief", "ticket"],
+      "rule": "A brief names its product by the product's recorded id, exactly as recorded. It is never re-spelled, re-cased or guessed; the line resolves the repository from that id itself.",
+      "failure": "The first Upread ticket spelled the product's repository 'upread' where the record says 'Upread'. One letter of case: the line would have refused the run at its first step, before any building.",
+      "check": "product_from_record",
+      "fix": "replace",
+      "fired": []
+    },
+    {
+      "id": "one-feature-per-ticket",
+      "learned": "2026-11-09",
+      "from_run": "upread-v1-one-word-at-a-time-reader-for",
+      "from_product": "upread",
+      "applies_to": ["brief", "ticket", "chat"],
+      "rule": "A ticket is one feature. A ticket that lists several deliverables says what is out of scope and leaves it to a later ticket; one large ticket ends as a 45-minute timeout, not a product.",
+      "failure": "One ticket asked for the reader, PDF reading, link extraction and tests together. RED after 2701 s with no build script written; 5 of 6 checks failed. The next ticket (reader only, PDFs named as out of scope) went GREEN in 455 s.",
+      "check": "scope_named",
+      "fix": "refuse",
+      "fired": []
+    },
+    {
+      "id": "write-files-early",
+      "learned": "2026-11-09",
+      "from_run": "upread-v1-one-word-at-a-time-reader-for",
+      "from_product": "upread",
+      "applies_to": ["brief", "ticket"],
+      "rule": "The builder writes project files early and improves them; a run that plans and inspects first runs out of time with nothing to check. Every ticket's task says so.",
+      "failure": "The RED run made 22 model calls and 18 shell commands in 2701 s and wrote no project file before the 2700 s limit. The GREEN ticket's task opened with \"write files early\".",
+      "check": "builder_line",
+      "fix": "append",
+      "fired": []
+    },
+    {
+      "id": "no-dependency-auditing",
+      "learned": "2026-11-09",
+      "from_run": "upread-v1-one-word-at-a-time-reader-for",
+      "from_product": "upread",
+      "applies_to": ["brief", "ticket"],
+      "rule": "The builder does not read or audit the source of installed libraries: their versions, licences and bundled URLs are not its job. Every ticket's task says so.",
+      "failure": "Commands 3 to 18 of the RED run looked through an installed PDF library for web addresses in its bundled files. None of them built the app.",
+      "check": "builder_line",
+      "fix": "append",
+      "fired": []
+    },
+    {
+      "id": "checks-must-be-passable",
+      "learned": "2026-11-09",
+      "from_run": "upread-v1-one-word-at-a-time-reader-for",
+      "from_product": "upread",
+      "applies_to": ["brief", "ticket"],
+      "rule": "No check that cannot pass. A no_external_hosts check cannot pass on a build that bundles a library, because bundled code carries URLs; a ticket that installs dependencies does not carry one and proves the same thing with a file check on the built page.",
+      "failure": "The RED ticket carried both `npm ci` and a no_external_hosts check on dist. The builder spent its run searching a library for 'http' instead of building, and the check failed anyway because dist was never built. The GREEN ticket left the check out.",
+      "check": "checks_can_pass",
+      "fix": "drop",
+      "fired": []
+    },
+    {
+      "id": "a-product-starts-with-an-approved-brief",
+      "learned": "2026-11-09",
+      "from_run": null,
+      "from_product": "upread",
+      "applies_to": ["chat", "brief"],
+      "rule": "A product is created by an approved brief, never by a chat command. When asked in chat to create or launch a product, say that a brief has to be drafted and approved by the council first.",
+      "failure": "A conversation asked for Upread by its id before any brief had been approved and was refused: no such product. Upread existed as a product only once its brief was approved, about 90 minutes later.",
+      "check": null,
+      "fix": "say",
+      "fired": []
+    },
+    {
+      "id": "no-money-in-brief-text",
+      "learned": "2026-11-09",
+      "from_run": null,
+      "from_product": "upread",
+      "applies_to": ["brief", "ticket"],
+      "rule": "A brief's title and task carry no budget figures or money words. The budget has its own field; the title and the task are what the public brief card shows.",
+      "failure": "Upread's announcement text repeated the ticket's $15 budget and was held back before anyone outside the council saw it.",
+      "check": "no_money_words",
+      "fix": "refuse",
+      "fired": []
+    },
+    {
+      "id": "after-red-a-smaller-ticket",
+      "learned": "2026-11-09",
+      "from_run": "upread-v1-reader-shell",
+      "from_product": "upread",
+      "applies_to": ["brief", "ticket", "chat"],
+      "rule": "After a RED run, write a smaller ticket, not a retry of the same one: cut the task to the part the run reached, name the rest as out of scope, lower the budget. The same task sent again fails the same way.",
+      "failure": "The all-in-one ticket ($15 budget) went RED after 2701 s having spent $3.98. The smaller ticket that followed (1 of 2, $8 budget) went GREEN on its first attempt in 455 s for $0.62.",
+      "check": "not_a_retry",
+      "fix": "refuse",
+      "fired": []
+    }
+  ]
+}
