@@ -1,0 +1,64 @@
+{
+  "kind": "build-ticket",
+  "v": 1,
+  "id": "upread-v1-reader-shell",
+  "product": "upread",
+  "title": "Upread v1 (1 of 2): reader, manifest and article extraction",
+  "task": "Build the first half of Upread: a Vite + TypeScript Home Screen web app. Keep it small and write files early; do not audit dependency source.\n\nReader (src/): dark screen showing one word at a time, large and centred, with one red pivot letter about 35% into each word held at a fixed position. Speed slider 150-900 wpm, default 300, remembered in localStorage. Pauses: 1.5x after commas, 2x after sentence ends, longer for words over 8 letters. Tap to pause, swipe left to go back one sentence, draggable progress bar. A text box to paste a link; the app posts it to /api/extract and reads the returned text.\n\npublic/manifest.webmanifest: name \"Upread\", display \"standalone\"; linked from index.html.\n\napi/extract.ts: a Vercel function that takes a URL, fetches the page server-side and returns only the article text, using @mozilla/readability with linkedom as the DOM. HTML pages only.\n\nTests (npm test runs vitest, offline): the tokenizer, pause timing, and article extraction on a bundled sample HTML page under test/fixtures/.\n\n.gitignore lists node_modules and dist; neither is committed.\n\nOut of scope (a later ticket): PDFs and pdf.js. Do not install pdfjs-dist.",
+  "green": [
+    {
+      "id": "install",
+      "kind": "run",
+      "run": "npm ci",
+      "network": "registry",
+      "timeout_s": 600
+    },
+    {
+      "id": "build",
+      "kind": "run",
+      "run": "npm run build",
+      "network": "none",
+      "timeout_s": 600
+    },
+    {
+      "id": "test",
+      "kind": "run",
+      "run": "npm test",
+      "network": "none",
+      "timeout_s": 600
+    },
+    {
+      "id": "manifest",
+      "kind": "file",
+      "path": "public/manifest.webmanifest",
+      "contains": [
+        "Upread",
+        "standalone"
+      ]
+    },
+    {
+      "id": "extract-fn",
+      "kind": "file",
+      "path": "api/extract.ts",
+      "contains": [
+        "@mozilla/readability"
+      ]
+    },
+    {
+      "id": "gitignore",
+      "kind": "file",
+      "path": ".gitignore",
+      "contains": [
+        "node_modules",
+        "dist"
+      ]
+    }
+  ],
+  "budget": {
+    "usd": 8,
+    "calls": 60,
+    "minutes": 45
+  },
+  "base": "main",
+  "branch": "build/upread-v1-reader-shell"
+}

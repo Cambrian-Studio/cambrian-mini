@@ -1,0 +1,22 @@
+{
+  "v": 1,
+  "products": [
+    {
+      "id": "upread",
+      "name": "Upread",
+      "tagline": "Reads articles and PDFs to you one word at a time.",
+      "status": "built on the private line; two of three tickets GREEN, previews behind sign-in",
+      "live_url": null,
+      "live_url_note": "No public address confirmed (checked 12 Nov 2026). The two preview addresses the runs recorded redirect to the host's sign-in page (HTTP 302). https://upread.vercel.app answers 200 without sign-in but serves a different, unrelated product with a similar name, so it is not linked.",
+      "repo": "Cambrian-Studio/Upread",
+      "runs": [
+        "upread-v1-one-word-at-a-time-reader-for",
+        "upread-v1-reader-shell",
+        "upread-v1-open-pdf"
+      ],
+      "cost_usd": 5.363208,
+      "cost_note": "Sum of cost.usd over the three run records: 3.977314 (RED) + 0.624346 + 0.761548.",
+      "built_on": "Cambrian's private line, 9 Nov 2026"
+    }
+  ]
+}
