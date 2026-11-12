@@ -1,0 +1,21 @@
+[package]
+name = "receipts"
+version = "1.0.0"
+edition = "2021"
+description = "Log-only receipt contract: record_receipt(32 bytes) emits one event log. No state, no deposit."
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+# No dependencies at all: the contract talks to the NEAR host functions directly (see src/lib.rs).
+[dependencies]
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+debug = false
