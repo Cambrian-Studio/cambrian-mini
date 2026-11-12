@@ -1,0 +1,64 @@
+/* Cambrian components, from the design system. The system file imports Archivo and Chivo Mono from a font host;
+   this app ships both under assets/fonts and declares them in styles.css, so nothing is loaded from another host. */
+body { margin: 0; font-family: var(--font-sans); background: var(--ground); color: var(--ink); -webkit-font-smoothing: antialiased; }
+.cb-row { display: flex; gap: 10px; align-items: center; padding: 20px; flex-wrap: wrap; }
+
+/* Card1 / Card2: gradient fill, inner white edge, two shadows */
+.cb-card { position: relative; border-radius: var(--radius-card); background: linear-gradient(180deg, var(--card1-top), var(--card1-bottom)); box-shadow: var(--shadow-card1); color: var(--ink); isolation: isolate; }
+.cb-card::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.25), rgba(255,255,255,.05));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.cb-card2 { background: linear-gradient(180deg, var(--card2-top), var(--card2-bottom)); box-shadow: var(--shadow-card2); }
+.cb-card2::before { background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.01)); }
+.cb-card.is-selected { box-shadow: 0 0 0 1px var(--selected-outline), 0 0 0 5px rgba(255,255,255,.2), 0 0 0 6px var(--selected-ring), var(--shadow-card1); }
+.cb-card:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+.cb-cap { position: absolute; z-index: 1; font-family: var(--font-mono); font-size: 10px; line-height: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--caption); display: inline-flex; align-items: center; gap: 6px; }
+.cb-cap-tl { top: var(--inset); left: var(--inset); }
+.cb-cap-tr { top: var(--inset); right: var(--inset); }
+.cb-cap-bl { bottom: var(--inset); left: var(--inset); }
+.cb-cap-br { bottom: var(--inset); right: var(--inset); }
+.cb-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--live); display: inline-block; }
+
+.cb-live { display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 8px; border-radius: var(--radius-pill); background: #151515; border: 1px solid #3e3e3e; font-family: var(--font-sans); font-weight: 500; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink); }
+
+/* members grid */
+.cb-members { display: grid; grid-template-columns: 1fr; gap: var(--gutter); padding: var(--page-margin); }
+@media (min-width: 686px) { .cb-members { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1105px) { .cb-members { grid-template-columns: repeat(3, 1fr); } }
+.cb-member { aspect-ratio: 351 / 342; }
+.cb-member-fig { position: absolute; inset: 14% 18%; display: flex; align-items: center; justify-content: center; }
+.cb-member-fig img { max-width: 100%; max-height: 100%; }
+.cb-key { width: 30%; aspect-ratio: 1; opacity: .35; }
+
+/* nav */
+.cb-nav { display: inline-flex; align-items: center; gap: 4px; padding: 6px; border-radius: var(--radius-nav); }
+.cb-nav-btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; color: #cfcfcf; cursor: pointer; padding: 0; }
+.cb-nav-btn svg { width: 22px; height: 22px; }
+.cb-nav-btn:hover, .cb-nav-btn[aria-current="page"] { color: var(--ink); }
+.cb-nav-btn[aria-current="page"] { background: rgba(255,255,255,.06); }
+.cb-nav-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.cb-nav-mark img { width: 30px; height: 30px; display: block; }
+.cb-nav-div { width: 1px; height: 40px; background: rgba(255,255,255,.12); margin: 0 10px 0 6px; }
+.cb-nav-hq { display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 14px; margin-left: 30px; border-radius: 12px; background: #151515; color: var(--ink); font-size: 14px; cursor: default; }
+.cb-nav-hq span { font-family: var(--font-mono); font-size: 8px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border: 1px solid #555; border-radius: var(--radius-pill); padding: 1px 6px; }
+
+/* Card2 / to-do */
+.cb-todo { width: 336px; min-height: 360px; overflow: hidden; }
+.cb-todo-head { position: relative; height: var(--card2-header); display: flex; align-items: center; justify-content: space-between; padding: 0 11px; border-bottom: 1px solid var(--hairline); overflow: hidden; border-radius: var(--radius-card) var(--radius-card) 0 0; }
+.cb-todo-head::before { content: ""; position: absolute; inset: -24px; background: var(--todo-image, linear-gradient(90deg, #2a2a2a, #4a4038)); filter: blur(24px); opacity: .6; z-index: 0; }
+.cb-todo-head > * { position: relative; }
+.cb-todo-title { font-weight: 500; font-size: 18px; }
+.cb-todo-head img { height: 26px; }
+.cb-todo-body { padding: var(--card2-pad); display: flex; flex-direction: column; gap: var(--card2-pad); }
+.cb-todo-sec { display: flex; flex-direction: column; gap: var(--row-gap); }
+.cb-todo-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--caption); }
+.cb-todo-row { display: grid; grid-template-columns: 10px 1fr; column-gap: var(--todo-gap); font-size: 13.5px; line-height: 1.24; }
+.cb-todo-c { width: 10px; height: 10px; box-sizing: border-box; border-radius: 50%; border: 1px solid var(--muted); margin-top: calc((13.5px * 1.24 - 10px) / 2); }
+.cb-todo-row.is-done .cb-todo-c { background: var(--ink); border-color: var(--ink); }
+.cb-todo-row.is-done .cb-todo-t { color: var(--done); text-decoration: line-through; }
+.cb-todo-row.is-empty .cb-todo-c { border: 0; background: repeating-conic-gradient(var(--muted) 0 10deg, transparent 10deg 30deg); -webkit-mask: radial-gradient(circle, transparent 4px, #000 4px); mask: radial-gradient(circle, transparent 4px, #000 4px); }
+.cb-todo-row.is-empty .cb-todo-t { color: var(--done); }
+.cb-cross { background-color: var(--ground); background-size: 20px 20px;
+  /* grid-cross #696969: 8px crosses, 1px lines, 20px pitch; layer at 20% so it reads as texture (matches JJ's renders) */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Cpath d='M10 6v8M6 10h8' stroke='%23696969' stroke-opacity='.15' stroke-width='1' shape-rendering='crispEdges'/%3E%3C/svg%3E"); }
