@@ -1,0 +1,18 @@
+data: {"id":"chatcmpl-1b81d9ce-fcfa-440d-b474-aa3494dd66a3","object":"chat.completion.chunk","created":1794488135,"model":"deepseek-ai/DeepSeek-V4.1-Flash-1017","choices":[{"index":0,"delta":{"role":"assistant","content":""}}],"usage":null,"prompt_text":null}
+
+data: {"id":"chatcmpl-1b81d9ce-fcfa-440d-b474-aa3494dd66a3","object":"chat.completion.chunk","created":1794488135,"model":"deepseek-ai/DeepSeek-V4.1-Flash-1017","choices":[{"index":0,"delta":{"reasoning_content":"We"}}],"usage":null}
+
+data: {"id":"chatcmpl-1b81d9ce-fcfa-440d-b474-aa3494dd66a3","object":"chat.completion.chunk","created":1794488135,"model":"deepseek-ai/DeepSeek-V4.1-Flash-1017","choices":[{"index":0,"delta":{"reasoning_content":" need answer"}}],"usage":null}
+
+data: {"id":"chatcmpl-1b81d9ce-fcfa-440d-b474-aa3494dd66a3","object":"chat.completion.chunk","created":1794488135,"model":"deepseek-ai/DeepSeek-V4.1-Flash-1017","choices":[{"index":0,"delta":{"reasoning_content":" \"ok\". Need"}}],"usage":null}
+
+data: {"id":"chatcmpl-1b81d9ce-fcfa-440d-b474-aa3494dd66a3","object":"chat.completion.chunk","created":1794488135,"model":"deepseek-ai/DeepSeek-V4.1-Flash-1017","choices":[{"index":0,"delta":{"reasoning_content":" comply"}}],"usage":null}
+
+data: {"id":"chatcmpl-1b81d9ce-fcfa-440d-b474-aa3494dd66a3","object":"chat.completion.chunk","created":1794488135,"model":"deepseek-ai/DeepSeek-V4.1-Flash-1017","choices":[{"index":0,"delta":{"reasoning_content":". Just"}}],"usage":null}
+
+data: {"id":"chatcmpl-1b81d9ce-fcfa-440d-b474-aa3494dd66a3","object":"chat.completion.chunk","created":1794488135,"model":"deepseek-ai/DeepSeek-V4.1-Flash-1017","choices":[{"index":0,"delta":{"content":"ok","reasoning_content":" \"ok\"."},"finish_reason":"stop"}],"usage":null}
+
+data: {"id":"chatcmpl-1b81d9ce-fcfa-440d-b474-aa3494dd66a3","object":"chat.completion.chunk","created":1794488135,"model":"deepseek-ai/DeepSeek-V4.1-Flash-1017","choices":[],"usage":{"prompt_tokens":32,"completion_tokens":16,"total_tokens":48,"prompt_tokens_details":{"cached_tokens":0,"created_cache_tokens":0},"completion_tokens_details":{"reasoning_tokens":13}}}
+
+data: [DONE]
+
