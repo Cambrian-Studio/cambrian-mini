@@ -93,7 +93,7 @@ export async function render(root) {
   const drafts = doc.drafts || [];
   const runs = runsDoc.runs || [];
   put(root,
-    h('header.head', {}, h('p.eyebrow', {}, 'Lessons'), h('h1.statement', {}, 'What the line learned from its own runs.'),
+    h('header.head', {}, h('p.eyebrow', {}, 'Lessons'), h('h1.statement', {}, 'What Cambrian learned from its own builds.'),
       h('p.lede', {}, 'A red run drafts a lesson, a council member accepts it '
         + 'with a passkey, and from then on it is applied to every new brief.'),
       doc._meta?.how_it_grows ? h('p.note', {}, doc._meta.how_it_grows) : null),

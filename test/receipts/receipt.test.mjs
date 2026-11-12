@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { canonical, sha256Hex, sha256HexAsync, hashOf } from '../../receipts/canonical.mjs';
 import { buildReceipt, receiptHash, verifyReceipt } from '../../receipts/receipt.mjs';
 
-const run = () => ({ v: 1, origin: 'baby', mode: 'offline', ticket: { id: 'facts-page-1', title: 'A facts page', product: 'facts', branch: 'build/facts-page-1', budget: { usd: 1, calls: 20, minutes: 10 }, checks: ['page'] },
+const run = () => ({ v: 1, origin: 'mini', mode: 'offline', ticket: { id: 'facts-page-1', title: 'A facts page', product: 'facts', branch: 'build/facts-page-1', budget: { usd: 1, calls: 20, minutes: 10 }, checks: ['page'] },
   ticket_sha256: 'a'.repeat(64), approvals: [{ member: 'jj', credential_id: 'c1', ticket_sha256: 'a'.repeat(64), authenticator_data: 'x', client_data_json: 'y', signature: 'z', at: 't' }],
   release: { ok: true, valid: ['clemens', 'jj'], threshold: 2 }, state: 'green-preview', started: '2026-11-12T10:00:00.000Z', finished: '2026-11-12T10:05:00.000Z',
   attempts: [{ n: 1, walls: 'sandbox probe: 20 passed, 0 failed', sandbox: { kind: 'sandbox-exec' }, commit: 'c'.repeat(40),

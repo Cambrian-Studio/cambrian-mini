@@ -57,7 +57,7 @@ const seconds = (r) => (r.started && r.finished ? Math.round((Date.parse(r.finis
 export function runSummary(run) {
   const calls = (run.attempts ?? []).reduce((n, a) => n + (a.calls?.length ?? a.bridge?.forwarded ?? 0), 0);
   const usd = run.cost?.usd ?? (run.attempts ?? []).reduce((s, a) => s + (a.bridge?.computed_usd ?? 0), 0);
-  return { id: run.ticket?.id, title: run.ticket?.title, product: run.ticket?.product, origin: run.origin ?? 'baby', mode: run.mode ?? null,
+  return { id: run.ticket?.id, title: run.ticket?.title, product: run.ticket?.product, origin: run.origin ?? 'mini', mode: run.mode ?? null,
     state: run.state, waiting_on: run.waiting_on ?? null, started: run.started, finished: run.finished ?? null, seconds: seconds(run),
     attempts: (run.attempts ?? []).length, calls, usd: Number(Number(usd).toFixed(6)), stations: run.stations ?? null,
     preview_url: run.preview?.url ?? null, receipt_sha256: run.receipt_sha256 ?? null, model: run.attempts?.at(-1)?.agent?.model ?? null };
@@ -68,7 +68,7 @@ export function receiptOf(cfg, run) {
   const receipt = buildReceipt(run); const sha = receiptHash(receipt);
   const chainFile = join(cfg.files.runs, run.ticket.id, 'onchain.json');
   return { receipt, receipt_sha256: sha, recorded_sha256: run.receipt_sha256 ?? null, matches_record: run.receipt_sha256 ? run.receipt_sha256 === sha : null,
-    origin: run.origin ?? 'baby', on_chain: readJson(chainFile),
+    origin: run.origin ?? 'mini', on_chain: readJson(chainFile),
     // onchain.json is written by the recorder: { network, contract, signer, tx_hash, receipt_sha256, recorded_at }
     on_chain_status: readJson(chainFile)?.receipt_sha256 === sha ? 'recorded in a transaction log (verify it with scripts/verify-receipt.mjs)' : 'hash computed, not yet on chain' };
 }
@@ -88,7 +88,7 @@ export function snapshot(cfg, extra = {}) {
     const id = run.ticket.id;
     out[`api/runs/${id}.json`] = run;
     const rc = receiptOf(cfg, run); if (rc) out[`api/receipts/${id}.json`] = rc;
-    for (const n of run.notifications ?? []) notifications.push({ ts: n.ts, kind: n.kind, text: n.text, run: id, origin: run.origin ?? 'baby' });
+    for (const n of run.notifications ?? []) notifications.push({ ts: n.ts, kind: n.kind, text: n.text, run: id, origin: run.origin ?? 'mini' });
   }
   out['api/receipts.json'] = { receipts: runs.filter((r) => r.finished).map((r) => ({ ...runSummary(r), receipt_sha256: out[`api/receipts/${r.ticket.id}.json`].receipt_sha256 })) };
   out['api/notifications.json'] = { notifications: notifications.sort((a, b) => String(b.ts).localeCompare(String(a.ts))) };
@@ -109,6 +109,6 @@ function productsView(cfg, runs) {
 }
 function stakeView(cfg, runs) {
   const doc = readJson(cfg.files.stake, { v: 1, placeholder: true });
-  const sum = (origin) => Number(runs.filter((r) => (r.origin ?? 'baby') === origin).reduce((s, r) => s + runSummary(r).usd, 0).toFixed(6));
-  return { ...doc, inference_spend: { ...(doc.inference_spend ?? {}), baby_line_usd: sum('baby'), private_line_usd: sum('private-line'), runs: runs.length } };
+  const sum = (origin) => Number(runs.filter((r) => (r.origin ?? 'mini') === origin).reduce((s, r) => s + runSummary(r).usd, 0).toFixed(6));
+  return { ...doc, inference_spend: { ...(doc.inference_spend ?? {}), mini_line_usd: sum('mini'), private_line_usd: sum('private-line'), runs: runs.length } };
 }

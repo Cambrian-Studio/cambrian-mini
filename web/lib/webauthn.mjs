@@ -131,6 +131,11 @@ export const passkeysAvailable = () =>
   typeof navigator !== 'undefined' && !!navigator.credentials && typeof PublicKeyCredential !== 'undefined';
 
 // Asks the device for an assertion. `options` is the server's answer to an options request.
+// The header shows a member's menu (Approvals, notifications) on a device that has used a passkey here.
+function rememberMember() {
+  try { localStorage.setItem('cambrian.member', '1'); } catch { /* no storage: nothing to remember */ }
+}
+
 export async function getAssertion(options) {
   const cred = await navigator.credentials.get({
     publicKey: {
@@ -142,6 +147,7 @@ export async function getAssertion(options) {
     },
   });
   if (!cred) throw new Error('no passkey was used');
+  rememberMember();
   return {
     credential_id: bytesToB64url(cred.rawId),
     authenticator_data: bytesToB64url(cred.response.authenticatorData),
@@ -164,6 +170,7 @@ export async function createPasskey(options) {
     },
   });
   if (!cred) throw new Error('no passkey was created');
+  rememberMember();
   const spki = cred.response.getPublicKey?.();
   if (!spki) throw new Error('this browser did not return the public key');
   if (cred.response.getPublicKeyAlgorithm?.() !== -7) throw new Error('the passkey is not ES256');

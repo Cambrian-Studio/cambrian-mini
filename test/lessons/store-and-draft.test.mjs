@@ -16,7 +16,7 @@ const greenRun = readJson('data/runs/upread-v1-reader-shell/run.json');
 const greenTicket = readJson('data/runs/upread-v1-reader-shell/ticket.json');
 
 function scratch(t) {
-  const dir = mkdtempSync(join(tmpdir(), 'baby-lessons-test-'));
+  const dir = mkdtempSync(join(tmpdir(), 'cambrian-mini-lessons-test-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const file = join(dir, 'lessons.json');
   writeFileSync(file, readFileSync(join(ROOT, 'lessons/lessons.json')));
@@ -84,7 +84,7 @@ test('recordFired appends to one lesson and changes nothing else', (t) => {
 });
 
 test('loadLessons reports a missing file instead of throwing', () => {
-  const r = loadLessons(join(tmpdir(), 'baby-lessons-test-no-such-file.json'));
+  const r = loadLessons(join(tmpdir(), 'cambrian-mini-lessons-test-no-such-file.json'));
   assert.equal(r.lessons.length, 0);
   assert.match(r.error, /cannot read/);
 });

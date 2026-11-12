@@ -50,7 +50,7 @@ test('REPLAY: every route that would spend or sign answers 409 and says why', as
   });
 });
 test('the static build is the same record, in replay mode, with no fixtures and no private state', () => {
-  const out = mkdtempSync(join(tmpdir(), 'baby-cambrian-static-test-'));
+  const out = mkdtempSync(join(tmpdir(), 'cambrian-mini-static-test-'));
   try {
     const cfg = replayCfg(); const r = buildStatic({ out, cfg });
     assert.ok(r.files > 5);
@@ -64,7 +64,7 @@ test('the static build is the same record, in replay mode, with no fixtures and 
 test('with a key file present the server boots in LIVE mode (and still listens on loopback only)', async () => {
   const { spawn } = await import('node:child_process');
   const { writeFileSync } = await import('node:fs');
-  const dir = mkdtempSync(join(tmpdir(), 'baby-cambrian-liveboot-test-'));
+  const dir = mkdtempSync(join(tmpdir(), 'cambrian-mini-liveboot-test-'));
   writeFileSync(join(dir, 'key'), 'not-a-real-key', { mode: 0o600 });
   const port = 20000 + Math.floor(Math.random() * 20000);
   const child = spawn(process.execPath, [join(appConfig().root, 'app/server.mjs')], { stdio: ['ignore', 'pipe', 'pipe'],

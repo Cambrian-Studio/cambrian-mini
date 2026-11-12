@@ -307,7 +307,7 @@ export async function runTicket(
   const started = now();
   const rec = {
     v: 1,
-    origin: 'baby',
+    origin: 'mini',
     mode: cfg.offline ? 'offline' : 'live',
     ticket: {
       id: ticket.id,

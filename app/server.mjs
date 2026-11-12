@@ -59,7 +59,7 @@ export async function makeServer(cfg = appConfig()) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { server, cfg } = await makeServer();
   server.listen(cfg.port, cfg.host, () => {
-    console.log(`baby Cambrian — ${cfg.mode.toUpperCase()} mode${cfg.reasons.length ? ` (${cfg.reasons.join('; ')})` : ''}`);
+    console.log(`Cambrian Mini — ${cfg.mode.toUpperCase()} mode${cfg.reasons.length ? ` (${cfg.reasons.join('; ')})` : ''}`);
     console.log(`open http://localhost:${cfg.port}/`);
     if (cfg.mode === 'replay') console.log('REPLAY: recorded runs only. Nothing spends, nothing signs.');
   });

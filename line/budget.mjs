@@ -80,7 +80,7 @@ export function readSpentToday(cfg, { day = utcDay() } = {}) {
   if (cfg.offline) return 0;
   let sum = 0;
   for (const { rec } of records(cfg)) {
-    if ((rec.origin ?? 'baby') !== 'baby' || utcDay(rec.started ?? '') !== day) continue;
+    if ((rec.origin ?? 'mini') !== 'mini' || utcDay(rec.started ?? '') !== day) continue;
     sum += spentOf(rec);
   }
   return Number(sum.toFixed(6));
@@ -90,7 +90,7 @@ export function readSpentToday(cfg, { day = utcDay() } = {}) {
 export function runsToday(cfg, { exceptId = null, day = utcDay() } = {}) {
   let committed = 0, today = 0;
   for (const { id, rec } of records(cfg)) {
-    if ((rec.origin ?? 'baby') !== 'baby') continue;
+    if ((rec.origin ?? 'mini') !== 'mini') continue;
     if (id !== exceptId && rec.state === 'running') committed += Number(rec.ticket?.budget?.usd ?? 0);
     if (utcDay(rec.started ?? '') === day && (rec.attempts?.length ?? 0) > 0) today++;
   }

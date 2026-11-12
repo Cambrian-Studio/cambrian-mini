@@ -12,7 +12,7 @@ import { checkWasm } from '../../scripts/check-wasm.mjs';
 const CONTRACTS = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'contracts');
 
 function scratch(t) {
-  const dir = mkdtempSync(join(tmpdir(), 'baby-cambrian-wasm-'));
+  const dir = mkdtempSync(join(tmpdir(), 'cambrian-mini-wasm-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   return dir;
 }

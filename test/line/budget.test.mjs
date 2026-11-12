@@ -43,20 +43,20 @@ test("today's spend is the sum of per-call dollars in today's run records", () =
     };
     const today = new Date().toISOString();
     put('today-one', {
-      origin: 'baby',
+      origin: 'mini',
       started: today,
       state: 'green-preview',
       ticket: { budget: { usd: 1 } },
       attempts: [{ calls: [{ usd: 0.25 }, { usd: 0.5 }, { usd: null }], bridge: { computed_usd: 99 } }, { calls: [{ usd: 0.05 }] }],
     });
     put('today-running', {
-      origin: 'baby',
+      origin: 'mini',
       started: today,
       state: 'running',
       ticket: { budget: { usd: 1.5 } },
       attempts: [{ calls: [], bridge: { computed_usd: 0.1 } }],
     });
-    put('yesterday', { origin: 'baby', started: '2020-01-01T00:00:00.000Z', state: 'red', attempts: [{ calls: [{ usd: 3 }] }] });
+    put('yesterday', { origin: 'mini', started: '2020-01-01T00:00:00.000Z', state: 'red', attempts: [{ calls: [{ usd: 3 }] }] });
     put('imported', { origin: 'private-line', started: today, state: 'green-preview', attempts: [{ calls: [{ usd: 4 }] }] });
     mkdirSync(join(cfg.records, 'broken'), { recursive: true });
     writeFileSync(join(cfg.records, 'broken', 'run.json'), '{');

@@ -57,7 +57,7 @@ test(
         'v',
         'waiting_on',
       ]);
-      assert.deepEqual([rec.v, rec.origin, rec.mode, rec.state, rec.waiting_on], [1, 'baby', 'offline', 'green-no-preview', null]);
+      assert.deepEqual([rec.v, rec.origin, rec.mode, rec.state, rec.waiting_on], [1, 'mini', 'offline', 'green-no-preview', null]);
       assert.deepEqual(rec.ticket, {
         id: ticket.id,
         title: ticket.title,

@@ -1,7 +1,7 @@
 // The shell: reads the mode, draws the header, and routes the hash to one screen at a time.
 
 import * as api from './lib/api.js';
-import { h, failure, closeSheet, toast } from './lib/ui.js';
+import { h, failure, closeSheet, toast, ACCESS } from './lib/ui.js';
 import * as home from './screens/home.js';
 import * as talk from './screens/talk.js';
 import * as approvals from './screens/approvals.js';
@@ -16,8 +16,8 @@ const screens = {
   '': home, talk, approvals, enrol: approvals.enrol, line, products, receipts, lessons, stake, notifications,
 };
 const titles = {
-  '': 'Cambrian', talk: 'Talk to Cambrian', approvals: 'Approvals', enrol: 'Enrol a passkey', line: 'The line',
-  products: 'Products', receipts: 'Receipts', lessons: 'Lessons', stake: 'Stake', notifications: 'Notifications',
+  '': 'Cambrian Mini', talk: 'Talk to Cambrian', approvals: 'Approvals', enrol: 'Enrol a passkey', line: 'Watch a build',
+  products: 'Products', receipts: 'Verify', lessons: 'Lessons', stake: 'Stake', notifications: 'Notifications',
 };
 
 const main = document.getElementById('main');
@@ -41,7 +41,7 @@ async function route() {
     if (a.dataset.route === name) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   }
-  document.title = name ? `${titles[name] || 'Not found'} · Cambrian` : 'Cambrian: a collective that ships products';
+  document.title = name ? `${titles[name] || 'Not found'} · Cambrian Mini` : 'Cambrian Mini: machines build, the collective decides';
 
   const root = h('div.screen', { 'data-screen': name || 'home' });
   main.replaceChildren(root);
@@ -62,7 +62,9 @@ async function route() {
     root.replaceChildren(failure(err, titles[name]));
   }
   // A sheet opens over its list, so the list keeps its place; every other screen starts at the top.
-  if (!(arg && (name === 'approvals' || name === 'products'))) window.scrollTo(0, 0);
+  // The watch screen scrolls to the step it was asked for.
+  if (!(arg && (name === 'approvals' || name === 'products' || name === 'line'))) window.scrollTo(0, 0);
+  drawMember();
 }
 
 function drawMode(info) {
@@ -73,6 +75,14 @@ function drawMode(info) {
     ? 'Ideas reach a model. Signing needs a passkey.'
     : 'Recorded runs, nothing spends or signs.';
   document.getElementById('mode-badge').title = (info.reasons || []).join(' · ');
+}
+
+// Approvals and notifications are a member's own menu: shown on a device that has signed with a passkey here.
+function drawMember() {
+  let member = false;
+  try { member = localStorage.getItem('cambrian.member') === '1'; } catch { /* no storage: the routes still open from a brief */ }
+  document.getElementById('member-menu').hidden = !member;
+  document.documentElement.classList.toggle('is-member', member);
 }
 
 async function drawBell() {
@@ -100,18 +110,19 @@ function onEvent(msg) {
     else if (run.state === 'red') toast(`${title} went red.`, 'red');
     else if (run.state === 'refused') toast(`${title} was refused. Nothing ran.`, 'red');
   } else if (msg.type === 'ticket') {
-    toast('A brief changed. See Approvals.');
+    toast('A brief changed.');
   } else if (msg.type === 'lesson-draft') {
-    toast('Cambrian drafted a lesson from a red run. See Lessons.');
+    toast('Cambrian drafted a lesson from a failed build.');
   } else if (msg.type === 'lesson') {
     toast('A council member accepted a lesson.', 'green');
   } else if (msg.type === 'error') {
-    toast(msg.why || 'The line reported an error.', 'red');
+    toast(msg.why || 'The build reported an error.', 'red');
   }
   drawBell();
 }
 
 async function start() {
+  document.getElementById('access').href = ACCESS;
   let info;
   try {
     info = await api.init();
@@ -123,9 +134,10 @@ async function start() {
   }
   drawMode(info);
   drawBell();
+  drawMember();
   api.events(onEvent);
   window.addEventListener('hashchange', route);
   route();
 }
 
-start().catch((err) => main.replaceChildren(failure(err, 'Cambrian')));
+start().catch((err) => main.replaceChildren(failure(err, 'Cambrian Mini')));

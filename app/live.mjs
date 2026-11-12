@@ -81,11 +81,11 @@ export async function makeLive(cfg, { near = nearai } = {}) {
   };
   const attemptUsd = (a) => (a.calls?.length ? a.calls.reduce((x, c) => x + (c.usd ?? 0), 0) : (a.bridge?.computed_usd ?? 0));
   // every model dollar this app has caused: all runs of this line, plus every brief and lesson draft ever
-  const totalSpent = () => Number((sideTotal().usd + listRuns(cfg).filter((r) => (r.origin ?? 'baby') === 'baby')
+  const totalSpent = () => Number((sideTotal().usd + listRuns(cfg).filter((r) => (r.origin ?? 'mini') === 'mini')
     .reduce((s, r) => s + (r.attempts ?? []).reduce((x, a) => x + attemptUsd(a), 0), 0)).toFixed(6));
   const totalWhy = (extra = '') => `The total cap of $${TOTAL_CAP_USD} for this app would be passed: $${totalSpent()} is spent${extra}. `
     + 'Nothing more is sent to a model until the operator raises it.';
-  const runSpendToday = () => listRuns(cfg).filter((r) => (r.origin ?? 'baby') === 'baby' && String(r.started).slice(0, 10) === utcDay())
+  const runSpendToday = () => listRuns(cfg).filter((r) => (r.origin ?? 'mini') === 'mini' && String(r.started).slice(0, 10) === utcDay())
     .reduce((s, r) => s + (r.attempts ?? []).reduce((x, a) => x + (a.bridge?.computed_usd ?? 0), 0), 0);
   const spentToday = () => Number((sideSpend().usd + runSpendToday()).toFixed(6));
   const chat = async ({ messages, max_tokens }) => {

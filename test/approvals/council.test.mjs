@@ -10,7 +10,7 @@ import { createInvite, findInvite, enrol, loadCouncil, publicCouncil } from '../
 const b64u = (b) => Buffer.from(b).toString('base64url');
 const sha256 = (b) => createHash('sha256').update(b).digest();
 function setup() {
-  const dir = mkdtempSync(join(tmpdir(), 'baby-cambrian-council-test-'));
+  const dir = mkdtempSync(join(tmpdir(), 'cambrian-mini-council-test-'));
   const councilFile = join(dir, 'council.json'), invitesFile = join(dir, 'invites.json');
   writeFileSync(councilFile, JSON.stringify({ v: 1, threshold: 2, rp: { id: 'localhost', name: 't', origins: ['http://localhost:8787'] },
     members: [{ id: 'clemens', name: 'Clemens', credentials: [] }, { id: 'jj', name: 'JJ', credentials: [] }, { id: 'michael', name: 'Michael', credentials: [] }] }));

@@ -159,7 +159,7 @@ async function detail(root, id) {
           c.detail ? h('em', {}, c.detail) : null, c.unverified ? h('em', {}, 'unverified') : null))))
         : h('p.plain', {}, 'No check is recorded.'),
       (r.build?.walls || []).map((w) => h('p.mono.dim.small', {},
-        `attempt ${w.attempt} walls: ${w.probe || 'not probed'}${w.sandbox ? ` (${w.sandbox})` : ''}`))),
+        `attempt ${w.attempt} sealed workspace: ${w.probe || 'not probed'}${w.sandbox ? ` (${w.sandbox})` : ''}`))),
 
     h('section', {}, h('h2', {}, `Model calls (${calls.length})`),
       calls.length ? callsTable(calls, totals) : h('p.plain', {}, 'No model call is recorded.')),
@@ -173,7 +173,7 @@ async function detail(root, id) {
         : h('p', {}, r.approvals?.note || 'No council signature is recorded on this receipt.'),
       sigs.length ? h('p.small', {}, cap('valid'), ' ',
         `${(r.approvals.valid || []).join(', ') || 'none'} · ${r.approvals.threshold ?? '–'} needed`) : null,
-      r.ticket?.sha256 ? h('p.small', {}, cap('ticket hash'), ' ', h('span.hash', {}, r.ticket.sha256)) : null),
+      r.ticket?.sha256 ? h('p.small', {}, cap('brief hash'), ' ', h('span.hash', {}, r.ticket.sha256)) : null),
 
     (r.lessons?.fired || []).length || r.lessons?.drafted ? h('section', {}, h('h2', {}, 'Lessons'),
       h('ul.rows', {},

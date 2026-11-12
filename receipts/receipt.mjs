@@ -39,7 +39,7 @@ export function buildReceipt(run) {
   return {
     kind: 'cambrian-receipt', v: 1,
     run_id: run.ticket?.id ?? null,
-    origin: run.origin ?? 'baby',
+    origin: run.origin ?? 'mini',
     mode: run.mode ?? null,
     ticket: { ...pick(run.ticket ?? {}, ['id', 'title', 'product', 'branch', 'budget']), sha256: run.ticket_sha256 ?? null },
     approvals: { threshold: run.release?.threshold ?? null, valid: run.release?.valid ?? [], note: run.release?.note ?? null, signatures: approvalRows(run) },

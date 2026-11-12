@@ -55,7 +55,7 @@ function stubNear({ answer, attestation = 'ok' } = {}) {
 }
 const IDEA = 'a page that lists three facts about tide pools';
 async function setup({ exposed = false, near = stubNear(), over = {} } = {}) {
-  const dir = mkdtempSync(join(tmpdir(), 'baby-cambrian-live-test-'));
+  const dir = mkdtempSync(join(tmpdir(), 'cambrian-mini-live-test-'));
   const data = join(dir, 'data'), state = join(dir, 'state'); mkdirSync(join(data, 'tickets'), { recursive: true }); mkdirSync(state, { recursive: true });
   const tc = makeTestCouncil();
   writeFileSync(join(data, 'council.json'), JSON.stringify(tc.council));
@@ -256,7 +256,7 @@ test('the total cap: every dollar ever spent counts; at the cap an idea is refus
   const s = await setup({ over: { totalCapUsd: 1 } });
   try {
     // what counts: runs of this line (not imported ones), plus every brief and lesson draft ever
-    for (const [id, origin, usd] of [['mine-one', 'baby', 0.25], ['theirs-one', 'private-line', 9]]) {
+    for (const [id, origin, usd] of [['mine-one', 'mini', 0.25], ['theirs-one', 'private-line', 9]]) {
       mkdirSync(join(s.cfg.files.runs, id), { recursive: true });
       writeFileSync(join(s.cfg.files.runs, id, 'run.json'), JSON.stringify({ ticket: { id }, origin, started: '2026-11-01T00:00:00.000Z',
         attempts: [{ bridge: { computed_usd: usd } }] }));
@@ -285,7 +285,7 @@ test('the judge\'s check of a drafted ticket: a real recorded model signature ho
   async () => {
   // real bytes recorded from NEAR AI Cloud (test/near/fixtures): the request, the response, the model TEE's report and signature
   const FIX = join(root, 'test/near/fixtures'); const source = JSON.parse(readFileSync(join(FIX, 'source.json'), 'utf8'));
-  const dir = mkdtempSync(join(tmpdir(), 'baby-cambrian-provenance-test-'));
+  const dir = mkdtempSync(join(tmpdir(), 'cambrian-mini-provenance-test-'));
   try {
     const keyFile = join(dir, 'not-a-key'); writeFileSync(keyFile, 'offline-replay-no-key', { mode: 0o600 });
     const serve = async (url) => { const u = new URL(url);

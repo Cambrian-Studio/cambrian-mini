@@ -34,7 +34,7 @@ export function makeTestCouncil({ rpId = 'localhost', origin = 'http://localhost
   const auth = Object.fromEntries(ids.map((id) => [id, makeTestAuthenticator({ rpId, origin })]));
   const council = {
     v: 1, threshold, test_only: true,
-    rp: { id: rpId, name: 'baby Cambrian (test council)', origins: [origin] },
+    rp: { id: rpId, name: 'Cambrian Mini (test council)', origins: [origin] },
     members: ids.map((id) => ({ id, name: id === 'jj' ? 'JJ' : id[0].toUpperCase() + id.slice(1), credentials: [auth[id].credential] })),
   };
   const sign = (memberId, ticket, forge) => {

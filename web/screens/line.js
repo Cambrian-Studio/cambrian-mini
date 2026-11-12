@@ -1,7 +1,9 @@
-// The line: per ticket, six stations lighting up in order, driven by the run record.
+// Watch a build: one recorded product told in seven steps, then every recorded build with its six steps
+// lighting up in order. All of it is driven by the run records.
 
 import * as api from '../lib/api.js';
-import { h, put, plural, card, usd, when, short, seconds, stateChip, originChip, failure } from '../lib/ui.js';
+import { h, put, plural, card, usd, when, short, seconds, stateChip, originChip, failure, isImported } from '../lib/ui.js';
+import { STEPS } from '../lib/mini.js';
 
 const STATIONS = ['brief', 'approved', 'build', 'test', 'preview', 'receipt'];
 const still = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -46,14 +48,15 @@ export function replaySteps(run) {
   }
   if (final.approved !== 'off') {
     const who = (run.release?.valid || []).join(', ');
-    push('approved', 'on', [who ? `${at(s.approved)}approved by ${who}; signatures verified by the line`
-      : `${at(s.approved)}${run.release?.note || 'approved'}`]);
+    push('approved', 'on', [who ? `${at(s.approved)}approved by ${who}; signatures verified before the build`
+      : `${at(s.approved)}${isImported(run) ? 'signed on Cambrian’s private setup; the signature is not in this record'
+        : (run.release?.note || 'approved')}`]);
   }
   const attempts = run.attempts || [];
   attempts.forEach((a, i) => {
     const last = i === attempts.length - 1;
     push('build', last && final.build === 'now' ? 'now' : 'on', [
-      a.walls ? `attempt ${a.n}  walls: ${a.walls}${a.sandbox?.kind ? ` (${a.sandbox.kind})` : ''}` : null,
+      a.walls ? `attempt ${a.n}  sealed workspace: ${a.walls}${a.sandbox?.kind ? ` (${a.sandbox.kind})` : ''}` : null,
       a.agent ? `attempt ${a.n}  agent ran ${seconds(a.agent.seconds)}`
         + `${a.agent.model ? ' on ' + a.agent.model : ''}, ${(a.calls || []).length} model calls` : null,
     ]);
@@ -87,18 +90,22 @@ export function stationReport(run, name, state) {
   if (name === 'approved') {
     if (state === 'red') return `Refused: ${run.release?.why || run.waiting_on || 'the signatures did not verify'}. Nothing ran.`;
     const who = (run.release?.valid || []).join(', ');
-    if (who) return `Signed by ${who}. The line verified the signatures.`;
+    if (who) return `Signed by ${who}. Cambrian verified the signatures.`;
     const note = run.release?.note;
+    if (isImported(run)) return 'Signed by one council member on Cambrian’s private setup. That signature is not in this record.';
     return note ? `${note.charAt(0).toUpperCase()}${note.slice(1)}.` : 'Approved.';
   }
   if (name === 'build') {
-    if (state === 'now') return 'The agent is building behind walls.';
+    if (state === 'now') return 'The agent is building in a sealed workspace.';
     const walls = attempts.some((a) => a.walls);
-    return `The agent ran${walls ? ' behind walls' : ''}. ${plural(attempts.length, 'attempt')}, ${run.cost?.calls ?? 0} model calls.`;
+    return `The agent ran${walls ? ' in a sealed workspace' : ''}. ${plural(attempts.length, 'attempt')}, `
+      + `${run.cost?.calls ?? 0} model calls.`;
   }
   if (name === 'test') {
     if (state === 'now') return 'The checks are running.';
-    if (state === 'red') return run.lessons?.drafted ? 'Red. Cambrian drafted a lesson.' : 'Red. The line stopped here.';
+    if (state === 'red') {
+      return run.lessons?.drafted ? 'A check failed. Cambrian drafted a lesson.' : 'A check failed. The build stopped here.';
+    }
     return 'The checks passed.';
   }
   if (name === 'preview') return s.preview?.url ? 'The preview was deployed.' : `Preview: ${run.preview?.why || 'no address recorded'}.`;
@@ -168,7 +175,7 @@ function row(run) {
   const el = card('article.pad.run', { tl: run.ticket?.product || 'run', tr: chipSlot, bl: facts }, { 'data-run': id },
     h('h3', {}, run.ticket?.title || id),
     originChip(run),
-    h('div.feather', {}, h('ol.tl.stations', { 'aria-label': 'Stations' }, STATIONS.map((n) => lamps[n]))),
+    h('div.feather', {}, h('ol.tl.stations', { 'aria-label': 'Steps' }, STATIONS.map((n) => lamps[n]))),
     h('div.actions', {},
       h('button.btn.ghost.small', { type: 'button', onclick: replay }, 'Replay'),
       h('button.textbtn', { type: 'button', onclick: () => { if (log.hidden) showLog(); else log.hidden = true; } }, 'Log'),
@@ -178,20 +185,96 @@ function row(run) {
   return { el, stop, update(next) { run = next; settle(); if (!log.hidden) showLog(); } };
 }
 
-export async function render(root) {
+const NUM = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+const word = (n) => NUM[n] || String(n);
+const listed = (xs) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
+
+// One product, start to finish, as seven plain past-tense lines. Every name, count and cost is read from the
+// run records; a step the record does not hold says so instead of borrowing a line from somewhere else.
+export function story(product, runs, { council = null, lessons = [], onChain = [] } = {}) {
+  const seq = [...runs].sort((x, y) => String(x.started).localeCompare(String(y.started)));
+  const first = seq[0];
+  if (!first) return [];
+  const name = (id) => council?.members?.find((m) => m.id === id)?.name || id;
+  const imported = seq.some(isImported);
+  const checksOf = (r) => (r.ticket?.green || []).length || (r.attempts?.[0]?.checks || []).length;
+  const green = (r) => /^green/.test(String(r.state));
+  const lines = [];
+
+  const by = first.proposed_by?.member || product?.proposed_by || null;
+  lines.push(`${by ? name(by) : 'A member'} described the idea: ${product?.name || first.ticket?.product || 'a product'}.`
+    + (product?.tagline ? ` ${product.tagline}` : ''));
+
+  lines.push(`${first.ticket?.drafted ? 'Cambrian wrote the brief' : 'The brief was written'}, with `
+    + `${plural(checksOf(first), 'check')} and a ${usd(first.ticket?.budget?.usd)} budget.`);
+
+  const valid = first.release?.valid || [];
+  lines.push(valid.length ? `${listed(valid.map(name))} signed.`
+    : imported ? 'One council member signed with a passkey on Cambrian’s private setup. '
+      + 'That signature is not in this record and cannot be checked here.'
+      : 'No signature is recorded.');
+
+  const sealed = (first.attempts || []).some((x) => x.walls);
+  lines.push(`Agents built it${sealed ? ' in a sealed workspace' : ''}${imported ? '' : ' on NEAR AI'}. `
+    + `${plural(first.cost?.calls ?? 0, 'model call')}, ${usd(first.cost?.usd)}.`);
+
+  const red = seq.find((r) => r.state === 'red');
+  if (red) {
+    const checks = red.attempts?.at(-1)?.checks || [];
+    const failed = checks.filter((c) => !c.pass).length;
+    const learned = red.lessons?.learned || [];
+    const signed = lessons.filter((l) => learned.includes(l.id) && l.accepted_by).length;
+    const after = seq.slice(seq.indexOf(red) + 1).filter(green);
+    const next = after[0];
+    lines.push([
+      `${word(failed)} of ${word(checks.length).toLowerCase()} checks failed and the build stopped.`,
+      red.lessons?.drafted ? 'Cambrian drafted a lesson.'
+        : learned.length ? `${word(learned.length)} lesson${learned.length === 1 ? ' was' : 's were'} written from it.` : null,
+      learned.length || red.lessons?.drafted
+        ? (signed ? `The members signed ${signed === learned.length ? (signed === 1 ? 'it' : 'them') : word(signed).toLowerCase()}.`
+          : 'No member’s signature on them is in this record.') : null,
+      next ? `The next build passed${(next.attempts || []).length === 1 ? ' on the first try' : ''}, for ${usd(next.cost?.usd)}.`
+        : 'No later build is recorded.',
+      after.length > 1 ? `${word(after.length - 1)} more passed after it.` : null,
+    ].filter(Boolean).join(' '));
+  } else {
+    lines.push(seq.every(green) ? 'Every check passed.' : 'The checks have not finished.');
+  }
+
+  const url = product?.live_url || seq.map((r) => r.stations?.preview?.url || r.preview?.url).find(Boolean) || null;
+  const previews = seq.filter((r) => r.preview || r.stations?.preview?.at).length;
+  lines.push(url ? 'A preview link went up, and the product is live.'
+    : previews ? `${word(previews)} preview${previews === 1 ? '' : 's'} went up behind a sign-in. There is no public link yet.`
+      : 'No preview went up.');
+
+  lines.push(onChain.length === seq.length ? 'Recorded on NEAR.'
+    : onChain.length ? `${word(onChain.length)} of ${word(seq.length).toLowerCase()} builds recorded on NEAR.`
+      : 'Not recorded on NEAR yet. The record of each build is hashed, and anyone can recompute the hash on Verify.');
+
+  const links = [null, null, null, null, ['#/lessons', 'Read the lessons'], url ? [url, 'Open it'] : null,
+    ['#/receipts/' + encodeURIComponent(seq.at(-1).ticket?.id || ''), 'Verify it']];
+  return lines.map((line, i) => ({ n: i + 1, title: STEPS[i][0], line, link: links[i] }));
+}
+
+export async function render(root, arg) {
   const { runs = [] } = await api.get('runs.json');
   const list = h('div.runs');
   const rows = new Map();
   const live = api.isLive();
+  const told = h('ol.tl.story', { 'aria-label': 'One build, in seven steps' });
+  const which = h('p.lede');
 
   put(root,
-    h('header.head', {}, h('p.eyebrow', {}, 'The line'), h('h1.statement', {}, 'Every ticket runs the same six stations.'),
-      h('p.lede', {}, 'Brief, council, build, checks, preview, receipt. A red run stops at the checks and still leaves '
-        + 'its receipt. A brief without two valid signatures stops at the council and nothing runs.'),
-      h('p.note', {}, live ? 'Live: stations update as the line works.'
-        : 'Replay: press “Replay” on a run to watch its recorded stations, compressed to a few seconds.')),
+    h('header.head', {}, h('p.eyebrow', {}, 'Watch a build'),
+      h('h1.statement', {}, 'From an idea to a live product, in seven steps.'), which),
+    told,
+    h('header.head.second', {}, h('h2.h2', {}, 'Every recorded build.'),
+      h('p.lede', {}, 'Brief, signatures, build, checks, preview, record. A failed build stops at the checks and still '
+        + 'leaves its record. A brief without enough valid signatures stops before anything is built.'),
+      h('p.note', {}, live ? 'Live: the steps update as a build runs.'
+        : 'Replay: press “Replay” on a build to watch its recorded steps, compressed to a few seconds.')),
     list);
-  if (!runs.length) list.append(h('p.plain', {}, 'No run is recorded yet.'));
+  if (!runs.length) list.append(h('p.plain', {}, 'No build is recorded yet.'));
 
   const loaded = await Promise.allSettled(runs.map((r) => api.get(`runs/${encodeURIComponent(r.id)}.json`)));
   loaded.forEach((res, i) => {
@@ -200,6 +283,25 @@ export async function render(root) {
     rows.set(runs[i].id, r);
     list.append(r.el);
   });
+
+  const full = loaded.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+  const [productsR, councilR, lessonsR] = await Promise.allSettled(
+    ['products.json', 'council.json', 'lessons.json'].map((n) => api.get(n)));
+  const products = productsR.status === 'fulfilled' ? productsR.value.products || [] : [];
+  const product = products.find((p) => full.some((r) => r.ticket?.product === p.id)) || null;
+  const mine = product ? full.filter((r) => r.ticket?.product === product.id) : full.slice(0, 1);
+  const receipts = await Promise.allSettled(mine.map((r) => api.get(`receipts/${encodeURIComponent(r.ticket?.id)}.json`)));
+  const steps = story(product, mine, {
+    council: councilR.status === 'fulfilled' ? councilR.value : null,
+    lessons: lessonsR.status === 'fulfilled' ? lessonsR.value.lessons || [] : [],
+    onChain: receipts.filter((r) => r.status === 'fulfilled' && r.value?.on_chain),
+  });
+  which.textContent = steps.length ? `${product?.name || 'One product'}, start to finish, from the record.` : 'No build is recorded yet.';
+  told.replaceChildren(...steps.map((st) => h('li', { id: `step-${st.n}`, 'data-state': 'on' }, h('i', { 'aria-hidden': 'true' }),
+    h('div', {}, h('span.step', {}, `${String(st.n).padStart(2, '0')} · ${st.title.replace(/\.$/, '')}`), h('span.said', {}, st.line),
+      st.link ? h('a.link', { href: st.link[0] }, st.link[1]) : null))));
+  const toStep = () => document.getElementById(`step-${arg}`)?.scrollIntoView({ block: 'center' });
+  if (arg) root.addEventListener('shown', toStep, { once: true });
 
   const onRun = (e) => {
     const run = e.detail;

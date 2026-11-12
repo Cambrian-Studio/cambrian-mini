@@ -40,13 +40,13 @@ function report(entry, council) {
   if (entry.proposed_by?.member) said.push(`${nameOf(council, entry.proposed_by.member)} brought the idea.`);
   if (!isWaiting(entry)) {
     said.push(`${NUMBER[valid.length] || valid.length} of ${String(NUMBER[total] || total).toLowerCase()} signed.`,
-      entry.run_started ? 'The brief was released to the line.' : 'The brief is signed.');
+      entry.run_started ? 'The brief was released to be built.' : 'The brief is signed.');
     return said.join(' ');
   }
   if (valid.length) said.push(`${valid.map((id) => nameOf(council, id)).join(' and ')} signed.`);
   const left = need - valid.length;
-  said.push(left === 1 ? 'One more signature releases it to the line.'
-    : `${NUMBER[left] || left} more signatures release it to the line.`);
+  said.push(left === 1 ? 'One more signature releases it to be built.'
+    : `${NUMBER[left] || left} more signatures release it to be built.`);
   return said.join(' ');
 }
 
@@ -65,8 +65,8 @@ function sheetBody(entry, council) {
   const recomputed = h('span.small.dim', {}, 'recomputing…');
   hashOfAsync(t).then((hash) => {
     const match = hash === entry.ticket_sha256;
-    recomputed.textContent = match ? 'Recomputed in your browser from the ticket: the hash matches.'
-      : 'Recomputed from the ticket: the hash does not match.';
+    recomputed.textContent = match ? 'Recomputed in your browser from the brief: the hash matches.'
+      : 'Recomputed from the brief: the hash does not match.';
     recomputed.className = 'small ' + (match ? 'ok' : 'bad');
   }).catch(() => { recomputed.textContent = ''; });
 
@@ -77,7 +77,7 @@ function sheetBody(entry, council) {
       const assertion = await getAssertion(options);
       const res = await api.post('approve', { ticket_id: t.id, member: member.id, ...assertion });
       api.forgetAll();
-      toast(res.released ? `${member.name} signed. “${t.title}” was released to the line.`
+      toast(res.released ? `${member.name} signed. “${t.title}” was released to be built.`
         : `${member.name} signed “${t.title}”. ${res.valid?.length ?? 1} of ${res.threshold ?? need} so far.`, 'green');
       reload();
     } catch (err) {
@@ -116,7 +116,7 @@ function sheetBody(entry, council) {
     for (const a of approvals) {
       const r = await verifyMemberSignature({ purpose: 'approval', subjectHash: entry.ticket_sha256, approval: a, council });
       const out = results.get(a);
-      out.replaceChildren(r.ok ? dot() : null, r.ok ? ' Valid ES256 signature over this ticket hash.' : `Not valid: ${r.why}`);
+      out.replaceChildren(r.ok ? dot() : null, r.ok ? ' Valid ES256 signature over this brief’s hash.' : `Not valid: ${r.why}`);
     }
     verifyAll.disabled = false;
   } }, 'Verify signatures') : null;
@@ -140,7 +140,7 @@ function sheetBody(entry, council) {
       : 'No verified model signature is recorded for this brief'
         + (entry.brief?.attestation_note ? ` (${entry.brief.attestation_note}).` : '.')),
     h('p.small.dim', {}, 'This is the server\'s recorded result. This page does not check the TEE quote again; the kept response, '
-      + 'request and report are beside the ticket in the record, and the judge script re-checks them offline.')) : null;
+      + 'request and report are beside the brief in the record, and the judge script re-checks them offline.')) : null;
 
   // Who proposed it: a council member's passkey signature over the idea's text. It is not an approval.
   const proposer = entry.proposed_by || null;
@@ -153,7 +153,7 @@ function sheetBody(entry, council) {
 
   const explain = h('button.btn.tall', { type: 'button', onclick: () => {
     note.hidden = false;
-    note.textContent = `This asks a council member's device for a passkey signature over the ticket hash `
+    note.textContent = `This asks a council member's device for a passkey signature over the brief’s hash `
       + `${short(entry.ticket_sha256)}…. Recorded signatures are shown above and can be verified.`;
   } }, 'Sign with passkey');
 
@@ -174,17 +174,17 @@ function sheetBody(entry, council) {
       verifyAll ? h('div.actions', {}, verifyAll) : null,
       approvals.length && entry.release?.why ? h('p.small.dim', {}, entry.release.why) : null),
     entry.run_started ? h('div.cb-card.cb-card2.released', {}, dot(),
-      h('div', {}, h('span', {}, `${t.title || t.id} went to the line at ${clock(entry.run_started)} UTC.`),
-        h('span', {}, 'The preview is on its receipt when it builds. ', h('a.link', { href: '#/line' }, 'Watch the line')))) : null,
+      h('div', {}, h('span', {}, `${t.title || t.id} went to be built at ${clock(entry.run_started)} UTC.`),
+        h('span', {}, 'The preview is on its record when it builds. ', h('a.link', { href: '#/line' }, 'Watch the build')))) : null,
     canSign && open.length ? h('div.actions.col', {}, sign, hint) : null,
     !canSign && isWaiting(entry) ? h('div.actions.col', {}, explain, note) : null,
     h('p.cap.footcap', {}, 'Passkeys kept with the brief · on-chain next'),
     origin,
-    card('div.pad', { tl: 'Ticket hash being signed' }, {},
+    card('div.pad', { tl: 'Hash being signed' }, {},
       h('p.hash', {}, entry.ticket_sha256 || '–'), recomputed,
-      h('p.small.dim', {}, 'sha256 of the canonical ticket. Change one word of the brief and every signature above stops matching.'),
+      h('p.small.dim', {}, 'sha256 of the brief in a fixed form. Change one word of the brief and every signature above stops matching.'),
       d ? h('p.small.dim', {}, `The hash being signed covers the model response hash ${short(d.response_sha256)}…: it is a field of `
-        + 'the ticket. The ticket is derived from that response by code (the budget is clamped, a lesson may add a line); '
+        + 'the brief. The signed form is derived from that response by code (the budget is clamped, a lesson may add a line); '
         + 'it is not the response byte for byte.') : null),
     steps(entry, council));
 }
@@ -200,7 +200,7 @@ function steps(entry, council) {
     item(entry?.release?.ok ? 'is-done' : (entry ? 'is-now' : ''), 'Council',
       `Council approval: ${need} of ${total} passkey signatures`),
     item(entry?.run_started ? 'is-done' : '', 'Release',
-      entry?.run_started ? `Released to the line · ${when(entry.run_started)}` : 'Release to the line'),
+      entry?.run_started ? `Released to be built · ${when(entry.run_started)}` : 'Release to be built'),
     item('is-off', 'Next', m.dao?.label || NEXT, m.dao?.detail ? h('span.small.dim', {}, m.dao.detail) : null));
 }
 
@@ -237,7 +237,7 @@ function todoCard(tickets, total) {
   const urgent = tickets.filter(isWaiting).map((e) => row(e, `Sign “${e.ticket.title || e.ticket.id}”.`));
   const rest = tickets.filter((e) => !isWaiting(e));
   const open = [
-    ...rest.filter((e) => !e.run_started).map((e) => row(e, `“${e.ticket.title || e.ticket.id}” is signed and waits for the line.`)),
+    ...rest.filter((e) => !e.run_started).map((e) => row(e, `“${e.ticket.title || e.ticket.id}” is signed and waits to be built.`)),
     ...rest.filter((e) => e.run_started).map((e) => row(e, `“${e.ticket.title || e.ticket.id}” released, `
       + `${(e.release?.valid || []).length} of ${total}.`, true)),
   ];
@@ -273,7 +273,7 @@ export async function render(root, arg) {
     h('header.head', {}, h('p.eyebrow', {}, 'Council'),
       h('h1.statement', {}, 'A member brings the idea. The collective decides what gets the compute.'),
       h('p.lede', {}, 'Nothing is built until the collective signs. '
-        + 'The line checks those signatures itself before it starts, and again before it pushes.'),
+        + 'Cambrian checks those signatures itself before a build starts, and again before the code is pushed.'),
       h('p.cap', {}, quorumLabel(council))),
     h('h2', {}, `Waiting for the council (${waiting.length})`),
     h('div.queue.has-todo', {},
@@ -282,7 +282,7 @@ export async function render(root, arg) {
       todoCard(tickets, council?.members?.length || 3)),
     h('h2', {}, `Signed and released (${done.length})`),
     done.length ? h('div.ideas', {}, done.map((e) => listCard(e, council)))
-      : h('p.plain', {}, 'No brief has been approved in this record yet. Runs imported from Cambrian’s private line were '
+      : h('p.plain', {}, 'No brief has been approved in this record yet. Builds imported from Cambrian’s private setup were '
         + 'approved there; their receipts say so and carry no signature that could be checked here.'),
     councilR.status === 'rejected' ? failure(councilR.reason, 'The council') : councilCards(council),
     h('h2', {}, 'How a brief is decided'),

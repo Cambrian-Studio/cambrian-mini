@@ -1,6 +1,31 @@
-# baby Cambrian
+# Cambrian Mini
 
-Cambrian is a collective that ships products with a factory line: a member proposes an idea, a quorum of the collective signs the brief with passkeys (today a founding council of 3, threshold 2), AI agents build it behind walls using NEAR AI Cloud, every run leaves a receipt, and a run that ends RED is drafted into a rule which, once a council member accepts it, the next brief is checked against. This repository is the public, pruned version of that line plus the app to use it. It was written 12–14 November 2026 for NEAR HACKATHON; the line itself was ported from Cambrian's private line (built 3–10 November), which built the product Upread.
+**Machines build. The collective decides.**
+
+Cambrian is a product studio run by one intelligence and owned by its members: a factory that owns everything it ships and gets better with every product. Members bring ideas, taste and capital. Staked NEAR becomes AI compute through NEAR AI, the members decide which ideas it funds, and AI agents build them, with every decision and every model call verifiable on NEAR. Cambrian Mini is the part we opened for this hackathon.
+
+## What you can check in five minutes
+
+1. **The hosted replay.** Open <https://cambrian-line-replay.vercel.app>, go to **Verify**, pick a build and press **Verify this receipt**. You see your own browser recompute the sha256 of that build's record and report that it matches.
+2. **`npm run judge`.** Clone, `npm ci`, `npm run judge`. You see 16 numbered checks run on your machine with no keys, ending `judge: 16 checks — 11 ok, 5 skipped, 0 failed`. Each skip prints its reason.
+3. **Solo mode.** One live build with your own NEAR AI key, as a council of one. This is not built yet. Until it is, `npm run demo` sends one brief through the real build path with a stand-in agent and a throwaway test council, and you see `state     green-no-preview`.
+
+## What is live today, and what is next
+
+Live today:
+
+- The path from a signed brief to a checked build: passkey signatures verified before anything runs, a sealed workspace, every model call priced through NEAR AI and stopped at the signed budget, the brief's checks, and a record with a hash. It is covered by the tests and the judge, and was exercised in rehearsal builds with a test council.
+- The replay: three recorded builds of one product, Upread, made on Cambrian's private setup on 9 November. One failed, two passed, $5.36 in total. They are imported with their numbers unchanged and labelled as imported.
+
+Next, and not true yet:
+
+- No council member has enrolled a passkey, so no build signed by the founding council is recorded here.
+- Nothing is recorded on NEAR. The contract that logs a build record's hash is written and tested, not deployed.
+- The stake is not recorded, so the home page shows no staked amount and no credits received.
+- Upread has no public link.
+- Solo mode, a collective larger than the founding council of 3, and the on-chain council are not built.
+
+The longer list is under [Honest limits](#honest-limits). This repository was written 12–14 November 2026 for NEAR HACKATHON; the build path was ported from Cambrian's private setup (built 3–10 November), which built Upread.
 
 ## Try it
 
@@ -14,10 +39,10 @@ npm ci
 **1. `npm test`** — unit tests and attack tests. Expect the last line:
 
 ```
-247 passed, 0 failed
+252 passed, 0 failed
 ```
 
-On macOS the last line is `246 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only. On Linux install bubblewrap first (`sudo apt-get install bubblewrap`); without any sandbox the wall tests print their reason and skip, and the line itself refuses to execute anything.
+On macOS the last line is `251 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only. On Linux install bubblewrap first (`sudo apt-get install bubblewrap`); without any sandbox the wall tests print their reason and skip, and the line itself refuses to execute anything.
 
 **2. `npm run judge`** — re-derives the claims on your machine, offline. Expect 16 numbered lines, each with a detail after a dash; these eight and the summary, shortened here to their titles:
 
@@ -46,7 +71,7 @@ receipt   sha256 <64 hex>
 
 Add `--approvals 1` (`node line/run-cli.mjs --offline --ticket test/line/fixtures/tickets/facts-page-1.json --approvals 1`) and expect `state     refused — not released by the council: 1 of 3 valid approvals; 2 are required. Nothing ran.`
 
-**4. `npm start`** then open `http://localhost:8787/` — the app. With no key file it says `REPLAY mode` and shows the recorded runs. Open **Receipts**, pick a run, press **Verify this receipt**: the browser recomputes the sha256 over the receipt's canonical JSON and shows `Hash matches.`. (This proves the browser and the server serialise and hash the receipt identically; it becomes tamper evidence once the hash is also recorded somewhere the server cannot change.) Open **The line** and press **Replay** on a run to watch its stations. Every button that would spend or sign explains what it would do instead of doing it.
+**4. `npm start`** then open `http://localhost:8787/` — the app. With no key file it says `REPLAY mode` and shows the recorded runs. Open **Verify**, pick a build, press **Verify this receipt**: the browser recomputes the sha256 over the receipt's canonical JSON and shows `Hash matches.`. (This proves the browser and the server serialise and hash the receipt identically; it becomes tamper evidence once the hash is also recorded somewhere the server cannot change.) Open **The line** and press **Replay** on a run to watch its stations. Every button that would spend or sign explains what it would do instead of doing it.
 
 **5. The contract, executed** (no Rust needed): `node --test test/near/verify-wasm.test.mjs` runs the committed 1.8 kB wasm itself with stub host functions → `ℹ pass 9`, `ℹ fail 0`.
 
@@ -89,14 +114,14 @@ Every claim, its `file:line`, its test and its status are in [CLAIMS.md](CLAIMS.
 - **Costs are as reported.** For runs of this line, a call's dollars are NEAR AI's published price times the token usage NEAR AI reports for that call. We do not independently measure usage. A ticket's dollar budget is checked before each call, so the call in flight when it is reached still completes.
 - **The eight starting lessons were carried over, not accepted here.** They come from the private line; three of them have no single run behind them. No lesson has yet been drafted from a RED run of this line and accepted by passkey.
 - **The judge and the demo are keyless, not network-free.** The stand-in build's install step may reach `registry.npmjs.org` through the line's allow-listed tunnel. They have not been run with the network off.
-- **The repository is private until submission.** Until it is public the clone command above fails, and until the pull requests are merged `main` holds only the first commit.
+- **The repository is private until submission.** Until it is public the clone command above fails.
 - **The enrolment trusts the browser for the public key.** A passkey's public key is taken from the browser at enrolment, behind a one-time invite; the attestation statement of the authenticator is not checked.
 
 ## Repository map
 
 ```
 app/         the server (REPLAY and LIVE), the record → JSON snapshot, the static demo builder
-web/         the UI: Talk, Approvals, The line, Products, Receipts, Lessons, Stake
+web/         the UI: Home, Watch a build, Products, Verify; Talk, Approvals, Lessons and Stake open from those
 tickets/     the ticket shape and its validation; idea → brief
 approvals/   passkey verification, the 2-of-3 release rule, council enrolment, the DAO stub
 line/        the factory line: run, checks, push guard, budget, preview, notifications
