@@ -1,0 +1,12 @@
+# Build settings for the one artifact this crate has. contracts/build.sh relies on them.
+[build]
+target = "wasm32-unknown-unknown"
+
+[target.wasm32-unknown-unknown]
+rustflags = [
+  # WebAssembly 1.0 (MVP) instructions only: no bulk-memory, sign-ext, multivalue, reference-types
+  # or nontrapping-fptoint, which a NEAR node may refuse at deploy time.
+  "-C", "target-cpu=mvp",
+  # A 16 kB stack is plenty (the contract uses about 200 bytes); it keeps the memory at one page.
+  "-C", "link-arg=-zstack-size=16384",
+]
