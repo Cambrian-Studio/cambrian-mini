@@ -1,0 +1,9 @@
+# The default rules apply everywhere. One narrow exception: the two recorded NEAR AI attestation reports.
+# They are public documents (the report endpoint answers without a key) and their fields named
+# "signing_key" and "ohttp_key_config" are PUBLIC keys of the TEE, which is exactly what the tests verify.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "public NEAR AI attestation reports recorded as test fixtures (public keys only)"
+paths = ['''^test/near/fixtures/report\.(ed25519|ecdsa)\.json$''']

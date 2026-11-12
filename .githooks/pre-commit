@@ -1,0 +1,4 @@
+#!/bin/sh
+# pre-commit — refuse a commit that stages a secret. Install: git config core.hooksPath .githooks
+command -v gitleaks >/dev/null 2>&1 || { echo "pre-commit: gitleaks is not installed — refusing to commit without the scan"; exit 1; }
+exec gitleaks git --staged --redact --no-banner

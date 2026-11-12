@@ -1,0 +1,16 @@
+# live state of the build machine: scratch, tools, product repositories, invites — never committed
+.line/
+.shots/
+dist-static/
+node_modules/
+contracts/receipts/target/
+# secrets never live in this repository; these patterns are a second line
+secrets/
+*.token
+*.pat
+*.key
+*.pem
+.env
+.env.*
+!.env.example
+.DS_Store

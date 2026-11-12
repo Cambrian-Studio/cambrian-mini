@@ -1,0 +1,22 @@
+{
+  "name": "baby-cambrian",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cambrian's factory line, in public: a council approves a brief with passkeys (2 of 3), AI agents build it behind walls with NEAR AI, every run leaves a receipt, every failure becomes a rule.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node app/server.mjs",
+    "test": "node scripts/test.mjs",
+    "judge": "node scripts/judge.mjs",
+    "demo": "node line/run-cli.mjs --offline --ticket test/line/fixtures/tickets/facts-page-1.json",
+    "build:static": "node app/static-build.mjs",
+    "check:wasm": "node scripts/check-wasm.mjs",
+    "invite": "node scripts/invite.mjs",
+    "setup:live": "sh line/kit/setup-tools.sh",
+    "verify:receipt": "node scripts/verify-receipt.mjs"
+  }
+}
