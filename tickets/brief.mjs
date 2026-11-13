@@ -46,8 +46,11 @@ export function shapeBrief(draft, { idSuffix, capUsd = 5, revision = null, conve
   // a revision stays on its parent's product, whatever the model wrote
   const product = revision ? revision.product : slug(draft.product);
   const id = `${product}-${idSuffix}`.slice(0, 40).replace(/-+$/, '');
-  const budget = { usd: Math.min(Number(draft.budget?.usd) || 1, 2, capUsd), calls: Math.min(Math.trunc(Number(draft.budget?.calls)) || 30, 40),
-    minutes: Math.min(Math.trunc(Number(draft.budget?.minutes)) || 10, 15) };
+  // The model proposes a budget; the code keeps it inside a floor and a ceiling. Below the floor a build runs out of calls or
+  // minutes before it has written anything (a real build was drafted at 12 calls and 5 minutes, and failed that way).
+  const within = (v, d, lo, hi) => Math.min(Math.max(Number(v) || d, lo), hi);
+  const budget = { usd: Math.min(within(draft.budget?.usd, 1, 1, 2), capUsd), calls: Math.trunc(within(draft.budget?.calls, 30, 20, 40)),
+    minutes: Math.trunc(within(draft.budget?.minutes, 10, 10, 15)) };
   return parseTicket({ kind: 'build-ticket', v: 1, id, product, title: String(draft.title ?? '').slice(0, 72), goal: draft.goal, task: draft.task,
     out_of_scope: draft.out_of_scope, green: draft.green, budget, ...(revision ? { revision } : {}),
     ...(conversation ? { conversation } : {}) });
