@@ -194,7 +194,10 @@ export async function makeLive(cfg, { near = nearai } = {}) {
         // a product begins with its first GREEN build: record it so the Products screen can show it
         if (/^green/.test(String(rec?.state))) {
           const doc = readJson(cfg.files.products, { v: 1, products: [] });
-          if (!doc.products.some((p) => p.id === entry.ticket.product)) {
+          const known = doc.products.find((p) => p.id === entry.ticket.product);
+          // a product that was on record before it was built gets its first build written on it
+          if (known && !known.first_run && !(known.runs ?? []).length) { known.first_run = entry.ticket.id; known.status = 'built here'; writeJson(cfg.files.products, doc); }
+          if (!known) {
             doc.products.push({ id: entry.ticket.product, name: entry.ticket.product, tagline: entry.ticket.goal ?? entry.ticket.title, status: 'preview',
               live_url: null, built_on: 'this line', first_run: entry.ticket.id });
             writeJson(cfg.files.products, doc);
@@ -348,7 +351,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       let report = null;
       try { report = await near.fetchReport({ model: model(), signingAlgo: 'ecdsa', nonce: randomBytes(32).toString('hex'), base: cfg.nearai.base }); } catch { report = null; }
       const tickets = listTickets(cfg);
-      const r = await draftBrief(transcript(c.messages), { chat, lessons: lessonsNow(), lintBrief, lessonsBlock, products: ctx.products, revision, house: HOUSE_LINE,
+      const r = await draftBrief(transcript(c.messages), { chat, lessons: lessonsNow(), lintBrief, lessonsBlock, products: ctx.products, revision, house: HOUSE_LINE, forceProduct: intent.intent === 'new' ? intent.product?.id ?? null : null,
         conversation, maxIdea: TRANSCRIPT_MAX + 200, existing: tickets.map((t) => ({ id: t.ticket.id, title: t.ticket.title, task: t.ticket.task })),
         idSuffix: randomBytes(3).toString('hex'), capUsd: Math.min(cfg.dailyCapUsd, BUILD_CAP_USD) });
       add(r.usd);
@@ -467,7 +470,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
         report = await near.fetchReport({ model: model(), signingAlgo: 'ecdsa', nonce: randomBytes(32).toString('hex'),
           base: cfg.nearai.base });
       } catch { report = null; }
-      const r = await draftBrief(body.idea, { chat, lessons, lintBrief, lessonsBlock, products, revision, house: HOUSE_LINE,
+      const r = await draftBrief(body.idea, { chat, lessons, lintBrief, lessonsBlock, products, revision, house: HOUSE_LINE, forceProduct: intent.intent === 'new' ? intent.product?.id ?? null : null,
         existing: tickets.map((t) => ({ id: t.ticket.id, title: t.ticket.title, task: t.ticket.task })),
         idSuffix: randomBytes(3).toString('hex'), capUsd: Math.min(cfg.dailyCapUsd, BUILD_CAP_USD) });
       const at = new Date().toISOString();

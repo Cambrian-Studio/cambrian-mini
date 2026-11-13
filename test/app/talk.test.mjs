@@ -57,12 +57,15 @@ function stubNear({ drafts = [base, simpler], stream = true } = {}) {
   }
   return near;
 }
-async function setup({ exposed = true, near = stubNear(), cap = 5 } = {}) {
+async function setup({ exposed = true, near = stubNear(), cap = 5, handover = false } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'cambrian-mini-talk-test-'));
   const data = join(dir, 'data'), state = join(dir, 'state'); mkdirSync(data, { recursive: true }); mkdirSync(state, { recursive: true });
   const tc = makeTestCouncil();
   writeFileSync(join(data, 'council.json'), JSON.stringify(tc.council));
-  cpSync(join(root, 'data/products.json'), join(data, 'products.json'));
+  // a record where Upread is an ordinary product with builds; the committed record hands Upread over to Upread Mini (tested apart)
+  const committed = JSON.parse(readFileSync(join(root, 'data/products.json'), 'utf8'));
+  const upread = { ...committed.products.find((p) => p.id === 'upread') }; delete upread.successor;
+  writeFileSync(join(data, 'products.json'), JSON.stringify(handover ? committed : { v: 1, products: [upread] }));
   cpSync(join(root, 'data/runs'), join(data, 'runs'), { recursive: true });
   cpSync(join(root, 'lessons/lessons.json'), join(dir, 'lessons.json'));
   const b = appConfig();
@@ -307,4 +310,25 @@ test('a brief model that does not answer at all is given up on after the time li
     assert.equal(d[1].brief.drafted.model, 'Qwen/Qwen3.6-35B-A3B-FP8');
     assert.equal(aborted, true, 'the call that hung was aborted, not left running');
   } finally { local.done(); }
+});
+
+test('Upread is built fresh here as Upread Mini: a message about Upread drafts the first build of upread-mini, with no parent, linted by the lessons', async () => {
+  const s = await setup({ handover: true });
+  try {
+    const record = snapshot(s.cfg)['api/products.json'].products;
+    const mini = record.find((p) => p.id === 'upread-mini');
+    assert.equal(mini.runs.length, 0, 'no build of its own yet');
+    assert.deepEqual(mini.history.map((r) => r.origin), ['private-line', 'private-line', 'private-line'], 'the imported Upread builds are shown as its history');
+    assert.equal(mini.live_url, null);
+    const session = await s.open('jj');
+    const t1 = await s.turn({ session, text: 'Build Upread: a reader that shows an article one word at a time.' });
+    const d = await s.post('/api/talk/draft', { session, conversation_id: t1.id, text: 'draft it' });
+    assert.equal(d[0], 200, JSON.stringify(d[1]));
+    const b = d[1].brief;
+    assert.equal(b.product, 'upread-mini', 'on the new product, whatever the model wrote');
+    assert.equal(b.revision, undefined, 'no parent: it does not continue the imported builds');
+    assert.match(s.near.seen.draft.at(-1)[0].content, /first build of the product "upread-mini"/);
+    assert.ok(d[1].lint.applied.length >= 1, 'the lessons carried over from the Upread builds were applied to the draft');
+    assert.deepEqual(d[1].lint.refused, []);
+  } finally { s.done(); }
 });

@@ -114,6 +114,9 @@ function productsView(cfg, runs) {
     const mine = runs.filter((r) => r.ticket?.product === p.id).map((r) => runSummary(r, cfg));
     return { ...p, runs: mine.map((r) => ({ id: r.id, title: r.title, state: r.state, usd: r.usd, origin: r.origin, finished: r.finished,
       preview_url: r.preview_url, revision: r.revision })),
+      // a product built fresh here can show the earlier builds of the product it follows, as history: never as its own builds
+      ...(p.history_of ? { history: runs.filter((r) => r.ticket?.product === p.history_of).map((r) => runSummary(r, cfg))
+        .map((r) => ({ id: r.id, title: r.title, state: r.state, usd: r.usd, origin: r.origin, finished: r.finished })) } : {}),
       cost_usd: Number(mine.reduce((s, r) => s + r.usd, 0).toFixed(6)), live_url: p.live_url ?? mine.find((r) => r.preview_url && /^green/.test(r.state))?.preview_url ?? null };
   }) };
 }

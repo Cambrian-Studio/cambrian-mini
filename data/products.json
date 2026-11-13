@@ -16,7 +16,18 @@
       ],
       "cost_usd": 5.363208,
       "cost_note": "Sum of cost.usd over the three run records: 3.977314 (RED) + 0.624346 + 0.761548.",
-      "built_on": "Cambrian's private setup, 9 Nov 2026"
+      "built_on": "Cambrian's private setup, 9 Nov 2026",
+      "successor": "upread-mini"
+    },
+    {
+      "id": "upread-mini",
+      "name": "Upread Mini",
+      "tagline": "Upread, built fresh here: reads an article to you one word at a time.",
+      "status": "to be built here; no build yet",
+      "live_url": null,
+      "history_of": "upread",
+      "history_note": "Upread was first built on Cambrian's private setup on 9 Nov 2026. Those three builds are shown here as history. Upread Mini starts from nothing: it does not continue their code.",
+      "built_on": "Cambrian Mini"
     }
   ]
 }

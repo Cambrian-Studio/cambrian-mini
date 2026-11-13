@@ -53,12 +53,15 @@ function stubNear() {
       return { ok: true, model, usd: 0.01, content, id: `c-${seen.draft}`, request_sha256: sha('q'), response_sha256: sha(content) };
     } };
 }
-async function setup({ exposed = true } = {}) {
+async function setup({ exposed = true, handover = false } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'cambrian-mini-intent-test-'));
   const data = join(dir, 'data'), state = join(dir, 'state'); mkdirSync(data, { recursive: true }); mkdirSync(state, { recursive: true });
   const tc = makeTestCouncil(); const near = stubNear();
   writeFileSync(join(data, 'council.json'), JSON.stringify(tc.council));
-  cpSync(join(root, 'data/products.json'), join(data, 'products.json'));
+  // a record where Upread is an ordinary product with builds; the committed record hands Upread over to Upread Mini (tested apart)
+  const committed = JSON.parse(readFileSync(join(root, 'data/products.json'), 'utf8'));
+  const upread = { ...committed.products.find((p) => p.id === 'upread') }; delete upread.successor;
+  writeFileSync(join(data, 'products.json'), JSON.stringify(handover ? committed : { v: 1, products: [upread] }));
   cpSync(join(root, 'data/runs'), join(data, 'runs'), { recursive: true });
   cpSync(join(root, 'lessons/lessons.json'), join(dir, 'lessons.json'));
   const base = appConfig();

@@ -81,11 +81,22 @@ export async function classifyIntent(message, { chat, products = [], runs = [] }
         ? `I have no product called ${named || 'that'} on record. Did you mean ${known.join(' or ')}, or is this a new product?`
         : 'There is no product on record to revise yet. Is this a new product?' };
     }
+    // A product that was only ever built elsewhere cannot be rebuilt here. When the record names the product that follows it,
+    // the message goes to that one.
+    const next = product.successor ? products.find((p) => p.id === product.successor) : null;
+    if (next) return classifyFor(next, j, runs, meta);
+    return classifyFor(product, j, runs, meta);
+  }
+  return { ok: true, intent: 'ask', ask: plainLine(j?.ask) || 'Is this a new product, a change to an existing one, or a question?', ...meta };
+}
+
+function classifyFor(product, j, runs, meta) {
+  {
     const mine = runs.filter((x) => (x.product ?? x.ticket?.product) === product.id)
       .sort((a, b) => String(a.finished ?? a.started ?? '').localeCompare(String(b.finished ?? b.started ?? '')));
     const parent = mine.filter((x) => /^green/.test(String(x.state))).at(-1) ?? mine.at(-1) ?? null;
-    if (!parent) return { ok: true, intent: 'ask', ...meta, ask: `${product.name ?? product.id} has no build on record to revise. Should this be its first build?` };
+    // a product on record with no build yet: this message is its first build, on that product's id, with no parent
+    if (!parent) return { ok: true, intent: 'new', product, ...meta };
     return { ok: true, intent: 'revision', kind: REVISION_KINDS.includes(j.kind) ? j.kind : 'feature', product, parent, ...meta };
   }
-  return { ok: true, intent: 'ask', ask: plainLine(j?.ask) || 'Is this a new product, a change to an existing one, or a question?', ...meta };
 }
