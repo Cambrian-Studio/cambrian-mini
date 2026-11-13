@@ -8,6 +8,8 @@ import { parseTicket } from './ticket.mjs';
 export const MAX_IDEA = 600;
 // The brief is written by an open model that NEAR AI hosts inside a TEE, so its answer can be signed there.
 export const BRIEF_MODEL = 'deepseek-ai/DeepSeek-V4.1-Flash-1017';
+// When NEAR AI answers that the brief model is overloaded, the next open model it hosts is asked instead, in this order.
+export const BRIEF_FALLBACKS = ['Qwen/Qwen3.6-35B-A3B-FP8'];
 export const BRIEF_MAX_TOKENS = 4000;   // the model's reasoning tokens count against this too
 const HEX64 = /^[0-9a-f]{64}$/;
 const slug = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24) || 'idea';

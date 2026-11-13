@@ -66,7 +66,7 @@ async function setup({ exposed = true, near = stubNear(), cap = 5 } = {}) {
   cpSync(join(root, 'data/runs'), join(data, 'runs'), { recursive: true });
   cpSync(join(root, 'lessons/lessons.json'), join(dir, 'lessons.json'));
   const b = appConfig();
-  const cfg = { ...b, dailyCapUsd: cap, mode: 'live', data, state, exposed, rp: { id: null, origin: null }, lineOverrides: { offline: true },
+  const cfg = { ...b, dailyCapUsd: cap, retryMs: 0, mode: 'live', data, state, exposed, rp: { id: null, origin: null }, lineOverrides: { offline: true },
     nearai: { ...b.nearai, briefModel: null },
     files: { council: join(data, 'council.json'), stake: join(data, 'stake.json'), products: join(data, 'products.json'), lessons: join(dir, 'lessons.json'),
       talk: join(data, 'talk.json'), tickets: join(data, 'tickets'), runs: join(data, 'runs'), invites: join(state, 'invites.json') } };
@@ -267,4 +267,19 @@ test('6. the same caps hold, and thinking turns run on the cheap model', async (
     const t = await plain.turn({ session, text: IDEA });
     assert.match(t.text, /^That is two products\./, 'a client that cannot stream still answers, in one piece');
   } finally { plain.done(); }
+});
+
+test('an overloaded brief model: the same model is asked once more, then the next open model, and the brief names the one that wrote it', async () => {
+  const near = stubNear({ stream: false }); const inner = near.chat; const asked = [];
+  near.chat = async (a) => { asked.push(a.model); return a.model === BRIEF_MODEL ? { ok: false, status: 429, usd: null, error: 'overloaded' } : inner(a); };
+  const s = await setup({ near });
+  try {
+    const session = await s.open('jj');
+    const t1 = await s.turn({ session, text: IDEA });
+    assert.match(t1.text, /^That is two products\./, 'the conversation went on');
+    assert.deepEqual(asked, [BRIEF_MODEL, BRIEF_MODEL, 'Qwen/Qwen3.6-35B-A3B-FP8']);
+    const d = await s.post('/api/talk/draft', { session, conversation_id: t1.id, text: 'ready' });
+    assert.equal(d[0], 200, JSON.stringify(d[1]));
+    assert.equal(d[1].brief.drafted.model, 'Qwen/Qwen3.6-35B-A3B-FP8', 'the brief names the model that answered, not the one that was overloaded');
+  } finally { s.done(); }
 });

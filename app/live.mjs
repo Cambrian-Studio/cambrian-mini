@@ -18,7 +18,7 @@ import { approvalChallenge, approvalSubject, ideaChallenge, ideaHash, lessonChal
   ticketHash }
   from '../approvals/release.mjs';
 import { hashOf } from '../receipts/canonical.mjs';
-import { draftBrief, BRIEF_MODEL, MAX_IDEA } from '../tickets/brief.mjs';
+import { draftBrief, BRIEF_FALLBACKS, BRIEF_MODEL, MAX_IDEA } from '../tickets/brief.mjs';
 import { classifyIntent, recordContext, replyLine } from '../tickets/intent.mjs';
 import { briefChanges, conversationHash, isReady, sentenceGate, thinkMessages, transcript, MAX_MEMBER_TURNS, MAX_TURN, THINK_MAX_TOKENS,
   TRANSCRIPT_MAX } from '../tickets/think.mjs';
@@ -97,13 +97,26 @@ export async function makeLive(cfg, { near = nearai } = {}) {
   const runSpendToday = () => listRuns(cfg).filter((r) => (r.origin ?? 'mini') === 'mini' && String(r.started).slice(0, 10) === utcDay())
     .reduce((s, r) => s + (r.attempts ?? []).reduce((x, a) => x + (a.bridge?.computed_usd ?? 0), 0), 0);
   const spentToday = () => Number((sideSpend().usd + runSpendToday()).toFixed(6));
+  // NEAR AI answers 429 or 503 when a model is overloaded. The same model is asked once more after a pause, then each fallback
+  // in turn. Whichever model answered is the one recorded: a brief never names a model that did not write it.
+  const overloaded = (r) => r?.status === 429 || r?.status === 503;
+  const pause = () => new Promise((done) => setTimeout(done, cfg.retryMs ?? 1500));
+  const overModels = async (call) => {
+    const order = [model(), model(), ...(cfg.nearai.briefFallbacks ?? BRIEF_FALLBACKS)];
+    let r = null; let asked = null;
+    for (const [i, m] of order.entries()) {
+      if (i) await pause();
+      asked = m; r = await call(m);
+      if (!overloaded(r)) break;
+    }
+    return { r, asked };
+  };
   const chat = async ({ messages, max_tokens }) => {
     // briefs and lesson drafts are paid from the same day's cap as builds: once it is spent, no model call
     if (spentToday() >= cfg.dailyCapUsd) return { ok: false, usd: 0, why: 'the daily cap is spent' };
     if (totalSpent() >= TOTAL_CAP_USD) return { ok: false, usd: 0, why: 'the total cap is spent' };
-    const asked = model();
-    const r = await near.chat({ model: asked, messages, max_tokens, keyFile: cfg.nearai.keyFile, base: cfg.nearai.base,
-      pricing: await getPricing() });
+    const { r, asked } = await overModels(async (asked) => near.chat({ model: asked, messages, max_tokens, keyFile: cfg.nearai.keyFile,
+      base: cfg.nearai.base, pricing: await getPricing() }));
     addSideSpend(r.usd); return { ...r, requested_model: asked, why: r.error };
   };
 
@@ -215,10 +228,12 @@ export async function makeLive(cfg, { near = nearai } = {}) {
   const think = async ({ messages, onText }) => {
     if (spentToday() >= cfg.dailyCapUsd) return { ok: false, usd: 0, why: 'the daily cap is spent' };
     if (totalSpent() >= TOTAL_CAP_USD) return { ok: false, usd: 0, why: 'the total cap is spent' };
-    const args = { model: model(), messages, max_tokens: THINK_MAX_TOKENS, keyFile: cfg.nearai.keyFile, base: cfg.nearai.base, pricing: await getPricing() };
-    let r;
-    if (typeof near.chatStream === 'function') r = await near.chatStream({ ...args, onText });
-    else { r = await near.chat(args); if (r.ok && r.content) onText(r.content); }
+    const pricing = await getPricing();
+    const { r } = await overModels(async (asked) => {
+      const args = { model: asked, messages, max_tokens: THINK_MAX_TOKENS, keyFile: cfg.nearai.keyFile, base: cfg.nearai.base, pricing };
+      if (typeof near.chatStream === 'function') return near.chatStream({ ...args, onText });
+      const one = await near.chat(args); if (one.ok && one.content) onText(one.content); return one;
+    });
     addSideSpend(r.usd); return { ...r, why: r.error };
   };
 
@@ -327,7 +342,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
         c.messages.push({ role: 'cambrian', text: r.why, at }); saveConv(c);
         return [200, { conversation_id: c.id, blocked: true, why: r.why, lint: r.lint ?? null, usd: (intent.usd ?? 0) + (r.usd ?? 0) }];
       }
-      const sig = await attest(r.call, report);
+      const sig = await attest(r.call, r.call?.model === model() ? report : null);
       const meta = { attestation: sig.attestation, attestation_check: sig.check, ...(sig.note ? { attestation_note: sig.note } : {}) };
       const prev = c.drafts.at(-1) ?? null; const v = c.drafts.length + 1;
       const changes = briefChanges(prev?.brief ?? null, r.brief);
@@ -442,7 +457,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       const at = new Date().toISOString();
       r.usd = (r.usd ?? 0) + (intent.usd ?? 0);   // the intent call and the draft are one message's cost
       const said = r.ok ? replyLine({ intent: intent.intent, kind: intent.kind, productName: intent.product?.name ?? intent.product?.id, title: r.brief.title }) : null;
-      const sig = r.ok ? await attest(r.call, report) : null;
+      const sig = r.ok ? await attest(r.call, r.call?.model === model() ? report : null) : null;
       const meta = sig ? { attestation: sig.attestation, attestation_check: sig.check,
         ...(sig.note ? { attestation_note: sig.note } : {}) } : {};
       const talk = readJson(cfg.files.talk, { v: 1, conversations: [] });
