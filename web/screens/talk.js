@@ -257,7 +257,7 @@ export async function render(root) {
   }
 
   const input = h('textarea', {
-    id: 'idea', rows: '1', maxlength: '1500', disabled: Boolean(off), 'aria-label': 'Your message',
+    id: 'idea', rows: '1', maxlength: '8000', disabled: Boolean(off), 'aria-label': 'Your message',
     placeholder: off ? 'Nothing is sent to a model here' : 'An idea, a change to a product, or a question.',
   });
   const pick = passkey ? h('input', { type: 'file', id: 'images', accept: 'image/png,image/jpeg', multiple: true,

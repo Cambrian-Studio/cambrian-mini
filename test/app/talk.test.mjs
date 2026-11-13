@@ -252,7 +252,7 @@ test('6. the same caps hold, and thinking turns run on the cheap model', async (
     assert.equal(s.near.seen.streamed, true);
     assert.equal(JSON.parse(readFileSync(join(s.state, 'brief-spend.json'), 'utf8')).usd, 0.001, 'a thinking turn is counted in the day\'s spend');
     assert.equal(t.events.at(-1).total_usd, 0.001);
-    assert.equal((await s.turn({ session, conversation_id: t.id, text: 'x'.repeat(1501) })).answer[0], 400);
+    assert.equal((await s.turn({ session, conversation_id: t.id, text: 'x'.repeat(8001) })).answer[0], 400);
   } finally { s.done(); }
   const spent = await setup({ cap: 0.001 });
   try {
@@ -366,4 +366,28 @@ test('at "Send to council" the latest draft is checked again against every lesso
   const fine = lintBrief({ ...base, goal: 'A page that shows the current NEAR price, fetched in the browser when the page opens.' }, { lessons, products: [{ id: 'tides' }] });
   assert.deepEqual(fine.refused, []); assert.ok(fine.brief.task.endsWith(RUNTIME_LINE));
   assert.equal(typeof parseLessons, 'function');
+});
+
+test('a long message is kept whole: 7,500 characters reach the model, the conversation, the drafter and the brief in full', async () => {
+  const long = `A reader for long articles. ${'Every sentence of this pasted note matters to the idea. '.repeat(140)}`.slice(0, 7499) + '§';
+  assert.equal(long.length, 7500);
+  const s = await setup();
+  try {
+    const session = await s.open('jj');
+    const t1 = await s.turn({ session, text: long });
+    assert.equal(t1.answer, undefined, JSON.stringify(t1.answer));
+    assert.equal(s.near.seen.think[0].at(-1).content, long, 'the thinking model was sent every character');
+    const kept = JSON.parse(readFileSync(join(s.state, 'talk', `${t1.id}.json`), 'utf8'));
+    assert.equal(kept.messages[0].text, long, 'and the conversation holds it in full');
+    const d = await s.post('/api/talk/draft', { session, conversation_id: t1.id, text: 'ready' });
+    assert.equal(d[0], 200, JSON.stringify(d[1]));
+    assert.ok(s.near.seen.draft[0][1].content.includes(long), 'the drafter read all of it, not a cut');
+    const sent = await s.sendAs('jj', t1.id);
+    const entry = JSON.parse(readFileSync(join(s.data, 'tickets', `${sent[1].ticket_id}.json`), 'utf8'));
+    assert.equal(entry.conversation.messages[0].text, long); assert.equal(entry.idea, long);
+    assert.equal(conversationHash(entry.conversation.messages), entry.ticket.conversation.sha256);
+    assert.match(readFileSync(join(root, 'web/screens/talk.js'), 'utf8'), /maxlength: '8000'/, 'the box takes as much as the server does');
+    const over = await s.turn({ session, text: 'y'.repeat(8001) });
+    assert.equal(over.answer[0], 400); assert.match(over.answer[1].why, /under 8000 characters/);
+  } finally { s.done(); }
 });
