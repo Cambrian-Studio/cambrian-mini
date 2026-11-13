@@ -8,7 +8,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { capitalFigures, councilLine } from '../../web/lib/ui.js';
 import { compounding, STEPS } from '../../web/lib/mini.js';
-import { story } from '../../web/screens/line.js';
+import { story, playerStates, liveStates, STEP_MS } from '../../web/screens/line.js';
 
 const at = (p) => fileURLToPath(new URL(`../../${p}`, import.meta.url));
 const json = (p) => JSON.parse(readFileSync(at(p), 'utf8'));
@@ -83,4 +83,15 @@ test('the replay tells the recorded product in seven lines and claims nothing th
 test('the label under "The collective decides" comes from the council file', () => {
   assert.equal(councilLine(json('data/council.json')), 'Founding council: 2 of 3 signatures. The threshold grows with the collective.');
   assert.equal(councilLine(null), 'The threshold grows with the collective.');
+});
+
+test('Watch a build plays from the start: one step at a time, and a build running now shows where it stands', () => {
+  assert.deepEqual(playerStates(0, 7), ['now', 'off', 'off', 'off', 'off', 'off', 'off'], 'it opens on the first step, not on a finished build');
+  assert.deepEqual(playerStates(3, 7), ['on', 'on', 'on', 'now', 'off', 'off', 'off']);
+  assert.deepEqual(playerStates(7, 7), Array(7).fill('on'), 'skip to end, and reduced motion, show the finished build');
+  assert.ok(STEP_MS >= 2000 && STEP_MS <= 3000, 'two to three seconds a step');
+  const running = { state: 'running', stations: { brief: { at: 'a' }, approved: { at: 'b' }, build: { at: 'c' } } };
+  assert.deepEqual(liveStates(running), ['on', 'on', 'on', 'now', 'off', 'off', 'off'], 'a live build is building: step four is happening');
+  const red = runs.find((r) => r.state === 'red');
+  assert.equal(liveStates(red)[4], 'red', 'a failed build shows its checks as failed');
 });

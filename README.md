@@ -46,10 +46,10 @@ npm ci
 **1. `npm test`** — unit tests and attack tests. Expect the last line:
 
 ```
-266 passed, 0 failed
+267 passed, 0 failed
 ```
 
-On macOS the last line is `265 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only. On Linux install bubblewrap first (`sudo apt-get install bubblewrap`); without any sandbox the wall tests print their reason and skip, and the line itself refuses to execute anything.
+On macOS the last line is `266 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only. On Linux install bubblewrap first (`sudo apt-get install bubblewrap`); without any sandbox the wall tests print their reason and skip, and the line itself refuses to execute anything.
 
 **2. `npm run judge`** — re-derives the claims on your machine, offline. Expect 16 numbered lines, each with a detail after a dash; these eight and the summary, shortened here to their titles:
 
