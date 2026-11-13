@@ -5,6 +5,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { faults } from '../support/deny.mjs';
+import { receiptOf } from '../../app/store.mjs';
 
 const scanText = (text) => text.split('\n').flatMap((line) => faults(line));
 const scanDir = (dir) => readdirSync(dir).flatMap((n) => scanText(readFileSync(join(dir, n), 'utf8')).map((f) => `${n}: ${f}`));
@@ -19,10 +20,25 @@ const SHA = /^[0-9a-f]{40}$/;
 test('the three Upread runs are there and pass the deny-list', () => {
   assert.deepEqual(readdirSync(RUNS).filter((n) => n.startsWith('upread-')).sort(), IDS);
   for (const id of IDS) {
-    assert.deepEqual(readdirSync(join(RUNS, id)).sort(), ['run.json', 'ticket.json'], id);
+    assert.deepEqual(readdirSync(join(RUNS, id)).sort(), ['onchain.json', 'run.json', 'ticket.json'], id);
     assert.deepEqual(scanDir(join(RUNS, id)), [], id);
   }
   assert.deepEqual(scanText(readFileSync(join(ROOT, 'data', 'products.json'), 'utf8')), []);
+});
+
+test('each on-chain record names the hash of its own run, the committed contract and recorder, and says it is imported', () => {
+  const chain = JSON.parse(readFileSync(join(ROOT, 'data', 'chain.json'), 'utf8'));
+  assert.equal(chain.network, 'mainnet');
+  const seen = new Set();
+  for (const id of IDS) {
+    const on = load(id, 'onchain.json');
+    assert.equal(on.receipt_sha256, receiptOf({ files: { runs: RUNS } }, load(id)).receipt_sha256, id);
+    assert.deepEqual([on.network, on.contract, on.signer], [chain.network, chain.contract, chain.recorder], id);
+    assert.match(on.tx_hash, /^[1-9A-HJ-NP-Za-km-z]{43,44}$/, id);
+    assert.equal(on.label, 'imported from the private line, recorded 13 Nov', id);
+    seen.add(on.tx_hash);
+  }
+  assert.equal(seen.size, IDS.length, 'one transaction per record');
 });
 
 test('each record has the run-record fields', () => {

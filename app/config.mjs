@@ -1,6 +1,6 @@
 // config.mjs — where things are and which mode the app is in. No secret is read here: the config names
 // the FILES that hold them. LIVE needs a NEAR AI key file; without one the app is in REPLAY.
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +8,13 @@ import { fileURLToPath } from 'node:url';
 export const ROOT = resolve(join(dirname(fileURLToPath(import.meta.url)), '..'));
 const env = (k, d = null) => (process.env[k] && process.env[k].trim() !== '' ? process.env[k].trim() : d);
 const keyFileOk = (f) => { try { return !!f && existsSync(f) && (statSync(f).mode & 0o777) === 0o600 && statSync(f).size > 0; } catch { return false; } };
+
+function committedChain(file) {
+  try {
+    const c = JSON.parse(readFileSync(file, 'utf8'));
+    return c.network && c.contract ? { network: c.network, contract: c.contract, recorder: c.recorder ?? null } : null;
+  } catch { return null; }
+}
 
 export function appConfig() {
   const data = resolve(env('CAMBRIAN_DATA', join(ROOT, 'data')));          // the committed record: what REPLAY and the judge read
@@ -31,7 +38,9 @@ export function appConfig() {
     // Then guests may only read. Proposing an idea needs an enrolled council member's passkey; enrolment and approval work as usual.
     exposed: env('CAMBRIAN_EXPOSED') === '1',
     publish: { remote: env('PUBLISH_REMOTE'), tokenFile: env('PUBLISH_TOKEN_FILE') },   // where GREEN build branches are also pushed
-    chain: env('NEAR_RECEIPTS_CONTRACT') ? { network: env('NEAR_NETWORK', 'testnet'), contract: env('NEAR_RECEIPTS_CONTRACT') } : null,
+    // The contract that logs record hashes: from the environment, else the committed data/chain.json, else none.
+    chain: env('NEAR_RECEIPTS_CONTRACT') ? { network: env('NEAR_NETWORK', 'testnet'), contract: env('NEAR_RECEIPTS_CONTRACT') }
+      : committedChain(join(data, 'chain.json')),
     files: {
       council: join(data, 'council.json'), stake: join(data, 'stake.json'), products: join(data, 'products.json'),
       lessons: join(ROOT, 'lessons', 'lessons.json'), talk: join(data, 'talk.json'),

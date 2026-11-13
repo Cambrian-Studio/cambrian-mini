@@ -247,7 +247,9 @@ export function story(product, runs, { council = null, lessons = [], onChain = [
     : previews ? `${word(previews)} preview${previews === 1 ? '' : 's'} went up behind a sign-in. There is no public link yet.`
       : 'No preview went up.');
 
-  lines.push(onChain.length === seq.length ? 'Recorded on NEAR.'
+  const label = onChain.map((r) => r?.value?.on_chain?.label ?? r?.on_chain?.label).find(Boolean);
+  const said = label ? ` ${label[0].toUpperCase()}${label.slice(1)}.` : '';
+  lines.push(onChain.length === seq.length ? `Recorded on NEAR.${said}`
     : onChain.length ? `${word(onChain.length)} of ${word(seq.length).toLowerCase()} builds recorded on NEAR.`
       : 'Not recorded on NEAR yet. The record of each build is hashed, and anyone can recompute the hash on Verify.');
 
