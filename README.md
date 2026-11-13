@@ -28,6 +28,7 @@ Next, and not true yet:
 - The stake is held by the collective's account, not by its treasury. The Sputnik DAO treasury, `cambrian.sputnik-dao.near`, is set up, and NEAR AI confirmed that a DAO cannot be bound as a funding wallet yet; that needs changes in Trezu, Sputnik DAO and NEAR AI.
 
 - No council member has enrolled a passkey, so no build signed by the founding council is recorded here.
+- Talk to Cambrian works out what a message is (a new product, a revision of one on record, or a question), and a revision is drafted, signed and rebuilt from the build it revises. This is built and tested with a stand-in model; no member's message has gone through it yet. A revision of Upread can be drafted and signed, but it cannot be built here: Upread was built on Cambrian's private setup, and this repository's build path has no copy of that build to start from.
 - Upread has no public link.
 - Solo mode, a collective larger than the founding council of 3, and the on-chain council are not built.
 
@@ -45,10 +46,10 @@ npm ci
 **1. `npm test`** — unit tests and attack tests. Expect the last line:
 
 ```
-253 passed, 0 failed
+264 passed, 0 failed
 ```
 
-On macOS the last line is `252 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only. On Linux install bubblewrap first (`sudo apt-get install bubblewrap`); without any sandbox the wall tests print their reason and skip, and the line itself refuses to execute anything.
+On macOS the last line is `263 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only. On Linux install bubblewrap first (`sudo apt-get install bubblewrap`); without any sandbox the wall tests print their reason and skip, and the line itself refuses to execute anything.
 
 **2. `npm run judge`** — re-derives the claims on your machine, offline. Expect 16 numbered lines, each with a detail after a dash; these eight and the summary, shortened here to their titles:
 
@@ -91,6 +92,15 @@ Add `--approvals 1` (`node line/run-cli.mjs --offline --ticket test/line/fixture
 6. **Receipt.** The run record becomes a receipt with a sha256 (`receipts/receipt.mjs`). That hash is what the receipt contract is for; recording it is a manual command today; the three imported records are on mainnet (see the limits).
 7. **Lesson.** On RED (not on a refused or blocked run), Cambrian drafts one rule from the failure; it becomes a rule only when a council member accepts it with a passkey; the next brief is then linted against it (`lessons/draft.mjs`, `lessons/store.mjs`).
 
+### One box, no modes
+
+Talk to Cambrian has one input. The brief model reads each message from an enrolled member with the built products and their builds as context and names it: a new product, a revision of an existing product (a design pass, a fix or a feature), or a question (`tickets/intent.mjs`). The model proposes and the code decides: a revision must name a product that is on record, or the member gets one short question back.
+
+- **Revision.** A revision brief carries a `revision` field: the build it revises, the kind of change, and who asked. The field is part of the ticket, so the council's signatures cover it. The member's notes become the brief's checks. The council signs it like any brief, and the build starts from the commit of the build it revises instead of from main (`line/run.mjs`). The product page and the receipt then say "Design pass by JJ · v1 → v2" with both previews linked.
+- **Images.** A member can attach up to 3 images to a message: PNG or JPEG, under 5 MB each. The passkey signature covers the text and each image's sha256. The files are kept beside the brief on the build machine and named in the brief by hash. They are not sent to a model, not served by the app and not committed.
+- **Taste note.** A council member can add a note of up to 200 characters when signing. The signature covers the brief's hash and the note together, so a note cannot be added, changed or removed later (`approvals/release.mjs`).
+- **House kit.** Every build's workspace gets the same design rules and tokens (`line/kit/house`), and the builder is told to read them first. The kit's hash is written on the run record.
+
 ## NEAR features used
 
 | Feature | How it is used | Status |
@@ -122,6 +132,7 @@ Every claim, its `file:line`, its test and its status are in [CLAIMS.md](CLAIMS.
 - **The judge and the demo are keyless, not network-free.** The stand-in build's install step may reach `registry.npmjs.org` through the line's allow-listed tunnel. They have not been run with the network off.
 - **The repository is private until submission.** Until it is public the clone command above fails.
 - **The enrolment trusts the browser for the public key.** A passkey's public key is taken from the browser at enrolment, behind a one-time invite; the attestation statement of the authenticator is not checked.
+- **Intent, revisions, images, taste notes and the house kit are tested, not yet used.** No enrolled member has sent a message, so every test of them uses a stand-in model and a test council. The intent step adds one model call to every message. Attached images are kept but there is no screen that shows them, because the app has no sign-in to show them behind; the builder does not see them either. The house kit is placed in the workspace and the builder is told to follow it; no check enforces that a build did. A revision can only be built when the build it revises was made by this repository's build path.
 
 ## Repository map
 

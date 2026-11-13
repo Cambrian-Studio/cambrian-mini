@@ -502,3 +502,9 @@ a.capcard { text-decoration: none; }
   .steps a { font-size: 13px; }
   .cb-members.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
+
+/* a taste note with a signature, and what a revision build says about itself */
+.taste { width: 100%; max-width: 520px; font: inherit; color: var(--ink); background: transparent; border: 1px solid var(--edge);
+  border-radius: 10px; padding: 10px 12px; resize: vertical; }
+.taste-note { display: block; color: var(--caption); font-size: 13px; }
+.revision { display: block; color: var(--caption); }

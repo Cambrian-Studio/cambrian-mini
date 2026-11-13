@@ -39,14 +39,25 @@ export function extractJson(text) {
 }
 
 /** Model draft → a ticket-shaped brief with an id of ours. Throws naming the first thing wrong. */
-export function shapeBrief(draft, { idSuffix, capUsd = 5 }) {
+export function shapeBrief(draft, { idSuffix, capUsd = 5, revision = null }) {
   if (!draft || typeof draft !== 'object' || Array.isArray(draft)) throw new Error('the draft is not an object');
-  const product = slug(draft.product);
+  // a revision stays on its parent's product, whatever the model wrote
+  const product = revision ? revision.product : slug(draft.product);
   const id = `${product}-${idSuffix}`.slice(0, 40).replace(/-+$/, '');
   const budget = { usd: Math.min(Number(draft.budget?.usd) || 1, 2, capUsd), calls: Math.min(Math.trunc(Number(draft.budget?.calls)) || 30, 40),
     minutes: Math.min(Math.trunc(Number(draft.budget?.minutes)) || 10, 15) };
   return parseTicket({ kind: 'build-ticket', v: 1, id, product, title: String(draft.title ?? '').slice(0, 72), goal: draft.goal, task: draft.task,
-    out_of_scope: draft.out_of_scope, green: draft.green, budget });
+    out_of_scope: draft.out_of_scope, green: draft.green, budget, ...(revision ? { revision } : {}) });
+}
+
+/** What the model is told when the message revises a product: the build it revises, and that the notes become checks. */
+export function revisionBlock({ kind, product, parent }) {
+  const t = parent?.ticket ?? {};
+  return [`This message is a ${kind.replace('-', ' ')} on the existing product "${product.id}"${product.tagline ? ` (${product.tagline})` : ''}.`,
+    `It revises the build ${t.id ?? parent?.id}: "${t.title ?? parent?.title ?? ''}". The files of that build are already in the working directory.`,
+    'Write a REVISION brief: "product" must be exactly "' + product.id + '". The task changes what exists and keeps everything else working.',
+    'Each note in the member\'s message becomes one acceptance check in "green", named in the member\'s own words.',
+    Array.isArray(t.checks) && t.checks.length ? `The parent build was checked by: ${t.checks.join(', ')}.` : null].filter(Boolean).join('\n');
 }
 
 /**
@@ -69,17 +80,21 @@ export async function draftBrief(idea, deps) {
   const text = String(idea ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, ' ').trim();
   if (text.length < 8) return { ok: false, why: 'Say a little more: one or two sentences about what should exist.', usd: 0 };
   if (text.length > MAX_IDEA) return { ok: false, why: `Keep the idea under ${MAX_IDEA} characters; a brief is one small feature.`, usd: 0 };
-  const { chat, lessons = [], lintBrief, lessonsBlock, products = [], existing = [], idSuffix, capUsd } = deps;
+  const { chat, lessons = [], lintBrief, lessonsBlock, products = [], existing = [], idSuffix, capUsd, revision = null, house = null } = deps;
   const block = lessonsBlock ? lessonsBlock(lessons, ['brief', 'ticket']) : null;
   const known = products.length ? `Existing products: ${products.map((p) => p.id).join(', ')}.` : 'There are no products yet.';
-  const messages = [{ role: 'system', content: [BRIEF_SYSTEM, known, block].filter(Boolean).join('\n\n') }, { role: 'user', content: text }];
+  // revision: { kind, product, parent, by, attachments } from the intent step; its ticket field is built here, not by the model
+  const rev = revision ? { of: revision.parent?.ticket?.id ?? revision.parent?.id, kind: revision.kind, by: revision.by, product: revision.product.id,
+    ...(revision.attachments?.length ? { attachments: revision.attachments } : {}) } : null;
+  const messages = [{ role: 'system', content: [BRIEF_SYSTEM, known, revision ? revisionBlock(revision) : null, house, block].filter(Boolean).join('\n\n') },
+    { role: 'user', content: text }];
   let usd = 0, model = null, lint = null, why = null;
   for (let attempt = 1; attempt <= 2; attempt++) {
     const r = await chat({ messages, max_tokens: BRIEF_MAX_TOKENS });
     usd += r.usd ?? 0; model = r.model ?? model;
     if (!r.ok) return { ok: false, why: `The model did not answer (${String(r.why ?? r.status ?? 'no detail').slice(0, 120)}).`, usd, model };
     let brief;
-    try { brief = shapeBrief(extractJson(r.content), { idSuffix, capUsd }); } catch (e) {
+    try { brief = shapeBrief(extractJson(r.content), { idSuffix, capUsd, revision: rev }); } catch (e) {
       why = `the draft was not a valid brief: ${e.message}`;
       messages.push({ role: 'assistant', content: String(r.content).slice(0, 4000) }, { role: 'user', content: `That was refused: ${why}. Send the corrected JSON only.` });
       continue;

@@ -1,7 +1,9 @@
-// Talk to Cambrian: type an idea, get a brief card back. In replay it plays recorded conversations.
+// Talk to Cambrian: one box, no modes. A member writes; Cambrian works out whether it is a new product, a revision
+// of one on record or a question, and answers in one line, with a brief when there is one. In replay it plays
+// recorded conversations.
 
 import * as api from '../lib/api.js';
-import { getAssertion, passkeysAvailable } from '../lib/webauthn.mjs';
+import { getAssertion, passkeysAvailable, sha256Hex } from '../lib/webauthn.mjs';
 import { h, put, cap, card, usd, when, briefCard, lintChips, toast, arrow } from '../lib/ui.js';
 
 const still = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -97,25 +99,48 @@ export async function render(root) {
     busy = false;
   }
 
+  // Images go with the message as base64, named in the signature by their sha256. Members only.
+  async function attached() {
+    const files = [...(pick?.files || [])];
+    if (files.length > 3) throw new Error('At most 3 images.');
+    const out = [];
+    for (const f of files) {
+      if (!/^image\/(png|jpeg)$/.test(f.type)) throw new Error(`${f.name} is not a PNG or a JPEG.`);
+      if (f.size >= 5 * 1024 * 1024) throw new Error(`${f.name} is 5 MB or more.`);
+      const bytes = new Uint8Array(await f.arrayBuffer());
+      let bin = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      out.push({ data: btoa(bin), sha256: await sha256Hex(bytes) });
+    }
+    return out;
+  }
+
   async function send(text) {
     busy = true;
-    say('member', h('p', {}, text));
+    say('member', h('p', {}, text), pick?.files?.length ? h('p.dim.small', {}, `${pick.files.length} image(s) attached`) : null);
     const d = dots();
     try {
       let body = { idea: text };
       if (passkey) {
         // the member's passkey signs the idea's exact text; the server checks it before any model call
         const member = who.value;
-        const options = await api.post('ideas/options', { idea: text, member });
-        body = { idea: text, member, ...await getAssertion(options) };
+        const images = await attached();
+        const options = await api.post('ideas/options', { idea: text, member, attachment_sha256: images.map((x) => x.sha256) });
+        body = { idea: text, member, ...await getAssertion(options),
+          ...(images.length ? { attachments: images.map((x) => ({ data: x.data })) } : {}) };
+        if (pick) pick.value = '';
       }
       const res = await api.post('ideas', body);
       d.remove();
       api.forget('tickets.json', 'talk.json');
-      reply({ brief: res.brief, lint: res.lint, cost: res.usd, model: res.model, att: res.attestation,
-        from: res.proposed_by, hash: res.ticket_sha256,
-        text: 'Cambrian wrote the brief. Nothing is built until two council members sign it.' });
-      toast('Cambrian wrote the brief. It waits for the council.', 'green');
+      if (res.brief) {
+        reply({ brief: res.brief, lint: res.lint, cost: res.usd, model: res.model, att: res.attestation,
+          from: res.proposed_by, hash: res.ticket_sha256, text: res.reply || 'I drafted a brief.' });
+        toast('The brief waits for the council.', 'green');
+      } else {
+        // a question answered, or one short question back: no brief, nothing to sign
+        say('cambrian', h('p', {}, res.reply));
+      }
     } catch (err) {
       d.remove();
       // The server answers "no brief" with its reason and the lessons that refused it.
@@ -130,9 +155,11 @@ export async function render(root) {
 
   const input = h('textarea', {
     id: 'idea', rows: '1', maxlength: '600', disabled: Boolean(off), 'aria-label': 'Your idea',
-    placeholder: off ? 'Nothing is sent to a model here' : 'Tell Cambrian an idea. It writes the brief.',
+    placeholder: off ? 'Nothing is sent to a model here' : 'An idea, a change to a product, or a question.',
   });
-  const label = passkey ? 'Propose with passkey' : 'Send';
+  const label = passkey ? 'Send with passkey' : 'Send';
+  const pick = passkey ? h('input', { type: 'file', id: 'images', accept: 'image/png,image/jpeg', multiple: true,
+    'aria-label': 'Attach up to 3 images, PNG or JPEG, under 5 MB each' }) : null;
   const form = h('form.composer', {
     onsubmit: (e) => {
       e.preventDefault();
@@ -175,15 +202,17 @@ export async function render(root) {
 
   put(root,
     h('header.head', {}, h('p.eyebrow', {}, 'Talk to Cambrian'), h('h1.statement', {}, 'Bring an idea. Cambrian writes the brief.'),
-      h('p.lede', {}, 'The brief says the goal, the checks that decide when it is done, what is out of scope, '
-        + 'and a budget in dollars. The council decides if it gets built.')),
+      h('p.lede', {}, 'A new product, a change to one that exists, or a question. Cambrian works out which. '
+        + 'A brief says the goal, the checks that decide when it is done, and a budget in dollars. The council decides if it gets built.')),
     log,
     h('div.talk-foot', {},
-      who && !off ? h('div.row.start', {}, h('label.cap', { for: 'proposer' }, 'who is proposing'), who) : null,
+      who && !off ? h('div.row.start', {}, h('label.cap', { for: 'proposer' }, 'who is writing'), who,
+        h('label.cap', { for: 'images' }, 'images'), pick) : null,
       off ? h('p.note', {}, off)
         : h('p.dim.small', {}, `A brief costs a few cents of model calls, inside today's cap of ${usd(m.daily_cap_usd)}`
           + (typeof m.spent_today_usd === 'number' ? ` (${usd(m.spent_today_usd)} spent today).` : '.')
-          + (passkey ? ' Your passkey signs the exact text of the idea. That signature proposes it; it is not an approval.' : '')),
+          + (passkey ? ' Your passkey signs the exact text and any images. That signature sends the message; it is not an approval. '
+            + 'Images are kept with the brief and are not sent to a model.' : '')),
       recorded.length ? h('div.row.start', {},
         h('button.btn.ghost', { type: 'button', onclick: () => play(recorded) }, 'Play a recorded idea'),
         h('span.dim.small', {}, `${recorded.length} recorded`)) : null));

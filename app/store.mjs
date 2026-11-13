@@ -60,7 +60,7 @@ export function runSummary(run) {
   return { id: run.ticket?.id, title: run.ticket?.title, product: run.ticket?.product, origin: run.origin ?? 'mini', mode: run.mode ?? null,
     state: run.state, waiting_on: run.waiting_on ?? null, started: run.started, finished: run.finished ?? null, seconds: seconds(run),
     attempts: (run.attempts ?? []).length, calls, usd: Number(Number(usd).toFixed(6)), stations: run.stations ?? null,
-    preview_url: run.preview?.url ?? null, receipt_sha256: run.receipt_sha256 ?? null, model: run.attempts?.at(-1)?.agent?.model ?? null };
+    preview_url: run.preview?.url ?? null, revision: run.revision ?? null, receipt_sha256: run.receipt_sha256 ?? null, model: run.attempts?.at(-1)?.agent?.model ?? null };
 }
 /** The receipt of a finished run, rebuilt from the record every time it is asked for. */
 export function receiptOf(cfg, run) {
@@ -103,7 +103,8 @@ function productsView(cfg, runs) {
   const doc = readJson(cfg.files.products, { v: 1, products: [] });
   return { ...doc, products: (doc.products ?? []).map((p) => {
     const mine = runs.filter((r) => r.ticket?.product === p.id).map(runSummary);
-    return { ...p, runs: mine.map((r) => ({ id: r.id, title: r.title, state: r.state, usd: r.usd, origin: r.origin, finished: r.finished })),
+    return { ...p, runs: mine.map((r) => ({ id: r.id, title: r.title, state: r.state, usd: r.usd, origin: r.origin, finished: r.finished,
+      preview_url: r.preview_url, revision: r.revision })),
       cost_usd: Number(mine.reduce((s, r) => s + r.usd, 0).toFixed(6)), live_url: p.live_url ?? mine.find((r) => r.preview_url && /^green/.test(r.state))?.preview_url ?? null };
   }) };
 }

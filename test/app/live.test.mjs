@@ -23,14 +23,20 @@ const root = appConfig().root;
 const ticket = () => parseTicket(readFileSync(join(root, 'test/line/fixtures/tickets/facts-page-1.json')));
 const sha = (x) => createHash('sha256').update(x).digest('hex');
 const BRIEF_MODEL = 'deepseek-ai/DeepSeek-V4.1-Flash-1017';
+const INTENT_SYSTEM = (await import('../../tickets/intent.mjs')).INTENT_SYSTEM;
 // A stand-in for near/nearai.mjs: one fixed completion with an id, the exact bodies and their hashes; a report; a signature.
-function stubNear({ answer, attestation = 'ok' } = {}) {
-  const seen = { chat: 0, order: [], last: null };
+// The intent question (what is this message) is answered apart from the drafting calls, so the counts below are of drafts.
+function stubNear({ answer, attestation = 'ok', intent = { intent: 'new' } } = {}) {
+  const seen = { chat: 0, intent: 0, order: [], last: null };
   return { seen, detachReport,
     fetchPricing: async () => ({ models: {} }),
     fetchReport: async ({ model, signingAlgo, nonce }) => { seen.order.push('report'); seen.report = { model, signingAlgo, nonce };
       return { stub: 'report', nonce }; },
     chat: async ({ model, messages, max_tokens }) => {
+      if (String(messages[0]?.content).startsWith(INTENT_SYSTEM)) {
+        seen.intent++; seen.intentContext = messages[0].content;
+        return { ok: true, status: 200, model, usd: 0, content: JSON.stringify(typeof intent === 'function' ? intent(messages.at(-1).content) : intent) };
+      }
       seen.chat++; seen.order.push('chat'); seen.last = { model, max_tokens };
       const content = answer ?? JSON.stringify(good);
       const request_body = JSON.stringify({ model, messages, max_tokens });

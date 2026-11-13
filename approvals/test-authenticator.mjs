@@ -3,7 +3,7 @@
 // verifier (webauthn.mjs / release.mjs) without a human. These keys are generated fresh, live in memory,
 // and are never a real council member's.
 import { createHash, generateKeyPairSync, sign as cryptoSign, randomBytes } from 'node:crypto';
-import { approvalChallenge, ideaChallenge, ideaHash, lessonChallenge, ticketHash } from './release.mjs';
+import { approvalChallenge, approvalSubject, ideaChallenge, ideaHash, lessonChallenge, tasteNote, ticketHash } from './release.mjs';
 
 const sha256 = (b) => createHash('sha256').update(b).digest();
 const b64u = (b) => Buffer.from(b).toString('base64url');
@@ -37,14 +37,16 @@ export function makeTestCouncil({ rpId = 'localhost', origin = 'http://localhost
     rp: { id: rpId, name: 'Cambrian Mini (test council)', origins: [origin] },
     members: ids.map((id) => ({ id, name: id === 'jj' ? 'JJ' : id[0].toUpperCase() + id.slice(1), credentials: [auth[id].credential] })),
   };
-  const sign = (memberId, ticket, forge) => {
+  /** `note`: a taste note signed with the ticket. */
+  const sign = (memberId, ticket, forge, note = null) => {
     const ticket_sha256 = ticketHash(ticket);
-    return { member: memberId, ticket_sha256, ...auth[memberId].assert(approvalChallenge(ticket_sha256), forge), at };
+    return { member: memberId, ticket_sha256, ...auth[memberId].assert(approvalChallenge(approvalSubject(ticket_sha256, note)), forge), at,
+      ...(tasteNote(note) ? { taste_note: tasteNote(note) } : {}) };
   };
   const signLesson = (memberId, lessonSha256, forge) => ({ member: memberId, lesson_sha256: lessonSha256, ...auth[memberId].assert(lessonChallenge(lessonSha256), forge), at });
   /** A proposer's signature over an idea's exact text: the body /api/ideas wants when the app is exposed. */
-  const signIdea = (memberId, idea, forge) => {
-    const idea_sha256 = ideaHash(idea);
+  const signIdea = (memberId, idea, forge, attachmentShas = []) => {
+    const idea_sha256 = ideaHash(idea, attachmentShas);
     return { member: memberId, idea_sha256, ...auth[memberId].assert(ideaChallenge(idea_sha256), forge), at };
   };
   return { council, sign, signLesson, signIdea, authenticators: auth };

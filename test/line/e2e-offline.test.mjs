@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { startRun } from '../../line/dispatch.mjs';
 import { recheck } from '../../line/checks.mjs';
 import { buildReceipt, receiptHash } from '../../receipts/receipt.mjs';
-import { ticketHash } from '../../tickets/ticket.mjs';
+import { parseTicket, ticketHash } from '../../tickets/ticket.mjs';
 import { fixtureTicket, needsWall, offlineConfig, refOf, release, scratch } from './helpers.mjs';
 
 const onDisk = (cfg, id) => JSON.parse(readFileSync(join(cfg.records, id, 'run.json'), 'utf8'));
@@ -40,6 +40,7 @@ test(
         'budget',
         'cost',
         'finished',
+        'house_kit',
         'lessons',
         'main',
         'mode',
@@ -258,4 +259,29 @@ test('a GREEN run that asks to push main, or to force, ends RED with the refused
   } finally {
     s.cleanup();
   }
+});
+
+test('a revision rebuilds from the build it revises, not from main; without that build it does not run', needsWall, async () => {
+  const s = scratch('e2e-revision');
+  try {
+    const cfg = offlineConfig(s.dir);
+    const first = fixtureTicket();
+    const a = release(first);
+    const v1 = await startRun(cfg, { ticket: first, approvals: a.approvals, council: a.council });
+    assert.match(v1.state, /^green/);
+    const revise = (id, of) => parseTicket({ ...first, id, branch: undefined, revision: { of, kind: 'design-pass', by: 'jj', product: first.product } });
+    const second = revise('facts-page-2', first.id);
+    const b = release(second);
+    const v2 = await startRun(cfg, { ticket: second, approvals: b.approvals, council: b.council });
+    assert.match(v2.state, /^green/, v2.waiting_on ?? '');
+    assert.equal(v2.revision.of, first.id); assert.equal(v2.revision.by, 'jj');
+    assert.equal(v2.revision.parent_commit, v1.push.remote_sha, 'it started from the commit the first build pushed');
+    assert.notEqual(v2.revision.parent_commit, v2.main.before, 'and not from main');
+    assert.equal(v2.main.untouched, true);
+    assert.match(v2.house_kit.sha256, /^[0-9a-f]{64}$/);
+    const orphan = revise('facts-page-3', 'facts-page-9');
+    const c = release(orphan);
+    const v3 = await startRun(cfg, { ticket: orphan, approvals: c.approvals, council: c.council });
+    assert.equal(v3.state, 'blocked'); assert.match(v3.waiting_on, /the build this revises \(facts-page-9\) has no branch/);
+  } finally { s.cleanup(); }
 });

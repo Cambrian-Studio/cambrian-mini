@@ -4,6 +4,8 @@
 dist-static/
 node_modules/
 contracts/receipts/target/
+# images a member attached to a message: kept beside the brief on the build machine, never committed
+data/tickets/*.attach-*
 # secrets never live in this repository; these patterns are a second line
 secrets/
 *.token

@@ -2,6 +2,7 @@
 
 import * as api from '../lib/api.js';
 import { hashOfAsync } from '../lib/canonical.mjs';
+import { revisionNote } from './products.js';
 import {
   h, put, plural, cap, card, dot, usd, count, when, short, seconds, between, ext, stateChip, originChip, isImported, IMPORTED,
 } from '../lib/ui.js';
@@ -124,6 +125,13 @@ async function detail(root, id) {
   const took = between(res.started, res.finished);
   const runCalls = new Map((run.attempts || []).flatMap((a) => (a.calls || []).map((c) => [`${a.n}:${c.seq}`, c])));
   const differs = typeof totals.usd_recorded === 'number' && Math.abs(totals.usd_recorded - totals.usd) >= 0.005;
+  // a revision build says who asked for what and which version it made, with both previews
+  let revised = null;
+  if (r.revision) {
+    const [all, council] = await Promise.all([api.get('runs.json').catch(() => ({})), api.get('council.json').catch(() => null)]);
+    const same = (all.runs || []).filter((x) => x.product === r.ticket?.product);
+    revised = revisionNote(same.find((x) => x.id === r.run_id) || { id: r.run_id, revision: r.revision, state: res.state }, same, council);
+  }
 
   put(root,
     h('div.actions', {}, h('a.textbtn', { href: '#/receipts' }, 'All receipts')),
@@ -131,6 +139,7 @@ async function detail(root, id) {
       h('div.row.start', {}, stateChip(res.state), originChip(r)),
       h('h1.statement', {}, r.ticket?.title || id),
       h('p.mono.dim.small', {}, `receipt ${r.run_id || id}`)),
+    revised ? h('p.note', {}, revised) : null,
     isImported(r) ? h('p.note', {}, run.imported?.note || `This is an ${IMPORTED}.`) : null,
     run.waiting_on ? h('p.note', {}, run.waiting_on) : null,
     verifyBox(file),

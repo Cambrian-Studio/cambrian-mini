@@ -20,7 +20,17 @@ export const lessonChallenge = (lessonSha256) => challengeFor('lesson', lessonSh
 /** The challenge a member signs to propose an idea: the subject is sha256 (hex) of the idea's exact utf8 text.
  *  It is another purpose than "approval", so a proposer's signature can never count as an approval. */
 export const ideaChallenge = (ideaSha256) => challengeFor('idea', ideaSha256);
-export const ideaHash = (idea) => createHash('sha256').update(String(idea), 'utf8').digest('hex');
+/** With images attached, the proposer signs the text AND the images: the text, then each image's sha256 on its own line. */
+export const ideaHash = (idea, attachmentShas = []) => createHash('sha256')
+  .update(attachmentShas.length ? `${String(idea)}\n${attachmentShas.join('\n')}` : String(idea), 'utf8').digest('hex');
+
+/** A taste note is a member's own short remark, given with the signature: why they signed, or what to watch for. */
+export const MAX_TASTE_NOTE = 200;
+export const tasteNote = (v) => (typeof v === 'string' && v.trim() ? v.replace(/\s+/g, ' ').trim().slice(0, MAX_TASTE_NOTE) : null);
+/** What an approval signs: the ticket hash alone, or with a taste note the hash of the ticket hash and the note.
+ *  So a note cannot be added to, changed in or removed from a signature after the fact. */
+export const approvalSubject = (ticketSha256, note = null) => (tasteNote(note)
+  ? sha256Hex(`${ticketSha256}\n${createHash('sha256').update(tasteNote(note), 'utf8').digest('hex')}`) : ticketSha256);
 
 function credentialOf(council, memberId, credentialId) {
   const member = (council?.members ?? []).find((m) => m.id === memberId);
@@ -62,7 +72,7 @@ export function verifyRelease(ticket, approvals, council) {
   const valid = new Set(); const invalid = [];
   for (const a of Array.isArray(approvals) ? approvals : []) {
     if (a?.ticket_sha256 !== ticket_sha256) { invalid.push({ member: String(a?.member ?? '?'), why: 'signed a different ticket body' }); continue; }
-    const r = verifyMemberSignature({ purpose: 'approval', subjectHash: ticket_sha256, approval: a, council });
+    const r = verifyMemberSignature({ purpose: 'approval', subjectHash: approvalSubject(ticket_sha256, a.taste_note), approval: a, council });
     if (r.ok) valid.add(r.member); else invalid.push({ member: r.member, why: r.why });
   }
   const out = { ...base, valid: [...valid].sort(), invalid };

@@ -37,3 +37,21 @@ export function compounding({ products = [], lessons = [], runs = [] }) {
       `${usd(spent)} over ${count(working.length)} working builds, failed builds included`],
   ];
 }
+
+const REVISION = { 'design-pass': 'Design pass', fix: 'Fix', feature: 'Feature' };
+/**
+ * What a revision build says about itself: who asked for what, which version it made from which, and both previews.
+ * Versions count the product's passing builds in the order they finished. → null for a build that revises nothing.
+ */
+export function revisionLine(run, runs = [], council = null) {
+  const rev = run?.revision;
+  if (!rev) return null;
+  const name = council?.members?.find((m) => m.id === rev.by)?.name || rev.by;
+  const passed = runs.filter((r) => /^green/.test(String(r.state))).sort((a, b) => String(a.finished).localeCompare(String(b.finished)));
+  const from = passed.findIndex((r) => r.id === rev.of) + 1;
+  const to = passed.findIndex((r) => r.id === run.id) + 1;
+  const parent = runs.find((r) => r.id === rev.of) || null;
+  return { text: `${REVISION[rev.kind] || 'Revision'} by ${name}`,
+    versions: from && to ? `v${from} → v${to}` : (from ? `from v${from}, not passed yet` : null),
+    previews: [parent?.preview_url || null, run.preview_url || null] };
+}

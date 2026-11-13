@@ -29,9 +29,17 @@ export const approvalChallenge = (ticketSha256) => challengeFor('approval', tick
 export const lessonChallenge = (lessonSha256) => challengeFor('lesson', lessonSha256);
 // Proposing an idea is its own purpose: the subject is sha256 (hex) of the idea's exact utf8 text.
 export const ideaChallenge = (ideaSha256) => challengeFor('idea', ideaSha256);
-export async function ideaHash(idea) {
-  return [...await sha256(enc.encode(String(idea)))].map((x) => x.toString(16).padStart(2, '0')).join('');
+const hex = (bytes) => [...bytes].map((x) => x.toString(16).padStart(2, '0')).join('');
+// With images attached the proposer signs the text and each image's sha256, one per line.
+export async function ideaHash(idea, attachmentShas = []) {
+  return hex(await sha256(enc.encode(attachmentShas.length ? `${String(idea)}\n${attachmentShas.join('\n')}` : String(idea))));
 }
+// An approval signs the brief's hash, or with a taste note the hash of that hash and the note's hash.
+export async function approvalSubject(ticketSha256, note) {
+  if (typeof note !== 'string' || !note) return ticketSha256;
+  return hex(await sha256(enc.encode(`${ticketSha256}\n${hex(await sha256(enc.encode(note)))}`)));
+}
+export const sha256Hex = async (bytes) => hex(await sha256(bytes));
 
 // An ES256 signature arrives DER-encoded; WebCrypto wants r||s, 32 bytes each.
 export function derToRaw(der) {

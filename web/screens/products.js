@@ -1,6 +1,7 @@
 // Products: a card per product and a sheet with its cost and the runs that built it.
 
 import * as api from '../lib/api.js';
+import { revisionLine } from '../lib/mini.js';
 import {
   h, put, cap, card, dot, kv, raw, usd, count, when, ext, stateChip, isImported, IMPORTED, openSheet, squircle, field,
 } from '../lib/ui.js';
@@ -38,6 +39,16 @@ function signedBy(p, tickets, council) {
   return 'no signature recorded';
 }
 
+// "Design pass by JJ · v1 → v2", with both previews linked when the record holds them.
+export function revisionNote(run, runs, council) {
+  const rev = revisionLine(run, runs, council);
+  if (!rev) return null;
+  const out = { target: '_blank', rel: 'noopener noreferrer' };
+  return h('span.small.revision', {}, [rev.text, rev.versions].filter(Boolean).join(' · '),
+    rev.previews[0] ? [' · ', h('a.link', { href: rev.previews[0], ...out }, 'preview before')] : null,
+    rev.previews[1] ? [' · ', h('a.link', { href: rev.previews[1], ...out }, 'preview after')] : null);
+}
+
 function sheet(p, { lessons, tickets, council }) {
   const runs = p.runs || [];
   const ids = new Set(runs.map((r) => r.id));
@@ -58,7 +69,8 @@ function sheet(p, { lessons, tickets, council }) {
         h('a', { href: '#/receipts/' + encodeURIComponent(r.id) },
           h('span', {}, r.title || r.id),
           h('span.row.start', {}, stateChip(r.state), h('span.mono.small', {}, usd(r.usd)))),
-        h('span.small.dim', {}, [when(r.finished), isImported(r) ? IMPORTED : null].filter(Boolean).join(' · ')))))
+        h('span.small.dim', {}, [when(r.finished), isImported(r) ? IMPORTED : null].filter(Boolean).join(' · ')),
+        revisionNote(r, runs, council))))
         : h('p.plain', {}, 'No run is linked to this product yet.')),
     p.live_url
       ? h('p', {}, h('a.btn', { href: p.live_url, target: '_blank', rel: 'noopener noreferrer' }, `Try ${p.name || 'it'}`))

@@ -3,7 +3,7 @@
 
 import * as api from '../lib/api.js';
 import { hashOfAsync } from '../lib/canonical.mjs';
-import { verifyMemberSignature, ideaHash, getAssertion, createPasskey, passkeysAvailable } from '../lib/webauthn.mjs';
+import { verifyMemberSignature, ideaHash, approvalSubject, getAssertion, createPasskey, passkeysAvailable } from '../lib/webauthn.mjs';
 import {
   h, put, cap, card, dot, usd, when, short, stateChip, briefCard, failure, toast, openSheet, squircle, field, MARK, quorumLabel,
 } from '../lib/ui.js';
@@ -73,9 +73,11 @@ function sheetBody(entry, council) {
   async function approve(member, btn) {
     btn.disabled = true;
     try {
-      const options = await api.post('approve/options', { ticket_id: t.id, member: member.id });
+      // the note is signed with the brief: the server derives the challenge from both
+      const taste_note = taste.value.replace(/\s+/g, ' ').trim().slice(0, 200) || undefined;
+      const options = await api.post('approve/options', { ticket_id: t.id, member: member.id, taste_note });
       const assertion = await getAssertion(options);
-      const res = await api.post('approve', { ticket_id: t.id, member: member.id, ...assertion });
+      const res = await api.post('approve', { ticket_id: t.id, member: member.id, taste_note, ...assertion });
       api.forgetAll();
       toast(res.released ? `${member.name} signed. “${t.title}” was released to be built.`
         : `${member.name} signed “${t.title}”. ${res.valid?.length ?? 1} of ${res.threshold ?? need} so far.`, 'green');
@@ -92,6 +94,8 @@ function sheetBody(entry, council) {
   const sign = h('button.btn.tall', { type: 'button', disabled: !me, onclick: (e) => { if (me) approve(me, e.currentTarget); } },
     'Sign with passkey');
   const hint = h('p.small.dim', { role: 'status' });
+  const taste = h('textarea.taste', { rows: '2', maxlength: '200', 'aria-label': 'Taste note, optional',
+    placeholder: 'Taste note, optional: why you sign, or what to watch for. It is signed with the brief.' });
   const seats = h('div.council3');
   function drawSeats() {
     seats.replaceChildren(...members.map((member) => {
@@ -114,7 +118,8 @@ function sheetBody(entry, council) {
   const verifyAll = approvals.length ? h('button.btn.ghost', { type: 'button', onclick: async () => {
     verifyAll.disabled = true;
     for (const a of approvals) {
-      const r = await verifyMemberSignature({ purpose: 'approval', subjectHash: entry.ticket_sha256, approval: a, council });
+      const subjectHash = await approvalSubject(entry.ticket_sha256, a.taste_note);
+      const r = await verifyMemberSignature({ purpose: 'approval', subjectHash, approval: a, council });
       const out = results.get(a);
       out.replaceChildren(r.ok ? dot() : null, r.ok ? ' Valid ES256 signature over this brief’s hash.' : `Not valid: ${r.why}`);
     }
@@ -126,6 +131,7 @@ function sheetBody(entry, council) {
     return h('div.sig', { class: counted ? 'is-signed' : '' }, h('i', { 'aria-hidden': 'true' }),
       h('span', {}, member.name || member.id, a && !counted ? ' · signature not valid' : ''),
       cap(a ? when(a.at) : (isEnrolled(member) ? 'Waiting' : 'No passkey enrolled yet')),
+      a?.taste_note ? h('span.taste-note', {}, `“${a.taste_note}”`) : null,
       a ? results.get(a) : null);
   }));
 
@@ -176,7 +182,7 @@ function sheetBody(entry, council) {
     entry.run_started ? h('div.cb-card.cb-card2.released', {}, dot(),
       h('div', {}, h('span', {}, `${t.title || t.id} went to be built at ${clock(entry.run_started)} UTC.`),
         h('span', {}, 'The preview is on its record when it builds. ', h('a.link', { href: '#/line' }, 'Watch the build')))) : null,
-    canSign && open.length ? h('div.actions.col', {}, sign, hint) : null,
+    canSign && open.length ? h('div.actions.col', {}, taste, sign, hint) : null,
     !canSign && isWaiting(entry) ? h('div.actions.col', {}, explain, note) : null,
     h('p.cap.footcap', {}, 'Passkeys kept with the brief · on-chain next'),
     origin,

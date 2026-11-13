@@ -38,11 +38,14 @@ import { inSandbox, manifest, runChecks, runProcess, wallEnv } from './checks.mj
 import { notify } from './notify.mjs';
 import { needsSockets, sandboxAvailable } from './kit/sandbox.mjs';
 import { deployPreview, OUTPUT_KEEP_BYTES, outputFiles } from './vercel.mjs';
-import { parseTicket, TICKET_ID, ticketHash } from '../tickets/ticket.mjs';
+import { branchOf, parseTicket, TICKET_ID, ticketHash } from '../tickets/ticket.mjs';
 import { canonical, sha256Hex } from '../receipts/canonical.mjs';
 import { verifyRelease } from '../approvals/release.mjs';
 
 const NODE = process.execPath;
+/** The house kit: the same design rules and tokens, placed in every build's workspace. */
+export const HOUSE_KIT = join(KIT, 'house');
+export const houseKitHash = () => sha256Hex(['HOUSE.md', 'tokens.css'].map((f) => `${f}\n${readFileSync(join(HOUSE_KIT, f), 'utf8')}`).join('\n'));
 const PRICED_FROM = 'NEAR AI /v1/models pricing × usage';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const now = () => new Date().toISOString();
@@ -92,7 +95,7 @@ const jsonLines = (file) => {
 };
 
 /** The ticket as the agent reads it: the task, every check in words, the rules of the room, and last time's findings. */
-function ticketText(t, findings) {
+export function ticketText(t, findings) {
   const line = (c) => {
     if (c.kind === 'run') {
       const net = c.network === 'registry' ? ' (registry.npmjs.org reachable)' : ' (no network)';
@@ -121,6 +124,12 @@ function ticketText(t, findings) {
     'All of these must hold. They run in this order on a fresh clone of the files you leave here:',
     '',
     ...t.green.map((c) => `- ${line(c)}`),
+    '',
+    '## The house kit',
+    '',
+    'Read `.oc/house/HOUSE.md` before you write anything, and follow it. Copy `.oc/house/tokens.css` into the product and build on it.',
+    ...(t.revision ? ['', `## This is a revision (${t.revision.kind.replace('-', ' ')})`, '',
+      `The files here are the build ${t.revision.of}. Change what the ticket asks and keep everything else working.`] : []),
     '',
     '## The room you are in',
     '',
@@ -634,11 +643,21 @@ export async function runTicket(
     if (base.code !== 0 || base.out !== mainBefore) {
       throw new Error(`the clone's main (${base.out || base.err}) is not the remote's (${mainBefore})`);
     }
-    const wa = git(['worktree', 'add', '-q', '--no-track', '-b', ticket.branch, wt, mainBefore], { cwd: repoDir });
+    // a revision starts from the build it revises (that build's branch); every other ticket starts from main
+    let startAt = mainBefore;
+    if (ticket.revision) {
+      const parentRef = `refs/remotes/origin/${branchOf(ticket.revision.of)}`;
+      const p = git(['rev-parse', '--verify', parentRef], { cwd: repoDir });
+      if (p.code !== 0) {
+        return await finish('blocked', { waiting: `the build this revises (${ticket.revision.of}) has no branch in the repository of ${ticket.product}. Nothing ran.` });
+      }
+      startAt = p.out; rec.revision = { ...ticket.revision, parent_commit: p.out };
+    }
+    const wa = git(['worktree', 'add', '-q', '--no-track', '-b', ticket.branch, wt, startAt], { cwd: repoDir });
     if (wa.code !== 0) throw new Error(`worktree add failed: ${wa.err}`);
     appendFileSync(join(repoDir, '.git/info/exclude'), "\n# the line: the agent's scratch space is never committed\n.oc/\n");
     const linkBefore = readFileSync(join(wt, '.git'));
-    say(`worktree on ${ticket.branch} at ${mainBefore.slice(0, 10)} (main of ${ticket.product})`);
+    say(`worktree on ${ticket.branch} at ${startAt.slice(0, 10)} (${ticket.revision ? `the build ${ticket.revision.of}` : 'main'} of ${ticket.product})`);
     save();
 
     // ---- the attempts -----------------------------------------------------------------------------------------------------------
@@ -673,6 +692,9 @@ export async function runTicket(
       if (!rec.stations.build) rec.stations.build = { at: att.started, done: null };
       mkdirSync(join(wt, '.oc'), { recursive: true });
       writeFileSync(join(wt, '.oc/TICKET.md'), ticketText(ticket, findings));
+      // the house kit, the same files for every build; .oc/ is scratch space, so the kit itself is never committed
+      cpSync(HOUSE_KIT, join(wt, '.oc/house'), { recursive: true });
+      rec.house_kit = { sha256: houseKitHash() };
       const again = findings ? ' Your previous attempt failed some checks; they are listed at the end of the ticket.' : '';
       writeFileSync(
         join(aDir, 'prompt.txt'),
