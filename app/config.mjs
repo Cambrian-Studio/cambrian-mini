@@ -16,6 +16,14 @@ function committedChain(file) {
   } catch { return null; }
 }
 
+/** The daily cap: the configured one, or a higher one the operator set for today's UTC date only. */
+export function dayCap(file, base, today = new Date().toISOString().slice(0, 10)) {
+  try {
+    const o = JSON.parse(readFileSync(file, 'utf8'));
+    return o.day === today && Number.isFinite(o.usd) && o.usd > base ? o.usd : base;
+  } catch { return base; }
+}
+
 export function appConfig() {
   const data = resolve(env('CAMBRIAN_DATA', join(ROOT, 'data')));          // the committed record: what REPLAY and the judge read
   const state = resolve(env('CAMBRIAN_STATE', join(ROOT, '.line')));      // the build machine's private state: never committed
@@ -32,7 +40,9 @@ export function appConfig() {
     reasons: live ? [] : [forcedReplay ? 'CAMBRIAN_MODE=replay' : 'no NEAR AI key file on this machine'],
     nearai: { keyFile: nearaiKeyFile, base: env('NEARAI_BASE', 'https://cloud-api.near.ai/v1'), model: env('LINE_MODEL', 'deepseek-ai/DeepSeek-V4.1-Flash-1017'), briefModel: env('BRIEF_MODEL') },
     vercel: { tokenFile: keyFileOk(vercelTokenFile) ? vercelTokenFile : null, team: env('VERCEL_TEAM') },
-    dailyCapUsd: cap,
+    // The operator can raise the cap for ONE named UTC day in <state>/daily-cap.json: {"day":"2026-11-13","usd":10}.
+    // It is read each time it is asked for, so it ends at midnight UTC without a restart.
+    get dailyCapUsd() { return dayCap(join(state, 'daily-cap.json'), cap); },
     rp: { id: env('CAMBRIAN_RP_ID'), origin: env('CAMBRIAN_ORIGIN') },   // override data/council.json's site when served on another host
     // EXPOSED: the app is reachable from outside this machine (through a tunnel that forwards to 127.0.0.1).
     // Then guests may only read. Proposing an idea needs an enrolled council member's passkey; enrolment and approval work as usual.

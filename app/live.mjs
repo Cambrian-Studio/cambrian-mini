@@ -143,6 +143,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
     const lineCfg = loadConfig({ home: cfg.state, records: cfg.files.runs, model: cfg.nearai.model ?? undefined,
       nearai_key_file: cfg.nearai.keyFile, nearai_base: cfg.nearai.base, vercel_token_file: cfg.vercel.tokenFile, vercel_team: cfg.vercel.team,
       // the line's ceiling is what briefs and lesson drafts have left of the day's cap
+      daily_cap_usd: cfg.dailyCapUsd,
       daily_ceiling_usd: Math.max(0.01, Number((cfg.dailyCapUsd - sideSpend().usd).toFixed(6))),
       ...(cfg.lineOverrides ?? {}),   // tests only: run the line offline
       ...(cfg.publish.remote ? { publish_remote: cfg.publish.remote, publish_token_file: cfg.publish.tokenFile } : {}) });

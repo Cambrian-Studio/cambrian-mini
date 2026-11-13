@@ -15,7 +15,15 @@
       "name": "Clemens",
       "role": "Founder",
       "figure": "assets/members/clemens.png",
-      "credentials": []
+      "credentials": [
+        {
+          "id": "NOzB9-UJhHx1oUZgIPkhyPEPquc",
+          "alg": -7,
+          "rp_id": "cambrian-mini.tail176671.ts.net",
+          "public_key_spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEA3aSmGccmw-3LcFFNVqg1LMN0QFgveZnICcr_GrznW2Vt-bMNJfHhtRieYQgMA5Hqy3NHU7YcCuteLgT8-LrEg",
+          "enrolled_at": "2026-11-13T15:39:56.874Z"
+        }
+      ]
     },
     {
       "id": "jj",

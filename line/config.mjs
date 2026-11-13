@@ -47,6 +47,7 @@ function defaults(home) {
     stand_in: join(REPO, 'test', 'line', 'fixtures', 'stand-in'), // offline only: the stand-in agent and what it writes
     agent_stub: 'agent-stub.sh', // offline only: the script in stand_in that runs in place of the agent
     daily_ceiling_usd: 5,
+    daily_cap_usd: null, // the app's daily cap when the operator raised it for the day; the ceiling may go up to it
     spend_fixture: null, // offline only: a JSON file {"spent_usd": n} read in place of the run records
     push_override: null, // offline only: { <ticket-id>: {branch, force, refspec} }, so tests see the push guard refuse
   };
@@ -59,7 +60,7 @@ export function loadConfig(over = process.env.LINE_CONFIG ?? {}) {
   const base = defaults(home);
   for (const k of Object.keys(given)) if (!(k in base)) throw new Error(`line config: unknown key '${k}'`);
   const c = { ...base, ...given, home };
-  const cap = budgetCapUsd();
+  const cap = Math.max(budgetCapUsd(), Number.isFinite(c.daily_cap_usd) ? c.daily_cap_usd : 0);
   for (const k of ['agent_stub', 'spend_fixture', 'push_override']) {
     if (given[k] != null && !c.offline) throw new Error(`line config: ${k} is honoured only with offline:true`);
   }

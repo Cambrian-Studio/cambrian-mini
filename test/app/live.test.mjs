@@ -68,7 +68,7 @@ async function setup({ exposed = false, near = stubNear(), over = {} } = {}) {
   writeFileSync(join(data, 'products.json'), JSON.stringify({ v: 1, products: [] }));
   cpSync(join(root, 'lessons/lessons.json'), join(dir, 'lessons.json'));
   const base = appConfig();
-  const cfg = { ...base, ...over, mode: 'live', data, state, exposed, rp: { id: null, origin: null }, lineOverrides: { offline: true },
+  const cfg = { ...base, dailyCapUsd: 5, ...over, mode: 'live', data, state, exposed, rp: { id: null, origin: null }, lineOverrides: { offline: true },
     nearai: { ...base.nearai, briefModel: null },
     files: { council: join(data, 'council.json'), stake: join(data, 'stake.json'), products: join(data, 'products.json'), lessons: join(dir, 'lessons.json'),
       talk: join(data, 'talk.json'), tickets: join(data, 'tickets'), runs: join(data, 'runs'), invites: join(state, 'invites.json') } };
@@ -385,4 +385,14 @@ test('brief: the ticket names the call whose answer became it (the accepted draf
   // a chat that reports no completion id or hashes: no provenance is invented
   const bare = await draftBrief(IDEA, deps([JSON.stringify(good)]));
   assert.equal(bare.ok, true); assert.equal(bare.brief.drafted, undefined); assert.equal(bare.call, null);
+});
+
+test('a daily cap raised for the day reaches the build path: a ticket is released under a $10 day', async () => {
+  const s = await setup({ over: { dailyCapUsd: 10 } });
+  try {
+    await s.post('/api/approve', body(s.t, s.tc.sign('jj', s.t)));
+    if (!sandboxAvailable().ok) return;
+    const two = await s.post('/api/approve', body(s.t, s.tc.sign('clemens', s.t)));
+    assert.equal(two[0], 200, JSON.stringify(two[1])); assert.equal(two[1].released, true);
+  } finally { rmSync(s.dir, { recursive: true, force: true }); }
 });
