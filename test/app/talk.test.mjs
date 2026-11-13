@@ -271,7 +271,9 @@ test('6. the same caps hold, and thinking turns run on the cheap model', async (
 
 test('an overloaded brief model: the same model is asked once more, then the next open model, and the brief names the one that wrote it', async () => {
   const near = stubNear({ stream: false }); const inner = near.chat; const asked = [];
-  near.chat = async (a) => { asked.push(a.model); return a.model === BRIEF_MODEL ? { ok: false, status: 429, usd: null, error: 'overloaded' } : inner(a); };
+  // the first answer is 429, the second 502: both mean "ask again, then ask the next model"
+  near.chat = async (a) => { asked.push(a.model);
+    return a.model === BRIEF_MODEL ? { ok: false, status: asked.length === 1 ? 429 : 502, usd: null, error: 'overloaded' } : inner(a); };
   const s = await setup({ near });
   try {
     const session = await s.open('jj');

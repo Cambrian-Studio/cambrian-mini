@@ -101,7 +101,8 @@ export async function makeLive(cfg, { near = nearai } = {}) {
   // in turn. Whichever model answered is the one recorded: a brief never names a model that did not write it.
   // A model that does not answer within the time limit is given up on (the request is aborted) and treated the same way.
   // A model that just failed this way is skipped for five minutes, so a conversation does not wait on it at every turn.
-  const overloaded = (r) => r?.status === 429 || r?.status === 503 || r?.timed_out === true;
+  // 429 and every 5xx count: tonight the same hosted model answered 429, then hung, then 502.
+  const overloaded = (r) => r?.status === 429 || (r?.status >= 500 && r?.status <= 599) || r?.timed_out === true;
   const pause = () => new Promise((done) => setTimeout(done, cfg.retryMs ?? 1500));
   const MODEL_WAIT_MS = cfg.modelWaitMs ?? 60000; const sick = new Map();
   const timed = async (call, m) => {
