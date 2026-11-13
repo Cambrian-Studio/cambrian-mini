@@ -145,6 +145,8 @@ export async function render(root) {
       const res = await api.post('talk/send', body);
       api.forget('tickets.json', 'talk.json');
       say('cambrian', h('p', {}, 'The brief went to the council. Nothing is built until the collective signs.'),
+        (res.relinted || []).length ? h('p.small', {}, 'A lesson accepted since the draft changed it before it went: '
+          + res.relinted.map((x) => `${x.lesson} (${x.what})`).join('; ') + '. The council sees the brief as it is now.') : null,
         h('a.btn.ghost', { href: '#/approvals/' + encodeURIComponent(res.ticket_id) }, 'Open it in Approvals'));
       toast('The brief waits for the council.', 'green');
       conversation = null;

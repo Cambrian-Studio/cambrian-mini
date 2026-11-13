@@ -19,6 +19,7 @@ import { approvalChallenge, approvalSubject, ideaChallenge, ideaHash, lessonChal
   from '../approvals/release.mjs';
 import { hashOf } from '../receipts/canonical.mjs';
 import { draftBrief, BRIEF_FALLBACKS, BRIEF_MODEL, MAX_IDEA } from '../tickets/brief.mjs';
+import { parseTicket } from '../tickets/ticket.mjs';
 import { classifyIntent, recordContext, replyLine } from '../tickets/intent.mjs';
 import { briefChanges, conversationHash, isReady, sentenceGate, thinkMessages, transcript, MAX_MEMBER_TURNS, MAX_TURN, THINK_MAX_TOKENS,
   TRANSCRIPT_MAX } from '../tickets/think.mjs';
@@ -182,7 +183,8 @@ export async function makeLive(cfg, { near = nearai } = {}) {
     const hooks = {
       onUpdate: (rec) => broadcast({ type: 'run', run: rec }),
       onRed: async (rec, failureLog) => {
-        const draft = await draftLesson({ run: rec, failureLog, chat, model: model() });
+        const asked = [entry.ticket.goal, entry.ticket.task].filter(Boolean).join(' ');
+        const draft = await draftLesson({ run: { ...rec, asked }, failureLog, chat, model: model() });
         if (!draft) return null;
         const doc = readJson(draftsFile, { v: 1, drafts: [] });
         doc.drafts = [...doc.drafts.filter((d) => d.id !== draft.id), { ...draft, sha256: hashOf(draftBody(draft)) }];
@@ -400,7 +402,19 @@ export async function makeLive(cfg, { near = nearai } = {}) {
         if (usedIdeaSignatures.has(approval.signature)) return [403, { error: 'signature refused', why: 'this signature was already used' }];
         usedIdeaSignatures.add(approval.signature); proposer = { member: approval.member, approval };
       }
-      const at = new Date().toISOString(); const b = d.brief;
+      const at = new Date().toISOString();
+      // A lesson may have been accepted since this draft was made. The draft is checked again against every lesson there is now:
+      // one that refuses it stops it here; one that adds to it changes the brief, and the response says so before anyone signs.
+      const now = recordNow().products; const known = now.some((x) => x.id === d.brief.product) ? now : [...now, { id: d.brief.product, name: d.brief.product, proposed: true }];
+      const again = lintBrief(d.brief, { lessons: lessonsNow(), products: known,
+        existing: listTickets(cfg).map((t) => ({ id: t.ticket.id, title: t.ticket.title, task: t.ticket.task })) });
+      if (again.refused.length) {
+        const why = again.refused.map((x) => x.why).join(' | ');
+        return [422, { error: 'blocked', why: `A lesson accepted since this draft refuses it (${why}). Change the brief, then send it.`, lint: { applied: [], refused: again.refused, notes: [] } }];
+      }
+      const b = parseTicket(again.brief); const relinted = again.applied;
+      const seen = new Set(d.lint.applied.map((x) => x.lesson));
+      d.lint = { ...d.lint, applied: [...d.lint.applied, ...relinted.filter((x) => !seen.has(x.lesson))] };
       const shaped = c.messages.slice(0, d.messages_at).map((m) => ({ role: m.role, text: m.text }));
       mkdirSync(cfg.files.tickets, { recursive: true });
       const kept = (b.revision?.attachments?.length ? c.attachments ?? [] : []).map((x, i) => { const name = b.id + '.attach-' + (i + 1) + (x.type === 'png' ? '.png' : '.jpg');
@@ -419,7 +433,8 @@ export async function makeLive(cfg, { near = nearai } = {}) {
         messages: [...shaped, { role: 'cambrian', text: 'Draft ' + d.v + ', sent to the council.', brief: b, lint: d.lint }] }, ...talk.conversations].slice(0, 50);
       writeJson(cfg.files.talk, talk);
       c.sent = b.id; saveConv(c); broadcast({ type: 'ticket', id: b.id });
-      return [200, { ok: true, ticket_id: b.id, ticket_sha256: ticketHash(b), conversation_sha256: sha, proposed_by: proposer?.member ?? null }];
+      return [200, { ok: true, ticket_id: b.id, ticket_sha256: ticketHash(b), conversation_sha256: sha, proposed_by: proposer?.member ?? null,
+        relinted, lint: d.lint }];
     },
 
     '/api/ideas': async (body, req) => {
