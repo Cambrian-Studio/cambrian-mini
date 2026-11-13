@@ -14,10 +14,11 @@ import * as notifications from './screens/notifications.js';
 
 const screens = {
   '': home, talk, approvals, enrol: approvals.enrol, line, products, receipts, lessons, stake, notifications,
+  verify: receipts,   // the nav says Verify; #/verify opens the same screen as #/receipts
 };
 const titles = {
   '': 'Cambrian Mini', talk: 'Talk to Cambrian', approvals: 'Approvals', enrol: 'Enrol a passkey', line: 'Watch a build',
-  products: 'Products', receipts: 'Verify', lessons: 'Lessons', stake: 'Stake', notifications: 'Notifications',
+  products: 'Products', receipts: 'Verify', verify: 'Verify', lessons: 'Lessons', stake: 'Stake', notifications: 'Notifications',
 };
 
 const main = document.getElementById('main');

@@ -2,7 +2,7 @@
   "name": "cambrian-mini",
   "version": "0.1.0",
   "private": true,
-  "description": "Cambrian's factory line, in public: a council approves a brief with passkeys (2 of 3), AI agents build it behind walls with NEAR AI, every run leaves a receipt, every failure becomes a rule.",
+  "description": "A council approves a written brief with passkeys, an AI agent builds it in a sandbox through NEAR AI with a fixed budget, and every build leaves a record whose hash can be logged on NEAR.",
   "license": "MIT",
   "type": "module",
   "engines": {

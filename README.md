@@ -1,18 +1,38 @@
-# Cambrian Mini
+# Cambrian Mini: Machines build. The collective decides.
 
-**Machines build. The collective decides.**
+Cambrian Mini is a system in which a small group of people, a council, approves a written description of a product, a brief, by signing it with passkeys (the fingerprint or face sign-in built into phones and laptops). When enough of them have signed, an AI coding agent builds the product in a sandbox with a fixed budget. Every build leaves a record of each model call, what it cost and which checks passed, and the hash of that record can be logged on NEAR mainnet, where anyone can check it.
 
-Cambrian is a product studio run by one intelligence and owned by its members: a factory that owns everything it ships and gets better with every product. Members bring ideas, taste and capital. Staked NEAR becomes AI compute through NEAR AI, the members decide which ideas it funds, and AI agents build them, with every decision and every model call verifiable on NEAR. Cambrian Mini is the part we opened for this hackathon.
+It is for a collective that wants AI-built products with a record anyone can verify: who approved what, and what each build cost. It is the open part of Cambrian, a product studio owned by its members, written for NEAR HACKATHON.
+
+The record holds one product so far: Upread, an app that reads an article to you one word at a time. Its three builds were made on Cambrian's private setup before this repository existed. They are imported here with their numbers unchanged and labelled as imported.
 
 ## What you can check in five minutes
 
 1. **The hosted replay.** Open <https://cambrian-line-replay.vercel.app>, go to **Verify**, pick a build and press **Verify this receipt**. You see your own browser recompute the sha256 of that build's record and report that it matches.
 2. **`npm run judge`.** Clone, `npm ci`, `npm run judge`. You see 16 numbered checks run on your machine with no keys, ending `judge: 16 checks — 12 ok, 4 skipped, 0 failed`. Each skip prints its reason. Check 16 reads NEAR mainnet from a public archival node; without a connection it skips and the line ends `11 ok, 5 skipped`.
-3. **Solo mode.** One live build with your own NEAR AI key, as a council of one. This is not built yet. Until it is, `npm run demo` sends one brief through the real build path with a stand-in agent and a throwaway test council, and you see `state     green-no-preview`.
+3. **Your own build.** `npm run solo` with your own NEAR AI key: you talk an idea through, sign the brief with your own passkey as a council of one, and watch it build. You see a preview of the page it built and a record whose hash your browser recomputes. The next section has the steps. Without a key, `npm run demo` sends one brief through the same build path with a stand-in agent and a throwaway test council, and you see `state     green-no-preview`.
 
-## Treasury and council
+## Run your own line
 
-Cambrian separates two decisions. Members' capital sits in a Sputnik DAO treasury (cambrian.sputnik-dao.near, managed through Trezu), controlled by those who contribute NEAR. What gets built is decided by the council, which signs briefs with passkeys, so creatives need no wallet. We set out to fund NEAR AI compute directly from the DAO. NEAR AI confirmed that a DAO cannot yet bind as a funding wallet: the ownership signature it requires is something a contract account cannot produce, and a fix needs changes in Trezu, Sputnik DAO and NEAR AI. Until then, the collective's account cambriancollective.near stakes into NEAR AI. Next: the treasury stakes directly once DAO binding exists, and council approvals move on chain as DAO proposals.
+One person, one machine, one real build. It needs Node 22 or newer, git, and your own NEAR AI key (from cloud.near.ai) saved in a file only you can read. On Linux it also needs bubblewrap with user namespaces (see the note under [Try it](#try-it)); macOS has its sandbox built in.
+
+```sh
+git clone https://github.com/Cambrian-Studio/cambrian-line && cd cambrian-line
+npm install
+chmod 600 /path/to/your-nearai.key
+NEARAI_KEY_FILE=/path/to/your-nearai.key npm run solo
+```
+
+The first start installs the coding agent (OpenCode) once, then prints four links on `http://localhost:8787` (set `CAMBRIAN_PORT` for another port):
+
+1. **Enrol your passkey.** Open the one-time link and press "Create a passkey". You are now a council of one, and the app says so wherever it shows the council ("1 of 1 · solo, a council of one").
+2. **Talk.** Type any small idea. Cambrian discusses it with you and proposes what to cut. Say "ready" or press "Draft the brief", change it with further instructions if you like, then press "Send to council".
+3. **Sign.** Open the brief in Approvals and press "Sign with passkey". One signature releases it, because this council has one member.
+4. **Watch it build.** The steps light up on Watch a build. When the build passes, Products links the page it built, served from your own machine at `/preview/<build id>/`, and Verify recomputes the hash of its record in your browser.
+
+What it costs: one build may cost at most $2 and a day at most $5; both are enforced before each model call. The run we timed on 13 November, from `git clone` to the first preview, took 57 seconds and cost $0.015: $0.006 for the conversation and the brief, $0.009 for the build. It built a Celsius and Fahrenheit converter on `Qwen/Qwen3.6-35B-A3B-FP8`, an open model NEAR AI hosts in a TEE, which is the solo default (set `LINE_MODEL` for another model; a larger model costs more). That run used a software passkey in a scripted browser, not a phone or a security key.
+
+What it does not do: nothing is recorded on NEAR, because a solo line has no recorder account. To log your records, deploy the contract and create a recorder key as `contracts/README.md` describes, then run `scripts/record-receipt.mjs` with your own account. Nothing is published either: no preview leaves your machine unless you set `VERCEL_TOKEN_FILE`. Everything a solo line makes is kept under `.solo/`, which git ignores, so the committed record stays as it is.
 
 ## What is live today, and what is next
 
@@ -27,10 +47,12 @@ Next, and not true yet:
 
 - The stake is held by the collective's account, not by its treasury. The Sputnik DAO treasury, `cambrian.sputnik-dao.near`, is set up, and NEAR AI confirmed that a DAO cannot be bound as a funding wallet yet; that needs changes in Trezu, Sputnik DAO and NEAR AI.
 
-- No council member has enrolled a passkey, so no build signed by the founding council is recorded here.
-- Talk to Cambrian works out what a message is (a new product, a revision of one on record, or a question), and a revision is drafted, signed and rebuilt from the build it revises. This is built and tested with a stand-in model; no member's message has gone through it yet. A revision of Upread can be drafted and signed, but it cannot be built here: Upread was built on Cambrian's private setup, and this repository's build path has no copy of that build to start from.
+- All three council members enrolled a passkey on 13 November (`data/council.json`). No build signed by the council is recorded here yet.
+- Contribute the line's redacted build traces through NEAR AI Gateway, so the factory's own failures and fixes earn inference credits.
+- No council member's conversation has become a build yet. The conversation, the draft and its versions, and the hand-over to the council are tested with a stand-in model, and were run once for real in solo mode (see [Run your own line](#run-your-own-line)).
+- Upread Mini, the fresh build of Upread on this repository's build path, is on record with no build yet. The imported Upread builds are shown as its history; it does not continue their code.
 - Upread has no public link.
-- Solo mode, a collective larger than the founding council of 3, and the on-chain council are not built.
+- A collective larger than the founding council of 3 and the on-chain council are not built.
 
 The longer list is under [Honest limits](#honest-limits). This repository was written 12–14 November 2026 for NEAR HACKATHON; the build path was ported from Cambrian's private setup (built 3–10 November), which built Upread.
 
@@ -46,10 +68,27 @@ npm ci
 **1. `npm test`** — unit tests and attack tests. Expect the last line:
 
 ```
-267 passed, 0 failed
+278 passed, 0 failed
 ```
 
-On macOS the last line is `266 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only. On Linux install bubblewrap first (`sudo apt-get install bubblewrap`); without any sandbox the wall tests print their reason and skip, and the line itself refuses to execute anything.
+On macOS the last line is `277 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only.
+
+**On Linux the sandbox needs unprivileged user namespaces.** Install bubblewrap first (`sudo apt-get install bubblewrap`). Bubblewrap can only build its sandbox where the kernel lets an ordinary user create a namespace. A default Docker container does not, and neither does Ubuntu 24.04 until you run `sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0` (CI does exactly that, in `.github/workflows/ci.yml`). Without it nothing is broken, but the build path refuses to run anything it cannot wall in, and you see this instead of the lines in this section:
+
+```
+267 passed, 0 failed, 11 skipped (each prints its reason above)        npm test
+judge: 16 checks — 11 ok, 5 skipped, 0 failed                          npm run judge
+state     blocked — no sandbox on this machine (bwrap is installed but cannot create a namespace here; …)   npm run demo
+```
+
+To get the full run in a container, give it the namespaces:
+
+```sh
+docker run --rm -it --privileged -v "$PWD":/src:ro node:22-bookworm sh -c \
+  'cp -r /src /work && cd /work && apt-get update -qq && apt-get install -y -qq bubblewrap && npm ci && npm test && npm run judge && npm run demo'
+```
+
+Both sets of lines were taken on 13 November in `node:22-bookworm`: the first without `--privileged`, the second with it.
 
 **2. `npm run judge`** — re-derives the claims on your machine, offline. Expect 16 numbered lines, each with a detail after a dash; these eight and the summary, shortened here to their titles:
 
@@ -82,6 +121,10 @@ Add `--approvals 1` (`node line/run-cli.mjs --offline --ticket test/line/fixture
 
 **5. The contract, executed** (no Rust needed): `node --test test/near/verify-wasm.test.mjs` runs the committed 1.8 kB wasm itself with stub host functions → `ℹ pass 9`, `ℹ fail 0`.
 
+## Treasury and council
+
+Cambrian separates two decisions. Members' capital sits in a Sputnik DAO treasury (cambrian.sputnik-dao.near, managed through Trezu), controlled by those who contribute NEAR. What gets built is decided by the council, which signs briefs with passkeys, so creatives need no wallet. We set out to fund NEAR AI compute directly from the DAO. NEAR AI confirmed that a DAO cannot yet bind as a funding wallet: the ownership signature it requires is something a contract account cannot produce, and a fix needs changes in Trezu, Sputnik DAO and NEAR AI. Until then, the collective's account cambriancollective.near stakes into NEAR AI. Next: the treasury stakes directly once DAO binding exists, and council approvals move on chain as DAO proposals.
+
 ## The loop
 
 1. **Idea → brief.** A member types an idea (`web/screens/talk.js`). On the hosted app only an enrolled council member can, with a passkey signature over the idea. In LIVE mode one NEAR AI call (a second if the first draft is refused) drafts a brief: title, goal, acceptance checks, out of scope, budget in dollars. The brief is written by an open model NEAR AI hosts inside a TEE (`deepseek-ai/DeepSeek-V4.1-Flash-1017`); the call's signature and exact bytes are kept beside the ticket, and the ticket carries the response hash. Code, not the model, decides what stands: the draft is parsed as a ticket, clamped to the budget rules and linted against every lesson (`tickets/brief.mjs`, `lessons/lessons.mjs`).
@@ -92,9 +135,11 @@ Add `--approvals 1` (`node line/run-cli.mjs --offline --ticket test/line/fixture
 6. **Receipt.** The run record becomes a receipt with a sha256 (`receipts/receipt.mjs`). That hash is what the receipt contract is for; recording it is a manual command today; the three imported records are on mainnet (see the limits).
 7. **Lesson.** On RED (not on a refused or blocked run), Cambrian drafts one rule from the failure; it becomes a rule only when a council member accepts it with a passkey; the next brief is then linted against it (`lessons/draft.mjs`, `lessons/store.mjs`).
 
-### One box, no modes
+### A conversation first
 
-Talk to Cambrian has one input. The brief model reads each message from an enrolled member with the built products and their builds as context and names it: a new product, a revision of an existing product (a design pass, a fix or a feature), or a question (`tickets/intent.mjs`). The model proposes and the code decides: a revision must name a product that is on record, or the member gets one short question back.
+Talk to Cambrian starts as a conversation, not a form. Cambrian discusses the idea, pushes back, asks at most two questions a turn and proposes what to cut; the answer is streamed, and nothing is a brief yet (`tickets/think.mjs`). When the member says it is ready or presses "Draft the brief", the brief is drafted from the conversation. Each further instruction ("simpler", "drop the login") makes a new draft version with its changes listed. Every draft is checked against the accepted lessons, and a draft that breaks one is shown with the rule and cannot be sent. "Send to council" puts that exact brief in Approvals. The brief names the conversation by hash, so every signature covers the conversation that shaped it, and the conversation is kept with the brief. Thinking turns and drafts run on the brief model and are paid from the same caps as builds. If NEAR AI answers that the brief model is overloaded, fails or does not answer in a minute, the next open model it hosts is asked (`Qwen/Qwen3.6-35B-A3B-FP8`), and the brief names the model that wrote it.
+
+There is still one input and no mode to choose. The brief model reads each message from an enrolled member with the built products and their builds as context and names it: a new product, a revision of an existing product (a design pass, a fix or a feature), or a question (`tickets/intent.mjs`). The model proposes and the code decides: a revision must name a product that is on record, or the member gets one short question back.
 
 - **Revision.** A revision brief carries a `revision` field: the build it revises, the kind of change, and who asked. The field is part of the ticket, so the council's signatures cover it. The member's notes become the brief's checks. The council signs it like any brief, and the build starts from the commit of the build it revises instead of from main (`line/run.mjs`). The product page and the receipt then say "Design pass by JJ · v1 → v2" with both previews linked.
 - **Images.** A member can attach up to 3 images to a message: PNG or JPEG, under 5 MB each. The passkey signature covers the text and each image's sha256. The files are kept beside the brief on the build machine and named in the brief by hash. They are not sent to a model, not served by the app and not committed.
@@ -111,7 +156,7 @@ Talk to Cambrian has one input. The brief model reads each message from an enrol
 | Function-call access keys | The recorder signs with a key limited to `record_receipt` on the receipt contract and refuses a full-access key (`near/record.mjs`). | in use on mainnet: the recorder account holds only this key |
 | Staking | The Stake screen shows the stake, its account and transaction, and NEAR AI's published staking-for-inference formula as separate facts (`data/stake.json`). | recorded: 3,045 NEAR from the collective's account, with its transaction; credits received not recorded |
 | The two accounts | The contract account and the one recorder account are written in `data/chain.json`. Both are implicit accounts (64 hex characters), not named ones. The recorder's signature is what gives a logged hash its meaning. | on mainnet |
-| Sputnik DAO approval via Trezu | The 2-of-3 approval as an on-chain DAO vote (`approvals/dao.mjs`). | **not built**: a stub that says so |
+| Sputnik DAO approval via Trezu | The 2-of-3 approval as an on-chain DAO vote (`approvals/dao.mjs`). | **not built**: a stub that says so. No code here reads or votes on the DAO; the treasury exists on mainnet and that is all |
 
 ## Claims
 
@@ -124,13 +169,14 @@ Every claim, its `file:line`, its test and its status are in [CLAIMS.md](CLAIMS.
 - **One stake, made after the recorded builds.** `data/stake.json` holds one stake: the collective's account staked 3,045 NEAR into NEAR AI on 13 November. The three recorded builds ran on 9 November, so this stake did not pay for them. The $60 a month is NEAR AI's estimate, not credits received. The treasury (`cambrian.sputnik-dao.near`) holds no stake: NEAR AI confirmed a DAO cannot be bound as a funding wallet yet. The stake does not by itself pay for builds; inference is paid in NEAR AI credits, and the Stake screen shows the stake and the spend as separate facts.
 - **What is replay.** The hosted demo and `npm start` without a key show recorded runs. The three Upread runs were built on Cambrian's private line on 9 November and imported here by a converter that is not published, because it has to name the private record's fields to read them. `test/import/committed-runs.test.mjs` checks the result. They were approved there by one council member's passkey; that signature is not in this repository and is not verifiable from it. They used a different model (`anthropic/claude-opus-5-5`, as their records say), captured no signatures, and their dollars are the private line's own rate table times reported usage, not this repository's pricing. Their two GREEN runs say `green-preview` because the private line made previews; those previews sat behind a sign-in, so no address is shown.
 - **The collective is three people today.** "The collective signs" means, today, 2 of a founding council of 3. A larger collective deciding by quorum is a parameter away in code and not yet a fact.
-- **The council is not enrolled yet.** `data/council.json` names three members and holds no passkey until each enrols. Until a live build is recorded, the 2-of-3 rule is proven with software passkeys in tests, against the real verifier.
+- **The council is enrolled, and has signed nothing yet.** `data/council.json` holds one passkey for each of the three members, enrolled on 13 November. Until a council-signed build is recorded, the 2-of-3 rule is proven with software passkeys in tests, against the real verifier.
+- **Why `data/council.json` names a host.** A passkey is bound to the site it was created on. The council's passkeys were created on the build machine's address, `cambrian-mini.tail176671.ts.net`, so that name is the passkey site (the WebAuthn relying party) and is part of what each signature covers. It is an address, not a secret. Changing it would invalidate the three enrolled passkeys.
 - **The walls differ by platform.** macOS: `sandbox-exec`. Linux: bubblewrap with `--unshare-all` (a new, empty network namespace, so no network at all; the bridge is reached through a unix socket), or a `--network none` container. The container fallback has never been executed. With no sandbox, the line only replays.
 - **Attestation has an online half we do not check.** Intel TCB status, GPU evidence and image provenance need online verifiers; the judge reports them as skipped.
 - **Costs are as reported.** For runs of this line, a call's dollars are NEAR AI's published price times the token usage NEAR AI reports for that call. We do not independently measure usage. A ticket's dollar budget is checked before each call, so the call in flight when it is reached still completes.
 - **The eight starting lessons were carried over, not accepted here.** They come from the private line; three of them have no single run behind them. No lesson has yet been drafted from a RED run of this line and accepted by passkey.
 - **The judge and the demo are keyless, not network-free.** The stand-in build's install step may reach `registry.npmjs.org` through the line's allow-listed tunnel. They have not been run with the network off.
-- **The repository is private until submission.** Until it is public the clone command above fails.
+- **The repository is private until submission.** Until it is public the clone commands above fail for anyone without access.
 - **The enrolment trusts the browser for the public key.** A passkey's public key is taken from the browser at enrolment, behind a one-time invite; the attestation statement of the authenticator is not checked.
 - **Intent, revisions, images, taste notes and the house kit are tested, not yet used.** No enrolled member has sent a message, so every test of them uses a stand-in model and a test council. The intent step adds one model call to every message. Attached images are kept but there is no screen that shows them, because the app has no sign-in to show them behind; the builder does not see them either. The house kit is placed in the workspace and the builder is told to follow it; no check enforces that a build did. A revision can only be built when the build it revises was made by this repository's build path.
 - **One failure is planned.** The first idea the founding council sends through this repository's build path is chosen to fail: "A page that shows the current NEAR price, fetched live when the page is built." A build has no network beyond the npm registry, so the fetch cannot work. We planned it to show the learning loop on the record: a failed build, the rule Cambrian drafts from it, a member's signature on that rule, and the next briefs checked against it. The rule we expect is that products never fetch data at build time and fetch live data in the browser at runtime. If the build does not fail, or the rule comes out differently, the record will say what happened.

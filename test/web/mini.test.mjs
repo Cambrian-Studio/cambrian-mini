@@ -25,6 +25,7 @@ test('the public nav has four items, and Request access is in the header', () =>
   const header = html.slice(html.indexOf('<header'), html.indexOf('</header>'));
   assert.match(header, />Request access</);
   assert.match(header, /id="member-menu" hidden/, 'Approvals and notifications sit in the member menu, hidden by default');
+  assert.match(readFileSync(at('web/app.js'), 'utf8'), /\n {2}verify: receipts,/, 'the nav says Verify, so #/verify opens that screen too');
 });
 
 test('capital cards: a figure the record does not hold leaves its card out', () => {
