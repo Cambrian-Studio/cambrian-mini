@@ -329,7 +329,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       if (!model()) return [503, { error: 'no model', why: 'No model is configured for briefs.' }];
       const ctx = recordNow(); const add = (usd) => { c.usd = Number((c.usd + (usd ?? 0)).toFixed(6)); };
       // what the conversation is about: a new product, a revision of one on record (then it starts from that product's last build), or neither
-      const intent = await classifyIntent(said.join('\n').slice(-4000), { chat, products: ctx.products, runs: ctx.runs });
+      const intent = await classifyIntent(said.join('\n').slice(-TRANSCRIPT_MAX), { chat, products: ctx.products, runs: ctx.runs });
       add(intent.usd);
       if (!intent.ok) return [502, { error: 'no answer', why: intent.why }];
       if (intent.intent === 'question' || intent.intent === 'ask') {
@@ -419,7 +419,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       mkdirSync(cfg.files.tickets, { recursive: true });
       const kept = (b.revision?.attachments?.length ? c.attachments ?? [] : []).map((x, i) => { const name = b.id + '.attach-' + (i + 1) + (x.type === 'png' ? '.png' : '.jpg');
         writeFileSync(join(cfg.files.tickets, name), readFileSync(join(talkDir, x.file)), { mode: 0o600 }); return { ...x, file: name }; });
-      const entry = { ticket: b, created: at, idea: String(shaped.find((m) => m.role === 'member')?.text ?? '').slice(0, MAX_IDEA), intent: d.intent,
+      const entry = { ticket: b, created: at, idea: String(shaped.find((m) => m.role === 'member')?.text ?? '').slice(0, MAX_TURN), intent: d.intent,
         conversation: { sha256: sha, turns: shaped.length, messages: shaped, draft: d.v }, lint: d.lint, ...(kept.length ? { attachments: kept } : {}),
         brief: { usd: c.usd, model: d.model, attempts: d.attempts, ...d.meta }, proposed_by: proposer, approvals: [], run_started: null };
       writeTicketEntry(cfg, entry);

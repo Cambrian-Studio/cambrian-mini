@@ -6,11 +6,13 @@
 // PURE: no I/O. The model calls are passed in.
 import { canonical, sha256Hex } from '../receipts/canonical.mjs';
 
-export const MAX_TURN = 1500;          // characters in one member message
+export const MAX_TURN = 8000;          // characters in one member message
 export const MAX_MEMBER_TURNS = 40;    // member messages in one conversation
 export const MAX_QUESTIONS = 2;        // questions Cambrian may ask in one turn
 export const THINK_MAX_TOKENS = 4000;   // an open model's reasoning tokens count against this too; 1200 left one with no text
-export const TRANSCRIPT_MAX = 8000;    // characters of conversation handed to the drafter
+// characters of conversation handed to the drafter and to the intent step: room for several full-length messages, so that
+// no single message is ever cut before a model reads it
+export const TRANSCRIPT_MAX = 40000;
 
 export const THINK_SYSTEM = [
   'You are Cambrian, a product studio owned by its members. A member is thinking an idea through with you before anything is built.',
