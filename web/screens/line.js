@@ -258,6 +258,15 @@ export function story(product, runs, { council = null, lessons = [], onChain = [
   return lines.map((line, i) => ({ n: i + 1, title: STEPS[i][0], line, link: links[i] }));
 }
 
+/** Where the replay stands: steps before `at` are done, step `at` is happening, the rest have not started. */
+export const playerStates = (at, total) => Array.from({ length: total }, (_, i) => (i < at ? 'on' : (i === at ? 'now' : 'off')));
+/** A build that is running now, as the seven steps: the idea and the brief exist, then its six recorded steps from the brief on. */
+export function liveStates(run) {
+  const st = stationStates(run);
+  return ['on', st.brief, st.approved, st.build, st.test, st.preview, st.receipt];
+}
+export const STEP_MS = 2500;
+
 export async function render(root, arg) {
   const { runs = [] } = await api.get('runs.json');
   const list = h('div.runs');
@@ -265,16 +274,18 @@ export async function render(root, arg) {
   const live = api.isLive();
   const told = h('ol.tl.story', { 'aria-label': 'One build, in seven steps' });
   const which = h('p.lede');
+  const player = h('div.player', { hidden: true });
 
   put(root,
     h('header.head', {}, h('p.eyebrow', {}, 'Watch a build'),
       h('h1.statement', {}, 'From an idea to a live product, in seven steps.'), which),
+    player,
     told,
     h('header.head.second', {}, h('h2.h2', {}, 'Every recorded build.'),
       h('p.lede', {}, 'Brief, signatures, build, checks, preview, record. A failed build stops at the checks and still '
         + 'leaves its record. A brief without enough valid signatures stops before anything is built.'),
       h('p.note', {}, live ? 'Live: the steps update as a build runs.'
-        : 'Replay: press “Replay” on a build to watch its recorded steps, compressed to a few seconds.')),
+        : 'Each recorded build can be replayed on its own: press “Replay” on it.')),
     list);
   if (!runs.length) list.append(h('p.plain', {}, 'No build is recorded yet.'));
 
@@ -302,6 +313,50 @@ export async function render(root, arg) {
   told.replaceChildren(...steps.map((st) => h('li', { id: `step-${st.n}`, 'data-state': 'on' }, h('i', { 'aria-hidden': 'true' }),
     h('div', {}, h('span.step', {}, `${String(st.n).padStart(2, '0')} · ${st.title.replace(/\.$/, '')}`), h('span.said', {}, st.line),
       st.link ? h('a.link', { href: st.link[0] }, st.link[1]) : null))));
+  // ---- the player: the recorded build plays from the start, a step every few seconds; a build running now replaces it
+  const items = [...told.children];
+  const total = items.length;
+  const date = mine[0]?.started ? when(mine[0].started) : '';
+  let at = total;
+  let timer = null;
+  let liveRun = full.find((r) => r.state === 'running') || null;
+  const label = h('p.cap.playlabel', { role: 'status' });
+  const fill = h('i');
+  const where = h('span.cap', {});
+  const stop = () => { clearInterval(timer); timer = null; };
+  const draw = () => {
+    const states = liveRun ? liveStates(liveRun) : playerStates(at, total);
+    items.forEach((li, i) => { li.dataset.state = states[i] || 'off'; });
+    const reached = states.filter((x) => x !== 'off').length;
+    fill.style.width = `${total ? Math.round((reached / total) * 100) : 0}%`;
+    if (liveRun) {
+      label.textContent = liveRun.state === 'running' ? `Live · ${liveRun.ticket?.title || liveRun.ticket?.id || 'a build'}`
+        : `Finished just now · ${liveRun.ticket?.title || liveRun.ticket?.id || 'a build'}`;
+      where.textContent = `Step ${Math.min(reached, total)} of ${total}`;
+    } else {
+      label.textContent = still() ? `A recorded build · ${date}` : `Replaying a recorded build · ${date}`;
+      where.textContent = at >= total ? 'Finished' : `Step ${at + 1} of ${total}`;
+    }
+    pause.textContent = timer ? 'Pause' : 'Play';
+    pause.disabled = Boolean(liveRun) || at >= total;
+    controls.hidden = Boolean(liveRun) || still();
+  };
+  const run = () => {
+    stop();
+    timer = setInterval(() => { at += 1; if (at >= total) stop(); draw(); }, STEP_MS);
+    draw();
+  };
+  const toggle = () => { if (timer) { stop(); draw(); } else if (at < total) run(); };
+  const pause = h('button.btn.ghost.small', { type: 'button', onclick: toggle }, 'Pause');
+  const controls = h('div.row.start', {}, pause,
+    h('button.btn.ghost.small', { type: 'button', onclick: () => { at = 0; run(); } }, 'Replay'),
+    h('button.btn.ghost.small', { type: 'button', onclick: () => { stop(); at = total; draw(); } }, 'Skip to end'));
+  if (total) {
+    player.replaceChildren(label, h('div.playbar', { 'aria-hidden': 'true' }, fill), h('div.row.start', {}, where, controls));
+    player.hidden = false;
+    // with reduced motion, or when a step was asked for by number, the finished build is shown and nothing moves
+    if (!liveRun && !still() && !arg) { at = 0; run(); } else draw();
+  }
   const toStep = () => document.getElementById(`step-${arg}`)?.scrollIntoView({ block: 'center' });
   if (arg) root.addEventListener('shown', toStep, { once: true });
 
@@ -309,6 +364,8 @@ export async function render(root, arg) {
     const run = e.detail;
     const id = run.ticket?.id;
     if (!id) return;
+    // a build running now takes over the seven steps, labelled Live, and stays there when it finishes
+    if (total && (run.state === 'running' || liveRun?.ticket?.id === id)) { stop(); liveRun = run; draw(); }
     if (rows.has(id)) { rows.get(id).update(run); return; }
     const r = row(run);
     rows.set(id, r);
@@ -318,6 +375,7 @@ export async function render(root, arg) {
   window.addEventListener('run-update', onRun);
   return () => {
     window.removeEventListener('run-update', onRun);
+    stop();
     for (const r of rows.values()) r.stop();
   };
 }

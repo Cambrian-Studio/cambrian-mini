@@ -30,14 +30,30 @@
       "name": "JJ",
       "role": "Design",
       "figure": "assets/members/jj.png",
-      "credentials": []
+      "credentials": [
+        {
+          "id": "B52TtguDFps2GpNBeNJbqM-WS6g",
+          "alg": -7,
+          "rp_id": "cambrian-mini.tail176671.ts.net",
+          "public_key_spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEP30RPhQDys_h6PdsCEtvrUQ7hdGd4l9PN1WFWxg4eVqO2v1CoAI4KSiuqGUOvvgoYyU_pC--gYJhQBw6qM_x-A",
+          "enrolled_at": "2026-11-13T15:58:21.293Z"
+        }
+      ]
     },
     {
       "id": "michael",
       "name": "Michael",
       "role": "Engineering",
       "figure": "assets/members/michael.png",
-      "credentials": []
+      "credentials": [
+        {
+          "id": "lxxF8Dqkoxku_2MYM4ljyA",
+          "alg": -7,
+          "rp_id": "cambrian-mini.tail176671.ts.net",
+          "public_key_spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEmLX14bHunuFQo7JOsi3BptOgi2hodRhMbUzPHpJYcOy4AuK7UhsrmhL5naUiKspLb6aV9TSdNXhDJC7LbDRvcQ",
+          "enrolled_at": "2026-11-13T15:59:51.324Z"
+        }
+      ]
     }
   ]
 }
