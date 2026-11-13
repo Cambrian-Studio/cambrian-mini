@@ -320,6 +320,8 @@ export const enrol = {
         const made = await createPasskey(options);
         await api.post('enrol', { token, ...made });
         api.forgetAll();
+        // the app now has a member who can sign: read its state again, so this tab can sign without a reload
+        await api.init().catch(() => {});
         tell(`Passkey enrolled for ${options.name || options.member}. It can now sign briefs.`);
         toast('Passkey enrolled.', 'green');
       } catch (err) {
