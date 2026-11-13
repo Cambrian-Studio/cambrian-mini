@@ -34,7 +34,12 @@ if (!existsSync(join(state, 'tools', 'node_modules', '.bin', 'opencode'))) {
   if (r.status !== 0) die('The coding agent could not be installed. Check your network and run `npm run solo` again.');
 }
 
-Object.assign(process.env, { CAMBRIAN_DATA: data, CAMBRIAN_STATE: state, NEARAI_KEY_FILE: keyFile, CAMBRIAN_PORT: String(port), CAMBRIAN_EXPOSED: '' });
+// The build model: an open model NEAR AI hosts, unless you name another (LINE_MODEL). Each of its calls is signed in its TEE.
+const buildModel = process.env.LINE_MODEL || 'Qwen/Qwen3.6-35B-A3B-FP8';
+// A solo line publishes nothing: the preview is served from this machine. Name a Vercel token file yourself to deploy previews.
+const vercel = process.env.VERCEL_TOKEN_FILE || join(state, 'no-vercel-token');
+Object.assign(process.env, { CAMBRIAN_DATA: data, CAMBRIAN_STATE: state, NEARAI_KEY_FILE: keyFile, CAMBRIAN_PORT: String(port), CAMBRIAN_EXPOSED: '',
+  LINE_MODEL: buildModel, VERCEL_TOKEN_FILE: vercel });
 const { appConfig } = await import('../app/config.mjs');
 const { council } = await import('../app/store.mjs');
 const { createInvite } = await import('../approvals/council.mjs');
@@ -53,5 +58,6 @@ server.listen(cfg.port, cfg.host, () => {
     console.log(`3. Sign it with your passkey:                          ${origin}/#/approvals`);
     console.log(`4. Watch it build, then open the preview and record:   ${origin}/#/line`);
   } else console.log(`Your passkey is enrolled. Talk: ${origin}/#/talk`);
-  console.log(`\nOne build may cost at most $${process.env.CAMBRIAN_BUILD_CAP_USD || 2}; the day's cap is $${cfg.dailyCapUsd}. Nothing is recorded on NEAR.`);
+  console.log(`\nBuilds run on ${buildModel}.`);
+  console.log(`One build may cost at most $${process.env.CAMBRIAN_BUILD_CAP_USD || 2}; the day's cap is $${cfg.dailyCapUsd}. Nothing is recorded on NEAR.`);
 });
