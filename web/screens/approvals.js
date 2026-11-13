@@ -152,7 +152,8 @@ function sheetBody(entry, council) {
   const proposer = entry.proposed_by || null;
   const proposerResult = h('span.small', { role: 'status' });
   const proposerCheck = proposer ? h('button.textbtn', { type: 'button', onclick: async () => {
-    const subjectHash = await ideaHash(entry.idea);
+    // a brief that came from a conversation is sent with a signature over the conversation's hash, which the brief names
+    const subjectHash = entry.ticket?.conversation?.sha256 || await ideaHash(entry.idea);
     const r = await verifyMemberSignature({ purpose: 'idea', subjectHash, approval: proposer.approval, council });
     proposerResult.replaceChildren(r.ok ? dot() : null, r.ok ? ' Valid ES256 signature over this idea.' : `Not valid: ${r.why}`);
   } }, 'Verify signature') : null;

@@ -518,3 +518,6 @@ a.capcard { text-decoration: none; }
 .story [data-state="off"] .said, .story [data-state="off"] .link { visibility: hidden; }
 .story [data-state="off"] .step { color: var(--done); opacity: .6; }
 @media (prefers-reduced-motion: reduce) { .playbar > i { transition: none; } }
+
+/* Talk: what changed between two drafts */
+.changes { margin: 0; padding-left: 18px; color: var(--caption); font-size: 13.5px; line-height: 1.45; }

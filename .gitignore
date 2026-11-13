@@ -1,5 +1,7 @@
 # live state of the build machine: scratch, tools, product repositories, invites — never committed
 .line/
+# `npm run solo`: your own line, its record and its tools
+.solo/
 .shots/
 dist-static/
 node_modules/

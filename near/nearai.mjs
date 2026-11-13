@@ -195,6 +195,42 @@ export async function chat({ model, messages, max_tokens, keyFile, base, fetchIm
   return out;
 }
 
+// One streamed chat completion: `onText(delta)` is called as the text arrives. Used for conversation, where
+// nothing is signed or kept by hash. Never throws for an HTTP or network failure. `usd` is priced from the
+// usage the API reports in its last chunk; null when it reports none or the model has no price.
+export async function chatStream({ model, messages, max_tokens, keyFile, base, fetchImpl = fetch, pricing, onText = () => {} } = {}) {
+  if (typeof model !== 'string' || !model) throw new Error('chatStream: model is required');
+  if (!Array.isArray(messages) || !messages.length) throw new Error('chatStream: messages are required');
+  const key = readKey(keyFile);
+  const payload = { model, messages, stream: true, stream_options: { include_usage: true } };
+  if (max_tokens !== undefined) payload.max_tokens = max_tokens;
+  const out = { ok: false, status: 0, model, content: '', usage: null, usd: null };
+  try {
+    const res = await fetchImpl(`${trimBase(base)}/chat/completions`, { method: 'POST',
+      headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json', accept: 'text/event-stream' }, body: JSON.stringify(payload) });
+    out.status = res.status;
+    if (!res.ok || !res.body) return { ...out, error: scrub(`HTTP ${res.status}`, key) };
+    const decoder = new TextDecoder(); let buf = '';
+    const take = (line) => {
+      if (!line.startsWith('data:')) return;
+      const data = line.slice(5).trim(); if (!data || data === '[DONE]') return;
+      let j; try { j = JSON.parse(data); } catch { return; }
+      if (j.usage) out.usage = j.usage;
+      if (typeof j.model === 'string') out.model = j.model;
+      const delta = j.choices?.[0]?.delta?.content;
+      if (typeof delta === 'string' && delta) { out.content += delta; onText(delta); }
+    };
+    for await (const chunk of res.body) {
+      buf += decoder.decode(chunk, { stream: true });
+      let i; while ((i = buf.indexOf('\n')) >= 0) { take(buf.slice(0, i).trimEnd()); buf = buf.slice(i + 1); }
+    }
+    take(buf.trim());
+  } catch (e) { return { ...out, error: scrub(e && e.message, key) }; }
+  out.usd = pricing ? priceCall(pricing, out.model, out.usage) ?? priceCall(pricing, model, out.usage) : null;
+  out.ok = out.content.length > 0;
+  return out.ok ? out : { ...out, error: 'the model sent no text' };
+}
+
 // ---------------------------------------------------------------------------------------
 // Attestation: fetch
 // ---------------------------------------------------------------------------------------

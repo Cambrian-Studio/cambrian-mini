@@ -54,13 +54,22 @@ export const listRuns = (cfg) => dirs(cfg.files.runs).map((id) => readRun(cfg, i
   .sort((a, b) => String(b.started).localeCompare(String(a.started)));
 
 const seconds = (r) => (r.started && r.finished ? Math.round((Date.parse(r.finished) - Date.parse(r.started)) / 1000) : null);
-export function runSummary(run) {
+// A passing build with no hosted preview still has its kept output; the local app serves it back at this path (see app/server.mjs).
+export function localPreview(cfg, run) {
+  if (!cfg || cfg.mode !== 'live' || cfg.exposed || !/^green/.test(String(run.state)) || !ID.test(String(run.ticket?.id))) return null;
+  const dir = join(cfg.files.runs, run.ticket.id, 'output');
+  if (existsSync(join(dir, 'index.html'))) return `preview/${run.ticket.id}/`;
+  // a build with a static root of its own (dist/, public/, …): the page is one folder down
+  const sub = existsSync(dir) ? readdirSync(dir).find((d) => existsSync(join(dir, d, 'index.html'))) : null;
+  return sub ? `preview/${run.ticket.id}/${sub}/` : null;
+}
+export function runSummary(run, cfg = null) {
   const calls = (run.attempts ?? []).reduce((n, a) => n + (a.calls?.length ?? a.bridge?.forwarded ?? 0), 0);
   const usd = run.cost?.usd ?? (run.attempts ?? []).reduce((s, a) => s + (a.bridge?.computed_usd ?? 0), 0);
   return { id: run.ticket?.id, title: run.ticket?.title, product: run.ticket?.product, origin: run.origin ?? 'mini', mode: run.mode ?? null,
     state: run.state, waiting_on: run.waiting_on ?? null, started: run.started, finished: run.finished ?? null, seconds: seconds(run),
     attempts: (run.attempts ?? []).length, calls, usd: Number(Number(usd).toFixed(6)), stations: run.stations ?? null,
-    preview_url: run.preview?.url ?? null, revision: run.revision ?? null, receipt_sha256: run.receipt_sha256 ?? null, model: run.attempts?.at(-1)?.agent?.model ?? null };
+    preview_url: run.preview?.url ?? localPreview(cfg, run), revision: run.revision ?? null, receipt_sha256: run.receipt_sha256 ?? null, model: run.attempts?.at(-1)?.agent?.model ?? null };
 }
 /** The receipt of a finished run, rebuilt from the record every time it is asked for. */
 export function receiptOf(cfg, run) {
@@ -82,7 +91,7 @@ export function snapshot(cfg, extra = {}) {
     daily_cap_usd: cfg.dailyCapUsd, exposed: cfg.exposed === true, guest_proposals: live && !cfg.exposed, chain: cfg.chain, dao: DAO_STATUS, generated_at: new Date().toISOString(), ...extra };
   out['api/council.json'] = publicCouncil(c);
   out['api/tickets.json'] = { tickets };
-  out['api/runs.json'] = { runs: runs.map(runSummary) };
+  out['api/runs.json'] = { runs: runs.map((r) => runSummary(r, cfg)) };
   const notifications = [];
   for (const run of runs) {
     const id = run.ticket.id;
@@ -102,7 +111,7 @@ export function snapshot(cfg, extra = {}) {
 function productsView(cfg, runs) {
   const doc = readJson(cfg.files.products, { v: 1, products: [] });
   return { ...doc, products: (doc.products ?? []).map((p) => {
-    const mine = runs.filter((r) => r.ticket?.product === p.id).map(runSummary);
+    const mine = runs.filter((r) => r.ticket?.product === p.id).map((r) => runSummary(r, cfg));
     return { ...p, runs: mine.map((r) => ({ id: r.id, title: r.title, state: r.state, usd: r.usd, origin: r.origin, finished: r.finished,
       preview_url: r.preview_url, revision: r.revision })),
       cost_usd: Number(mine.reduce((s, r) => s + r.usd, 0).toFixed(6)), live_url: p.live_url ?? mine.find((r) => r.preview_url && /^green/.test(r.state))?.preview_url ?? null };

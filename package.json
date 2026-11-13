@@ -16,6 +16,7 @@
     "build:static": "node app/static-build.mjs",
     "check:wasm": "node scripts/check-wasm.mjs",
     "invite": "node scripts/invite.mjs",
+    "solo": "node scripts/solo.mjs",
     "setup:live": "sh line/kit/setup-tools.sh",
     "verify:receipt": "node scripts/verify-receipt.mjs"
   }
