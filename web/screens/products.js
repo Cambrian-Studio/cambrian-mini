@@ -71,7 +71,14 @@ function sheet(p, { lessons, tickets, council }) {
           h('span.row.start', {}, stateChip(r.state), h('span.mono.small', {}, usd(r.usd)))),
         h('span.small.dim', {}, [when(r.finished), isImported(r) ? IMPORTED : null].filter(Boolean).join(' · ')),
         revisionNote(r, runs, council))))
-        : h('p.plain', {}, 'No run is linked to this product yet.')),
+        : h('p.plain', {}, 'No build of this product is recorded yet.')),
+    (p.history || []).length ? h('div', {}, cap('history: earlier builds, not built here'),
+      p.history_note ? h('p.small.dim', {}, p.history_note) : null,
+      h('ul.rows', {}, p.history.map((r) => h('li', {},
+        h('a', { href: '#/receipts/' + encodeURIComponent(r.id) },
+          h('span', {}, r.title || r.id),
+          h('span.row.start', {}, stateChip(r.state), h('span.mono.small', {}, usd(r.usd)))),
+        h('span.small.dim', {}, [when(r.finished), IMPORTED].filter(Boolean).join(' · ')))))) : null,
     p.live_url
       ? h('p', {}, h('a.btn', { href: p.live_url, target: '_blank', rel: 'noopener noreferrer' }, `Try ${p.name || 'it'}`))
       : card('div.pad.cb-card2', { tl: 'Live link' }, {}, h('p', {}, 'No public link yet.'),

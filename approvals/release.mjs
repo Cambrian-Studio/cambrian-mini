@@ -20,6 +20,8 @@ export const lessonChallenge = (lessonSha256) => challengeFor('lesson', lessonSh
 /** The challenge a member signs to propose an idea: the subject is sha256 (hex) of the idea's exact utf8 text.
  *  It is another purpose than "approval", so a proposer's signature can never count as an approval. */
 export const ideaChallenge = (ideaSha256) => challengeFor('idea', ideaSha256);
+/** The challenge a member signs to open a conversation with Cambrian. Its own purpose: it proposes nothing and approves nothing. */
+export const talkChallenge = (talkSha256) => challengeFor('talk', talkSha256);
 /** With images attached, the proposer signs the text AND the images: the text, then each image's sha256 on its own line. */
 export const ideaHash = (idea, attachmentShas = []) => createHash('sha256')
   .update(attachmentShas.length ? `${String(idea)}\n${attachmentShas.join('\n')}` : String(idea), 'utf8').digest('hex');
@@ -66,7 +68,9 @@ export function verifyRelease(ticket, approvals, council) {
   const threshold = Number(council?.threshold);
   const ticket_sha256 = ticketHash(ticket);
   const base = { valid: [], invalid: [], threshold, ticket_sha256 };
-  if (!Number.isInteger(threshold) || threshold < 2) return { ...base, ok: false, why: 'the council file names no threshold of 2 or more' };
+  // one person deciding alone is its own labelled case: `solo: true`, one member, threshold 1. Anything else below 2 is refused.
+  const solo = council?.solo === true && threshold === 1 && (council?.members ?? []).length === 1;
+  if (!solo && (!Number.isInteger(threshold) || threshold < 2)) return { ...base, ok: false, why: 'the council file names no threshold of 2 or more' };
   if ((council?.members ?? []).length < threshold) return { ...base, ok: false, why: 'the council has fewer members than its threshold' };
 
   const valid = new Set(); const invalid = [];

@@ -22,13 +22,14 @@ export function compounding({ products = [], lessons = [], runs = [] }) {
   const done = runs.filter((r) => r.finished);
   const working = done.filter(isGreen);
   const first = working.filter((r) => r.attempts === 1);
+  const built = products.filter((p) => (p.runs || []).length);   // a product with no build yet is not counted as built
   const shipped = products.filter((p) => p.live_url);
   const signed = lessons.filter((l) => l.accepted_by);
   const spent = done.reduce((sum, r) => sum + (Number(r.usd) || 0), 0);
   return [
     ['Products shipped', count(shipped.length),
-      products.length === shipped.length ? 'with a public link'
-        : `${count(products.length)} built, ${count(shipped.length)} with a public link`],
+      built.length === shipped.length ? 'with a public link'
+        : `${count(built.length)} built, ${count(shipped.length)} with a public link`],
     ['Lessons signed', count(signed.length),
       `${count(lessons.length)} on record, ${count(signed.length)} signed by a member`],
     ['First-try pass rate', done.length ? `${Math.round((first.length / done.length) * 100)}%` : null,

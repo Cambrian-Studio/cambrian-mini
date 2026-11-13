@@ -53,12 +53,15 @@ function stubNear() {
       return { ok: true, model, usd: 0.01, content, id: `c-${seen.draft}`, request_sha256: sha('q'), response_sha256: sha(content) };
     } };
 }
-async function setup({ exposed = true } = {}) {
+async function setup({ exposed = true, handover = false } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'cambrian-mini-intent-test-'));
-  const data = join(dir, 'data'), state = join(dir, 'state'); mkdirSync(join(data, 'tickets'), { recursive: true }); mkdirSync(state, { recursive: true });
+  const data = join(dir, 'data'), state = join(dir, 'state'); mkdirSync(data, { recursive: true }); mkdirSync(state, { recursive: true });
   const tc = makeTestCouncil(); const near = stubNear();
   writeFileSync(join(data, 'council.json'), JSON.stringify(tc.council));
-  cpSync(join(root, 'data/products.json'), join(data, 'products.json'));
+  // a record where Upread is an ordinary product with builds; the committed record hands Upread over to Upread Mini (tested apart)
+  const committed = JSON.parse(readFileSync(join(root, 'data/products.json'), 'utf8'));
+  const upread = { ...committed.products.find((p) => p.id === 'upread') }; delete upread.successor;
+  writeFileSync(join(data, 'products.json'), JSON.stringify(handover ? committed : { v: 1, products: [upread] }));
   cpSync(join(root, 'data/runs'), join(data, 'runs'), { recursive: true });
   cpSync(join(root, 'lessons/lessons.json'), join(dir, 'lessons.json'));
   const base = appConfig();
@@ -69,7 +72,7 @@ async function setup({ exposed = true } = {}) {
   const live = await makeLive(cfg, { near });
   const post = (path, body) => live._test.handlers[path](body, { socket: { remoteAddress: '127.0.0.1' }, headers: {} });
   const say = (member, idea, extra = {}, shas = []) => post('/api/ideas', { idea, ...tc.signIdea(member, idea, undefined, shas), ...extra });
-  return { dir, cfg, tc, near, post, say, data, tickets: () => readdirSync(join(data, 'tickets')) };
+  return { dir, cfg, tc, near, post, say, data, tickets: () => (existsSync(join(data, 'tickets')) ? readdirSync(join(data, 'tickets')) : []) };
 }
 const done = (s) => rmSync(s.dir, { recursive: true, force: true });
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('not a real image, only its first bytes')]);

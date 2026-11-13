@@ -49,6 +49,17 @@ export async function makeServer(cfg = appConfig()) {
         return await live.post(path, req, res);
       }
       if (req.method !== 'GET' && req.method !== 'HEAD') return sendJson(res, 405, { error: 'method not allowed' });
+      // On a machine that is not reachable from outside, a build's kept output is served back as its preview, in a sandbox of its own.
+      const pv = /^\/preview\/([a-z0-9][a-z0-9-]{2,39})(\/.*)?$/.exec(path);
+      if (pv && live && !cfg.exposed) {
+        if (pv[2] === undefined) { res.writeHead(302, { location: `/preview/${pv[1]}/` }); return res.end(); }
+        const f = safeFile(join(cfg.files.runs, pv[1], 'output'), pv[2]);
+        if (!f) { res.writeHead(404, { 'content-type': TYPES['.txt'], ...SECURITY }); return res.end('not found\n'); }
+        res.writeHead(200, { 'content-type': TYPES[extname(f)] ?? 'application/octet-stream', 'cache-control': 'no-store', ...SECURITY,
+          'content-security-policy': "sandbox allow-scripts; default-src 'self' 'unsafe-inline' data: blob:" });
+        if (req.method === 'HEAD') return res.end();
+        return createReadStream(f).pipe(res);
+      }
       // the one serialisation file the browser shares with the server
       const file = path === '/lib/canonical.mjs' ? join(cfg.root, 'receipts', 'canonical.mjs') : safeFile(web, path === '/' ? '/index.html' : path);
       if (!file) { res.writeHead(404, { 'content-type': TYPES['.txt'], ...SECURITY }); return res.end('not found\n'); }

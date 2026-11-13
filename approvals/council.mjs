@@ -20,7 +20,9 @@ export function loadCouncil(file) {
   if (c.v !== 1) throw new Error('council: v must be 1');
   // N members, any threshold M with 2 <= M <= N. A threshold of 1 is never a council here: one person deciding alone
   // is a different, separately labelled case and is not read from this file.
-  if (!Number.isInteger(c.threshold) || c.threshold < 2) throw new Error('council: threshold must be 2 or more');
+  // That case is `solo: true` with exactly one member and a threshold of 1 (npm run solo), and it says so wherever it is shown.
+  const solo = c.solo === true && c.threshold === 1 && Array.isArray(c.members) && c.members.length === 1;
+  if (!solo && (!Number.isInteger(c.threshold) || c.threshold < 2)) throw new Error('council: threshold must be 2 or more');
   if (!Array.isArray(c.members) || c.members.length < c.threshold) throw new Error('council: fewer members than the threshold');
   const ids = new Set();
   for (const m of c.members) {
@@ -34,7 +36,7 @@ export const saveCouncil = (file, council) => writeAtomic(file, JSON.stringify(c
 
 /** What the UI may see: names, figures, how many passkeys, the public keys. (There is nothing secret in it.) */
 export const publicCouncil = (c) => ({
-  v: c.v, threshold: c.threshold, label: c.label ?? null, rp: c.rp, test_only: c.test_only === true,
+  v: c.v, threshold: c.threshold, label: c.label ?? null, ...(c.solo === true ? { solo: true } : {}), rp: c.rp, test_only: c.test_only === true,
   members: c.members.map((m) => ({ id: m.id, name: m.name, role: m.role ?? null, figure: m.figure ?? null, enrolled: m.credentials.length > 0,
     credentials: m.credentials.map((k) => ({ id: k.id, alg: k.alg, rp_id: k.rp_id, public_key_spki: k.public_key_spki, enrolled_at: k.enrolled_at })) })),
 });

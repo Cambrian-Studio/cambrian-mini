@@ -8,6 +8,8 @@ import { parseTicket } from './ticket.mjs';
 export const MAX_IDEA = 600;
 // The brief is written by an open model that NEAR AI hosts inside a TEE, so its answer can be signed there.
 export const BRIEF_MODEL = 'deepseek-ai/DeepSeek-V4.1-Flash-1017';
+// When NEAR AI answers that the brief model is overloaded, the next open model it hosts is asked instead, in this order.
+export const BRIEF_FALLBACKS = ['Qwen/Qwen3.6-35B-A3B-FP8'];
 export const BRIEF_MAX_TOKENS = 4000;   // the model's reasoning tokens count against this too
 const HEX64 = /^[0-9a-f]{64}$/;
 const slug = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24) || 'idea';
@@ -39,15 +41,19 @@ export function extractJson(text) {
 }
 
 /** Model draft → a ticket-shaped brief with an id of ours. Throws naming the first thing wrong. */
-export function shapeBrief(draft, { idSuffix, capUsd = 5, revision = null }) {
+export function shapeBrief(draft, { idSuffix, capUsd = 5, revision = null, conversation = null, forceProduct = null }) {
   if (!draft || typeof draft !== 'object' || Array.isArray(draft)) throw new Error('the draft is not an object');
-  // a revision stays on its parent's product, whatever the model wrote
-  const product = revision ? revision.product : slug(draft.product);
+  // a revision stays on its parent's product, and a first build of a product on record on that product, whatever the model wrote
+  const product = revision ? revision.product : (forceProduct || slug(draft.product));
   const id = `${product}-${idSuffix}`.slice(0, 40).replace(/-+$/, '');
-  const budget = { usd: Math.min(Number(draft.budget?.usd) || 1, 2, capUsd), calls: Math.min(Math.trunc(Number(draft.budget?.calls)) || 30, 40),
-    minutes: Math.min(Math.trunc(Number(draft.budget?.minutes)) || 10, 15) };
+  // The model proposes a budget; the code keeps it inside a floor and a ceiling. Below the floor a build runs out of calls or
+  // minutes before it has written anything (a real build was drafted at 12 calls and 5 minutes, and failed that way).
+  const within = (v, d, lo, hi) => Math.min(Math.max(Number(v) || d, lo), hi);
+  const budget = { usd: Math.min(within(draft.budget?.usd, 1, 1, 2), capUsd), calls: Math.trunc(within(draft.budget?.calls, 30, 20, 40)),
+    minutes: Math.trunc(within(draft.budget?.minutes, 10, 10, 15)) };
   return parseTicket({ kind: 'build-ticket', v: 1, id, product, title: String(draft.title ?? '').slice(0, 72), goal: draft.goal, task: draft.task,
-    out_of_scope: draft.out_of_scope, green: draft.green, budget, ...(revision ? { revision } : {}) });
+    out_of_scope: draft.out_of_scope, green: draft.green, budget, ...(revision ? { revision } : {}),
+    ...(conversation ? { conversation } : {}) });
 }
 
 /** What the model is told when the message revises a product: the build it revises, and that the notes become checks. */
@@ -79,14 +85,18 @@ export function revisionBlock({ kind, product, parent }) {
 export async function draftBrief(idea, deps) {
   const text = String(idea ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, ' ').trim();
   if (text.length < 8) return { ok: false, why: 'Say a little more: one or two sentences about what should exist.', usd: 0 };
-  if (text.length > MAX_IDEA) return { ok: false, why: `Keep the idea under ${MAX_IDEA} characters; a brief is one small feature.`, usd: 0 };
-  const { chat, lessons = [], lintBrief, lessonsBlock, products = [], existing = [], idSuffix, capUsd, revision = null, house = null } = deps;
+  const { chat, lessons = [], lintBrief, lessonsBlock, products = [], existing = [], idSuffix, capUsd, revision = null, house = null,
+    conversation = null, maxIdea = MAX_IDEA, forceProduct = null } = deps;
+  if (text.length > maxIdea) return { ok: false, why: `Keep the idea under ${maxIdea} characters; a brief is one small feature.`, usd: 0 };
   const block = lessonsBlock ? lessonsBlock(lessons, ['brief', 'ticket']) : null;
   const known = products.length ? `Existing products: ${products.map((p) => p.id).join(', ')}.` : 'There are no products yet.';
   // revision: { kind, product, parent, by, attachments } from the intent step; its ticket field is built here, not by the model
   const rev = revision ? { of: revision.parent?.ticket?.id ?? revision.parent?.id, kind: revision.kind, by: revision.by, product: revision.product.id,
     ...(revision.attachments?.length ? { attachments: revision.attachments } : {}) } : null;
-  const messages = [{ role: 'system', content: [BRIEF_SYSTEM, known, revision ? revisionBlock(revision) : null, house, block].filter(Boolean).join('\n\n') },
+  const first = forceProduct ? `This is the first build of the product "${forceProduct}", which is on record with no build yet. "product" must be exactly "${forceProduct}".` : null;
+  const fromTalk = conversation ? 'The user message is a conversation between a member and Cambrian. Draft the brief they converged on: '
+    + 'what it is, who it is for, the one thing it must do, the checks and the budget. The latest instructions win over earlier turns.' : null;
+  const messages = [{ role: 'system', content: [BRIEF_SYSTEM, known, first, fromTalk, revision ? revisionBlock(revision) : null, house, block].filter(Boolean).join('\n\n') },
     { role: 'user', content: text }];
   let usd = 0, model = null, lint = null, why = null;
   for (let attempt = 1; attempt <= 2; attempt++) {
@@ -94,7 +104,7 @@ export async function draftBrief(idea, deps) {
     usd += r.usd ?? 0; model = r.model ?? model;
     if (!r.ok) return { ok: false, why: `The model did not answer (${String(r.why ?? r.status ?? 'no detail').slice(0, 120)}).`, usd, model };
     let brief;
-    try { brief = shapeBrief(extractJson(r.content), { idSuffix, capUsd, revision: rev }); } catch (e) {
+    try { brief = shapeBrief(extractJson(r.content), { idSuffix, capUsd, revision: rev, conversation, forceProduct }); } catch (e) {
       why = `the draft was not a valid brief: ${e.message}`;
       messages.push({ role: 'assistant', content: String(r.content).slice(0, 4000) }, { role: 'user', content: `That was refused: ${why}. Send the corrected JSON only.` });
       continue;

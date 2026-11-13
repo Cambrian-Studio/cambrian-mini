@@ -13,7 +13,7 @@ const DEFAULT_CAP_USD = 5;
 const CHECK_ID = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const CTRL = /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/; // tab, newline and carriage return are text; the rest are not
 const KINDS = ['run', 'file', 'no_external_hosts'];
-const TICKET_KEYS = ['kind', 'v', 'id', 'product', 'title', 'task', 'goal', 'out_of_scope', 'green', 'budget', 'base', 'branch', 'drafted', 'revision'];
+const TICKET_KEYS = ['kind', 'v', 'id', 'product', 'title', 'task', 'goal', 'out_of_scope', 'green', 'budget', 'base', 'branch', 'drafted', 'revision', 'conversation'];
 const REVISION_KINDS = ['design-pass', 'fix', 'feature'];
 const HEX64 = /^[0-9a-f]{64}$/;
 
@@ -218,6 +218,16 @@ export function parseTicket(input, id = undefined) {
   }
   const drafted = t.drafted === undefined ? undefined : parseDrafted(t.drafted);
   const revision = t.revision === undefined ? undefined : parseRevision(t.revision, t.product);
+  // the conversation that shaped the brief, by hash: part of the ticket, so every signature covers it
+  let conversation;
+  if (t.conversation !== undefined) {
+    const c = t.conversation;
+    if (!c || typeof c !== 'object' || Array.isArray(c)) throw new Error('build ticket: conversation — {sha256, turns}');
+    only(c, ['sha256', 'turns'], 'build ticket: conversation');
+    if (typeof c.sha256 !== 'string' || !HEX64.test(c.sha256)) throw new Error('build ticket: conversation.sha256: 64 lowercase hex characters');
+    if (!Number.isInteger(c.turns) || c.turns < 1 || c.turns > 200) throw new Error('build ticket: conversation.turns: 1..200');
+    conversation = { sha256: c.sha256, turns: c.turns };
+  }
   return {
     kind: 'build-ticket',
     v: 1,
@@ -233,5 +243,6 @@ export function parseTicket(input, id = undefined) {
     branch,
     ...(drafted ? { drafted } : {}),
     ...(revision ? { revision } : {}),
+    ...(conversation ? { conversation } : {}),
   };
 }

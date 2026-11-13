@@ -9,16 +9,19 @@
 // A guest can read everything and propose; nothing is built without the council's signatures, and the line
 // checks those signatures again itself (line/run.mjs) — this file is the door, not the lock.
 import { randomBytes } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { sendJson } from './http.mjs';
 import { council, listTickets, readTicketEntry, writeTicketEntry, writeJson, listRuns, readRun, attestationSummary } from './store.mjs';
 import { enrol, findInvite } from '../approvals/council.mjs';
-import { approvalChallenge, approvalSubject, ideaChallenge, ideaHash, lessonChallenge, tasteNote, verifyMemberSignature, verifyRelease, ticketHash }
+import { approvalChallenge, approvalSubject, ideaChallenge, ideaHash, lessonChallenge, talkChallenge, tasteNote, verifyMemberSignature, verifyRelease,
+  ticketHash }
   from '../approvals/release.mjs';
 import { hashOf } from '../receipts/canonical.mjs';
-import { draftBrief, BRIEF_MODEL, MAX_IDEA } from '../tickets/brief.mjs';
-import { classifyIntent, replyLine } from '../tickets/intent.mjs';
+import { draftBrief, BRIEF_FALLBACKS, BRIEF_MODEL, MAX_IDEA } from '../tickets/brief.mjs';
+import { classifyIntent, recordContext, replyLine } from '../tickets/intent.mjs';
+import { briefChanges, conversationHash, isReady, sentenceGate, thinkMessages, transcript, MAX_MEMBER_TURNS, MAX_TURN, THINK_MAX_TOKENS,
+  TRANSCRIPT_MAX } from '../tickets/think.mjs';
 import { readAttachments, MAX_ATTACHMENTS, MAX_ATTACHMENT_BYTES } from '../tickets/attachments.mjs';
 import { parseLessons, lessonsBlock, lintBrief } from '../lessons/lessons.mjs';
 import { acceptLesson, recordFired } from '../lessons/store.mjs';
@@ -94,13 +97,42 @@ export async function makeLive(cfg, { near = nearai } = {}) {
   const runSpendToday = () => listRuns(cfg).filter((r) => (r.origin ?? 'mini') === 'mini' && String(r.started).slice(0, 10) === utcDay())
     .reduce((s, r) => s + (r.attempts ?? []).reduce((x, a) => x + (a.bridge?.computed_usd ?? 0), 0), 0);
   const spentToday = () => Number((sideSpend().usd + runSpendToday()).toFixed(6));
+  // NEAR AI answers 429 or 503 when a model is overloaded. The same model is asked once more after a pause, then each fallback
+  // in turn. Whichever model answered is the one recorded: a brief never names a model that did not write it.
+  // A model that does not answer within the time limit is given up on (the request is aborted) and treated the same way.
+  // A model that just failed this way is skipped for five minutes, so a conversation does not wait on it at every turn.
+  // 429 and every 5xx count: tonight the same hosted model answered 429, then hung, then 502.
+  const overloaded = (r) => r?.status === 429 || (r?.status >= 500 && r?.status <= 599) || r?.timed_out === true;
+  const pause = () => new Promise((done) => setTimeout(done, cfg.retryMs ?? 1500));
+  const MODEL_WAIT_MS = cfg.modelWaitMs ?? 60000; const sick = new Map();
+  const timed = async (call, m) => {
+    const ctl = new AbortController(); let timer;
+    const late = new Promise((done) => { timer = setTimeout(() => { ctl.abort(); done({ ok: false, status: 0, usd: null, timed_out: true,
+      error: `no answer in ${Math.round(MODEL_WAIT_MS / 1000)} s` }); }, MODEL_WAIT_MS); });
+    try { return await Promise.race([call(m, ctl.signal), late]); } finally { clearTimeout(timer); }
+  };
+  const overModels = async (call) => {
+    const all = [model(), ...(cfg.nearai.briefFallbacks ?? BRIEF_FALLBACKS)];
+    const well = all.filter((m) => !(sick.get(m) > Date.now()));
+    const order = well.length ? well : all;
+    let r = null; let asked = null;
+    for (const [i, m] of order.entries()) {
+      asked = m; r = await timed(call, m);
+      // a plain "overloaded" answer gets one more try on the same model after a pause; a model that hung does not
+      if (overloaded(r) && !r.timed_out) { await pause(); r = await timed(call, m); }
+      if (!overloaded(r)) break;
+      sick.set(m, Date.now() + 5 * 60 * 1000);
+      if (i < order.length - 1) await pause();
+    }
+    return { r, asked };
+  };
   const chat = async ({ messages, max_tokens }) => {
     // briefs and lesson drafts are paid from the same day's cap as builds: once it is spent, no model call
     if (spentToday() >= cfg.dailyCapUsd) return { ok: false, usd: 0, why: 'the daily cap is spent' };
     if (totalSpent() >= TOTAL_CAP_USD) return { ok: false, usd: 0, why: 'the total cap is spent' };
-    const asked = model();
-    const r = await near.chat({ model: asked, messages, max_tokens, keyFile: cfg.nearai.keyFile, base: cfg.nearai.base,
-      pricing: await getPricing() });
+    const pricing = await getPricing();
+    const { r, asked } = await overModels((asked, signal) => near.chat({ model: asked, messages, max_tokens, keyFile: cfg.nearai.keyFile,
+      base: cfg.nearai.base, pricing, signal }));
     addSideSpend(r.usd); return { ...r, requested_model: asked, why: r.error };
   };
 
@@ -162,7 +194,10 @@ export async function makeLive(cfg, { near = nearai } = {}) {
         // a product begins with its first GREEN build: record it so the Products screen can show it
         if (/^green/.test(String(rec?.state))) {
           const doc = readJson(cfg.files.products, { v: 1, products: [] });
-          if (!doc.products.some((p) => p.id === entry.ticket.product)) {
+          const known = doc.products.find((p) => p.id === entry.ticket.product);
+          // a product that was on record before it was built gets its first build written on it
+          if (known && !known.first_run && !(known.runs ?? []).length) { known.first_run = entry.ticket.id; known.status = 'built here'; writeJson(cfg.files.products, doc); }
+          if (!known) {
             doc.products.push({ id: entry.ticket.product, name: entry.ticket.product, tagline: entry.ticket.goal ?? entry.ticket.title, status: 'preview',
               live_url: null, built_on: 'this line', first_run: entry.ticket.id });
             writeJson(cfg.files.products, doc);
@@ -172,8 +207,221 @@ export async function makeLive(cfg, { near = nearai } = {}) {
   }
   const draftBody = (d) => ({ id: d.id, rule: d.rule, failure: d.failure ?? '', applies_to: d.applies_to, check: d.check ?? null, fix: d.fix ?? null, from_run: d.from_run ?? null });
 
+
+  // ---- Talk as a conversation: who is speaking, and the conversation kept in this machine's private state until it is sent --
+  const sessions = new Map();      // session token → { member, at }: opened once with a passkey, good for two hours
+  const pendingOpen = new Map();   // member → the hash their passkey is about to sign
+  const SESSION_MS = 2 * 3600 * 1000;
+  const talkDir = join(cfg.state, 'talk');
+  const CONV_ID = /^talk-[0-9]{14}-[0-9a-f]{6}$/;
+  const loadConv = (id) => (CONV_ID.test(String(id ?? '')) ? readJson(join(talkDir, id + '.json'), null) : null);
+  const saveConv = (c) => writeJson(join(talkDir, c.id + '.json'), c);
+  const talkTurns = makeLimiter({ max: 40, windowMs: 10 * 60 * 1000 });   // one member: 40 messages per 10 minutes
+  const cleanText = (v) => String(v ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, ' ').trim();
+  const REFUSED_SPEAKER = [403, { error: 'passkey required', why: 'Only an enrolled council member can talk to Cambrian here. Open the conversation with your passkey.' }];
+  /** Who is speaking: the member of a live session; on a machine that is not reachable from outside, a local guest. */
+  function speaker(body) {
+    const s = sessions.get(String(body.session ?? ''));
+    if (s && Date.now() - s.at < SESSION_MS) return { ok: true, member: s.member };
+    return cfg.exposed ? { ok: false } : { ok: true, member: null };
+  }
+  function convFor(body, member) {
+    if (body.conversation_id) {
+      const c = loadConv(body.conversation_id);
+      if (!c) return { why: 'no such conversation' };
+      if (c.member !== member) return { why: 'this conversation belongs to another member' };
+      if (c.sent) return { why: 'this conversation already went to the council; start a new one' };
+      return { c };
+    }
+    const at = new Date().toISOString();
+    return { c: { id: 'talk-' + at.replace(/[^0-9]/g, '').slice(0, 14) + '-' + randomBytes(3).toString('hex'), member, started: at, messages: [], drafts: [],
+      attachments: [], usd: 0 } };
+  }
+  const capsWhy = () => (spentToday() >= cfg.dailyCapUsd
+    ? [402, { error: 'daily cap', why: 'Today\'s cap of $' + cfg.dailyCapUsd + ' is spent. Nothing more is sent to a model today.' }]
+    : (totalSpent() >= TOTAL_CAP_USD ? [402, { error: 'total cap', why: totalWhy() }] : null));
+  const recordNow = () => ({ products: readJson(cfg.files.products, { products: [] }).products ?? [],
+    runs: listRuns(cfg).map((x) => ({ id: x.ticket?.id, title: x.ticket?.title, product: x.ticket?.product, state: x.state, started: x.started,
+      finished: x.finished, ticket: x.ticket })) });
+  /** One thinking turn on the brief model (the cheap one), streamed when the client can stream; paid from the same caps as everything else. */
+  const think = async ({ messages, onText }) => {
+    if (spentToday() >= cfg.dailyCapUsd) return { ok: false, usd: 0, why: 'the daily cap is spent' };
+    if (totalSpent() >= TOTAL_CAP_USD) return { ok: false, usd: 0, why: 'the total cap is spent' };
+    const pricing = await getPricing();
+    const { r } = await overModels(async (asked, signal) => {
+      const args = { model: asked, messages, max_tokens: THINK_MAX_TOKENS, keyFile: cfg.nearai.keyFile, base: cfg.nearai.base, pricing, signal };
+      if (typeof near.chatStream === 'function') return near.chatStream({ ...args, onText });
+      const one = await near.chat(args); if (one.ok && one.content) onText(one.content); return one;
+    });
+    addSideSpend(r.usd); return { ...r, why: r.error };
+  };
+
   // ---- handlers -------------------------------------------------------------------------------------------
   const handlers = {
+    // ---- Talk is a conversation first: think, then draft from it, then send that exact ticket to the council ----------
+    '/api/talk/open/options': async (body) => {
+      const c = council(cfg); const m = c.members.find((x) => x.id === body.member);
+      if (!m?.credentials.length) return [403, { error: 'not an enrolled council member', why: 'Only a council member with an enrolled passkey can talk to Cambrian here.' }];
+      const sha = hashOf({ talk: m.id, nonce: randomBytes(16).toString('hex') }); pendingOpen.set(m.id, sha);
+      return [200, { talk_sha256: sha, challenge: talkChallenge(sha), rpId: c.rp.id,
+        allowCredentials: m.credentials.map((k) => ({ type: 'public-key', id: k.id })), userVerification: 'preferred', timeout: 120000 }];
+    },
+    '/api/talk/open': async (body) => {
+      const member = String(body.member ?? ''); const sha = pendingOpen.get(member);
+      if (!sha) return [403, { error: 'signature refused', why: 'Ask for a new challenge first.' }];
+      const approval = { member, credential_id: body.credential_id, authenticator_data: body.authenticator_data,
+        client_data_json: body.client_data_json, signature: body.signature };
+      const v = verifyMemberSignature({ purpose: 'talk', subjectHash: sha, approval, council: council(cfg) });
+      if (!v.ok) return [403, { error: 'signature refused', why: v.why }];
+      pendingOpen.delete(member);
+      const session = randomBytes(24).toString('base64url'); sessions.set(session, { member, at: Date.now() });
+      return [200, { session, member, minutes: SESSION_MS / 60000 }];
+    },
+    '/api/talk/turn': async (body, req, res) => {
+      const who = speaker(body); if (!who.ok) return REFUSED_SPEAKER;
+      const text = cleanText(body.text);
+      if (text.length < 2) return [400, { error: 'empty', why: 'Write something first.' }];
+      if (text.length > MAX_TURN) return [400, { error: 'too long', why: 'Keep one message under ' + MAX_TURN + ' characters.' }];
+      const lim = talkTurns(who.member ?? req.socket?.remoteAddress ?? 'guest');
+      if (!lim.ok) return [429, { error: 'slow down', why: 'Too many messages. Try again in ' + lim.retry_s + ' s.' }];
+      const f = convFor(body, who.member); if (f.why) return [409, { error: 'conversation', why: f.why }];
+      const c = f.c;
+      if (c.messages.filter((m) => m.role === 'member').length >= MAX_MEMBER_TURNS) {
+        return [409, { error: 'conversation', why: 'This conversation is long enough. Draft the brief, or start a new one.' }];
+      }
+      // "ready", or any instruction once a draft exists, is not a thinking turn: the page asks for a draft with it
+      if (c.drafts.length || (isReady(text) && c.messages.length)) return [200, { draft: true, conversation_id: c.id }];
+      if (isReady(text)) return [400, { error: 'nothing to draft', why: 'Tell me the idea first.' }];
+      const capped = capsWhy(); if (capped) return capped;
+      const at = new Date().toISOString();
+      c.messages.push({ role: 'member', text, at });
+      const ctx = recordNow();
+      const messages = thinkMessages(c.messages, { record: recordContext(ctx.products, ctx.runs), lessons: lessonsNow(), house: HOUSE_LINE });
+      res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', 'x-accel-buffering': 'no' });
+      const send = (o) => res.write('data: ' + JSON.stringify(o) + '\n\n');
+      send({ conversation_id: c.id });
+      const gate = sentenceGate();
+      const r = await think({ messages, onText: (d) => { const t = gate.push(d); if (t) send({ t }); } });
+      const rest = gate.end(); if (rest) send({ t: rest });
+      if (!r.ok || !gate.text.trim()) { send({ error: 'Cambrian did not answer (' + String(r.why ?? 'no text').slice(0, 120) + ').' }); res.end(); return undefined; }
+      c.messages.push({ role: 'cambrian', text: gate.text.trim(), at: new Date().toISOString() });
+      c.usd = Number((c.usd + (r.usd ?? 0)).toFixed(6)); saveConv(c);
+      send({ done: true, usd: r.usd ?? 0, total_usd: c.usd, model: r.model ?? model() }); res.end();
+      return undefined;
+    },
+    '/api/talk/draft': async (body, req) => {
+      const who = speaker(body); if (!who.ok) return REFUSED_SPEAKER;
+      const img = readAttachments(body.attachments);
+      if (!img.ok) return [400, { error: 'attachment refused', why: img.why }];
+      if (img.files.length && !who.member) return [403, { error: 'members only', why: 'Only an enrolled member can attach images.' }];
+      const lim = talkTurns(who.member ?? req.socket?.remoteAddress ?? 'guest');
+      if (!lim.ok) return [429, { error: 'slow down', why: 'Too many messages. Try again in ' + lim.retry_s + ' s.' }];
+      const f = convFor(body, who.member); if (f.why) return [409, { error: 'conversation', why: f.why }];
+      const c = f.c; const at = new Date().toISOString();
+      const text = cleanText(body.text);
+      if (text.length > MAX_TURN) return [400, { error: 'too long', why: 'Keep one message under ' + MAX_TURN + ' characters.' }];
+      if (text) c.messages.push({ role: 'member', text, at });
+      const said = c.messages.filter((m) => m.role === 'member' && !isReady(m.text)).map((m) => m.text);
+      if (said.join(' ').length < 8) return [400, { error: 'nothing to draft', why: 'Tell me the idea first.' }];
+      const capped = capsWhy(); if (capped) return capped;
+      if (!model()) return [503, { error: 'no model', why: 'No model is configured for briefs.' }];
+      const ctx = recordNow(); const add = (usd) => { c.usd = Number((c.usd + (usd ?? 0)).toFixed(6)); };
+      // what the conversation is about: a new product, a revision of one on record (then it starts from that product's last build), or neither
+      const intent = await classifyIntent(said.join('\n').slice(-4000), { chat, products: ctx.products, runs: ctx.runs });
+      add(intent.usd);
+      if (!intent.ok) return [502, { error: 'no answer', why: intent.why }];
+      if (intent.intent === 'question' || intent.intent === 'ask') {
+        const reply = intent.answer ?? intent.ask;
+        c.messages.push({ role: 'cambrian', text: reply, at }); saveConv(c);
+        return [200, { conversation_id: c.id, reply, usd: intent.usd }];
+      }
+      if (intent.intent === 'revision' && !who.member) {
+        return [403, { error: 'members only', why: 'Only an enrolled member can revise a product, with a passkey.' }];
+      }
+      if (img.files.length) {
+        mkdirSync(talkDir, { recursive: true });
+        c.attachments = img.files.map((x) => { const name = c.id + '.attach-' + x.n + (x.type === 'png' ? '.png' : '.jpg');
+          writeFileSync(join(talkDir, name), x.buf, { mode: 0o600 }); return { file: name, type: x.type, bytes: x.bytes, sha256: x.sha256 }; });
+      }
+      const revision = intent.intent === 'revision' ? { kind: intent.kind, product: intent.product, parent: intent.parent, by: who.member,
+        attachments: (c.attachments ?? []).map((x) => ({ type: x.type, bytes: x.bytes, sha256: x.sha256 })) } : null;
+      // the conversation as it stands now, by hash: it goes into the ticket, so the council's signatures cover it
+      const conversation = { sha256: conversationHash(c.messages), turns: c.messages.length };
+      const messagesAt = c.messages.length;
+      let report = null;
+      try { report = await near.fetchReport({ model: model(), signingAlgo: 'ecdsa', nonce: randomBytes(32).toString('hex'), base: cfg.nearai.base }); } catch { report = null; }
+      const tickets = listTickets(cfg);
+      const r = await draftBrief(transcript(c.messages), { chat, lessons: lessonsNow(), lintBrief, lessonsBlock, products: ctx.products, revision, house: HOUSE_LINE, forceProduct: intent.intent === 'new' ? intent.product?.id ?? null : null,
+        conversation, maxIdea: TRANSCRIPT_MAX + 200, existing: tickets.map((t) => ({ id: t.ticket.id, title: t.ticket.title, task: t.ticket.task })),
+        idSuffix: randomBytes(3).toString('hex'), capUsd: Math.min(cfg.dailyCapUsd, BUILD_CAP_USD) });
+      add(r.usd);
+      if (!r.ok) {
+        // a draft the lessons refuse is shown with the rules it broke, and nothing can go to the council until a draft passes
+        c.blocked = { why: r.why, lint: r.lint ?? null, at };
+        c.messages.push({ role: 'cambrian', text: r.why, at }); saveConv(c);
+        return [200, { conversation_id: c.id, blocked: true, why: r.why, lint: r.lint ?? null, usd: (intent.usd ?? 0) + (r.usd ?? 0) }];
+      }
+      const sig = await attest(r.call, r.call?.model === model() ? report : null);
+      const meta = { attestation: sig.attestation, attestation_check: sig.check, ...(sig.note ? { attestation_note: sig.note } : {}) };
+      const prev = c.drafts.at(-1) ?? null; const v = c.drafts.length + 1;
+      const changes = briefChanges(prev?.brief ?? null, r.brief);
+      const reply = v === 1 ? replyLine({ intent: intent.intent, kind: intent.kind, productName: intent.product?.name ?? intent.product?.id, title: r.brief.title })
+        : 'Draft ' + v + '. ' + changes.join(' ');
+      c.drafts.push({ v, at, brief: r.brief, lint: r.lint, intent: intent.intent, call: r.call, meta, report: sig.report, model: r.model ?? model(),
+        attempts: r.attempts, messages_at: messagesAt });
+      delete c.blocked;
+      c.messages.push({ role: 'cambrian', text: reply, at }); saveConv(c);
+      return [200, { conversation_id: c.id, version: v, reply, brief: r.brief, ticket_sha256: ticketHash(r.brief), lint: r.lint, changes,
+        usd: (intent.usd ?? 0) + (r.usd ?? 0), total_usd: c.usd, model: r.model ?? model(), attestation: attestationSummary(meta) }];
+    },
+    '/api/talk/send/options': async (body) => {
+      const c = loadConv(body.conversation_id); const d = c?.drafts.at(-1);
+      if (!d) return [404, { error: 'no draft', why: 'There is no draft to send.' }];
+      const cl = council(cfg); const m = cl.members.find((x) => x.id === body.member);
+      if (!m?.credentials.length) return [403, { error: 'not an enrolled council member' }];
+      const sha = d.brief.conversation.sha256;
+      return [200, { idea_sha256: sha, challenge: ideaChallenge(sha), rpId: cl.rp.id,
+        allowCredentials: m.credentials.map((k) => ({ type: 'public-key', id: k.id })), userVerification: 'preferred', timeout: 120000 }];
+    },
+    '/api/talk/send': async (body) => {
+      const c = loadConv(body.conversation_id);
+      if (!c) return [404, { error: 'no such conversation' }];
+      if (c.sent) return [409, { error: 'already sent', why: 'This conversation already went to the council.' }];
+      if (c.blocked) return [422, { error: 'blocked', why: 'The last draft broke a rule (' + c.blocked.why + '). Change it before it goes to the council.' }];
+      const d = c.drafts.at(-1); if (!d) return [404, { error: 'no draft', why: 'There is no draft to send.' }];
+      const sha = d.brief.conversation.sha256; let proposer = null;
+      if (cfg.exposed || c.member || body.signature) {
+        // the member's passkey signs the hash of the conversation: that signature sends the brief, and it is not an approval
+        const approval = { member: String(body.member ?? ''), credential_id: body.credential_id, idea_sha256: sha,
+          authenticator_data: body.authenticator_data, client_data_json: body.client_data_json, signature: body.signature, at: new Date().toISOString() };
+        if (c.member && approval.member !== c.member) return [403, { error: 'signature refused', why: 'This conversation belongs to another member.' }];
+        const v = verifyMemberSignature({ purpose: 'idea', subjectHash: sha, approval, council: council(cfg) });
+        if (!v.ok) return [403, { error: 'signature refused', why: v.why }];
+        if (usedIdeaSignatures.has(approval.signature)) return [403, { error: 'signature refused', why: 'this signature was already used' }];
+        usedIdeaSignatures.add(approval.signature); proposer = { member: approval.member, approval };
+      }
+      const at = new Date().toISOString(); const b = d.brief;
+      const shaped = c.messages.slice(0, d.messages_at).map((m) => ({ role: m.role, text: m.text }));
+      mkdirSync(cfg.files.tickets, { recursive: true });
+      const kept = (b.revision?.attachments?.length ? c.attachments ?? [] : []).map((x, i) => { const name = b.id + '.attach-' + (i + 1) + (x.type === 'png' ? '.png' : '.jpg');
+        writeFileSync(join(cfg.files.tickets, name), readFileSync(join(talkDir, x.file)), { mode: 0o600 }); return { ...x, file: name }; });
+      const entry = { ticket: b, created: at, idea: String(shaped.find((m) => m.role === 'member')?.text ?? '').slice(0, MAX_IDEA), intent: d.intent,
+        conversation: { sha256: sha, turns: shaped.length, messages: shaped, draft: d.v }, lint: d.lint, ...(kept.length ? { attachments: kept } : {}),
+        brief: { usd: c.usd, model: d.model, attempts: d.attempts, ...d.meta }, proposed_by: proposer, approvals: [], run_started: null };
+      writeTicketEntry(cfg, entry);
+      const beside = (name) => join(cfg.files.tickets, b.id + '.' + name + '.json');
+      if (typeof d.call?.response_body === 'string') writeFileSync(beside('brief-response'), d.call.response_body);
+      if (typeof d.call?.request_body === 'string') writeFileSync(beside('brief-request'), d.call.request_body);
+      if (d.report) writeJson(beside('brief-report'), d.report);
+      for (const x of d.lint.applied) { try { recordFired(cfg.files.lessons, x.lesson, { brief: b.id, at, what: x.what }); } catch { /* not in the file */ } }
+      const talk = readJson(cfg.files.talk, { v: 1, conversations: [] });
+      talk.conversations = [{ id: c.id, at, usd: c.usd, model: d.model, proposed_by: proposer?.member ?? null, attestation: attestationSummary(d.meta),
+        messages: [...shaped, { role: 'cambrian', text: 'Draft ' + d.v + ', sent to the council.', brief: b, lint: d.lint }] }, ...talk.conversations].slice(0, 50);
+      writeJson(cfg.files.talk, talk);
+      c.sent = b.id; saveConv(c); broadcast({ type: 'ticket', id: b.id });
+      return [200, { ok: true, ticket_id: b.id, ticket_sha256: ticketHash(b), conversation_sha256: sha, proposed_by: proposer?.member ?? null }];
+    },
+
     '/api/ideas': async (body, req) => {
       let proposer = null;
       const img = readAttachments(body.attachments);
@@ -222,13 +470,13 @@ export async function makeLive(cfg, { near = nearai } = {}) {
         report = await near.fetchReport({ model: model(), signingAlgo: 'ecdsa', nonce: randomBytes(32).toString('hex'),
           base: cfg.nearai.base });
       } catch { report = null; }
-      const r = await draftBrief(body.idea, { chat, lessons, lintBrief, lessonsBlock, products, revision, house: HOUSE_LINE,
+      const r = await draftBrief(body.idea, { chat, lessons, lintBrief, lessonsBlock, products, revision, house: HOUSE_LINE, forceProduct: intent.intent === 'new' ? intent.product?.id ?? null : null,
         existing: tickets.map((t) => ({ id: t.ticket.id, title: t.ticket.title, task: t.ticket.task })),
         idSuffix: randomBytes(3).toString('hex'), capUsd: Math.min(cfg.dailyCapUsd, BUILD_CAP_USD) });
       const at = new Date().toISOString();
       r.usd = (r.usd ?? 0) + (intent.usd ?? 0);   // the intent call and the draft are one message's cost
       const said = r.ok ? replyLine({ intent: intent.intent, kind: intent.kind, productName: intent.product?.name ?? intent.product?.id, title: r.brief.title }) : null;
-      const sig = r.ok ? await attest(r.call, report) : null;
+      const sig = r.ok ? await attest(r.call, r.call?.model === model() ? report : null) : null;
       const meta = sig ? { attestation: sig.attestation, attestation_check: sig.check,
         ...(sig.note ? { attestation_note: sig.note } : {}) } : {};
       const talk = readJson(cfg.files.talk, { v: 1, conversations: [] });
@@ -241,6 +489,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       // proposed_by keeps the verified passkey assertion over the idea, so it can be checked again; null for a local guest.
       // It is NOT an approval: it signs another challenge and is never counted toward the 2 of 3.
       // images: beside the ticket, named by position; never sent to a model, never served
+      mkdirSync(cfg.files.tickets, { recursive: true });   // the first brief on a new machine: the folder may not exist yet
       const kept = img.files.map((f) => { const name = `${r.brief.id}.attach-${f.n}.${f.type === 'png' ? 'png' : 'jpg'}`;
         writeFileSync(join(cfg.files.tickets, name), f.buf, { mode: 0o600 }); return { file: name, type: f.type, bytes: f.bytes, sha256: f.sha256 }; });
       const entry = { ticket: r.brief, created: at, idea: convo.messages[0].text, lint: r.lint, intent: intent.intent,
@@ -348,7 +597,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
   return {
     modeExtra: () => ({ spent_today_usd: spentToday(), model: cfg.nearai.model, brief_model: model(), vercel: !!cfg.vercel.tokenFile,
       build_cap_usd: BUILD_CAP_USD, total_cap_usd: TOTAL_CAP_USD, total_spent_usd: totalSpent(),
-      member_proposals: true }),   // this server takes a council member's passkey-signed idea when it is exposed
+      member_proposals: true, talk: true }),   // talk: this server holds a conversation before it drafts   // this server takes a council member's passkey-signed idea when it is exposed
     events(req, res) {
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });
       res.write(`data: ${JSON.stringify({ type: 'hello', mode: 'live' })}\n\n`); clients.add(res);
@@ -362,12 +611,17 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       if (origin && !allowed.includes(origin)) return sendJson(res, 403, { error: 'cross-origin request refused' });
       if (!String(req.headers['content-type'] ?? '').startsWith('application/json')) return sendJson(res, 415, { error: 'JSON only' });
       // a signing attempt is limited per visitor; a local guest's idea has its own limits in the handler
-      if (path !== '/api/ideas' || cfg.exposed) {
+      const talking = path === '/api/talk/turn' || path === '/api/talk/draft';   // these have their own limit, per member
+      if (!talking && (path !== '/api/ideas' || cfg.exposed)) {
         const lim = signing(req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? 'unknown');
         if (!lim.ok) return sendJson(res, 429, { error: 'slow down', why: `Too many attempts. Try again in ${lim.retry_s} s.` });
       }
-      let body; try { body = await readBody(req, path === '/api/ideas' ? MAX_IDEA_BODY : MAX_BODY); } catch (e) { return sendJson(res, 400, { error: String(e.message) }); }
-      try { const [status, out] = await h(body, req); return sendJson(res, status, out); } catch (e) { return sendJson(res, 500, { error: 'failed', why: String(e.message).slice(0, 200) }); }
+      let body; try { body = await readBody(req, path === '/api/ideas' || path === '/api/talk/draft' ? MAX_IDEA_BODY : MAX_BODY); } catch (e) { return sendJson(res, 400, { error: String(e.message) }); }
+      // a handler that streams writes its own answer and returns nothing
+      try { const answer = await h(body, req, res); if (!answer) return undefined; return sendJson(res, answer[0], answer[1]); } catch (e) {
+        if (res.headersSent) { res.end(); return undefined; }   // a stream that failed part way: the page sees it end
+        return sendJson(res, 500, { error: 'failed', why: String(e.message).slice(0, 200) });
+      }
     },
     _test: { handlers, spentToday, totalSpent, readRun: (id) => readRun(cfg, id), draftsFile },
   };
