@@ -112,9 +112,14 @@ function messagesFor(run, failureLog, failing) {
     'characters, a general rule for future tickets, no web addresses), "failure" (what went wrong here, with the numbers,',
     'at most 400 characters), "applies_to" (a list from "brief", "ticket", "chat"), "check" (null, or one of:',
     `${KNOWN_CHECKS.join(', ')}), "fix" (one of: ${FIXES.join(', ')}).`,
+    'What the checks mean: scope_named = a large ticket must name what is out of scope; checks_can_pass = no check that cannot pass;',
+    'not_a_retry = not the same ticket again; no_build_time_fetch = a build has no network, so nothing is fetched while building and',
+    'live data is fetched in the browser at runtime (use it when the build failed because it tried to reach another host).',
   ].join(' ');
   const facts = {
     ticket: { id: run?.ticket?.id, title: run?.ticket?.title, budget: run?.ticket?.budget },
+    // what was asked for, so the lesson can name the cause and not only the symptom
+    asked: String(run?.asked ?? '').slice(0, 600) || undefined,
     state: run?.state,
     attempts: Array.isArray(run?.attempts) ? run.attempts.length : 0,
     agent: a?.agent ?? null,

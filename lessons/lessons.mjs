@@ -11,8 +11,11 @@
 export const SCOPES = ['brief', 'ticket', 'chat'];
 export const FIXES = ['replace', 'drop', 'append', 'refuse', 'say'];
 export const KNOWN_CHECKS = [
-  'product_from_record', 'scope_named', 'builder_line', 'checks_can_pass', 'no_money_words', 'not_a_retry',
+  'product_from_record', 'scope_named', 'builder_line', 'checks_can_pass', 'no_money_words', 'not_a_retry', 'no_build_time_fetch',
 ];
+// What a brief is told once a lesson with the check `no_build_time_fetch` is accepted: a build has no network, a browser does.
+export const RUNTIME_LINE = 'Fetch no data while building; live data is fetched in the browser at runtime.';
+const BUILD_FETCH = /\b(fetch|download|request|load|pull|retriev|quer|call)\w*\b[^.\n]{0,90}\b(at|during|while|when|as)\b[^.\n]{0,40}\b(build time|built|building|build)\b/i;
 export const BUILDER_LINE = 'Write files early; do not audit dependency source.';
 export const LESSON_ID = /^[a-z0-9][a-z0-9-]{1,40}$/;
 export const CHECK_NAME = /^[a-z][a-z0-9_]{1,39}$/;
@@ -183,6 +186,22 @@ function lint(input, { lessons = [], products = null, existing = [] } = {}, scop
         if (same) {
           refuse(`the same ${norm(same.task) === t ? 'task' : 'title'} as ticket '${same.id}', which already exists — `
             + 'after RED, a smaller ticket, not a retry');
+        }
+        break;
+      }
+      // A build has no network beyond the package registry, so a brief that asks for data to be fetched while building cannot pass.
+      // With the fix "refuse" such a brief is refused. In every other brief the task is told where live data comes from.
+      case 'no_build_time_fetch': {
+        const where = [['title', title()], ['goal', String(b.goal ?? '')], ['task', task().replace(RUNTIME_LINE, '')]]
+          .map(([name, text]) => [name, text, BUILD_FETCH.exec(text)]).find((x) => x[2]);
+        if (where && l.fix === 'refuse') {
+          refuse(`the ${where[0]} asks for data to be fetched while building (${around(where[1], where[2])}) — a build has no network; `
+            + 'fetch it in the browser at runtime');
+          break;
+        }
+        if (!task().includes(RUNTIME_LINE)) {
+          b.task = task().replace(/\s+$/, '') + '\n\n' + RUNTIME_LINE;
+          applied.push({ lesson: l.id, what: `task says "${RUNTIME_LINE}"` });
         }
         break;
       }

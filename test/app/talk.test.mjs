@@ -332,3 +332,38 @@ test('Upread is built fresh here as Upread Mini: a message about Upread drafts t
     assert.deepEqual(d[1].lint.refused, []);
   } finally { s.done(); }
 });
+
+test('at "Send to council" the latest draft is checked again against every lesson accepted since: one that adds to it changes the brief, one that refuses it stops it', async () => {
+  const { acceptLesson } = await import('../../lessons/store.mjs');
+  const { RUNTIME_LINE, lintBrief, parseLessons } = await import('../../lessons/lessons.mjs');
+  const lesson = (fix) => ({ id: `no-build-time-fetch-${fix}`, rule: 'Products never fetch data at build time; live data is fetched in the browser at runtime.',
+    failure: 'RED: the build tried to reach another host and has no network.', applies_to: ['brief', 'ticket'], check: 'no_build_time_fetch', fix,
+    from_run: 'near-price-1', from_product: 'near-price' });
+  const s = await setup();
+  try {
+    const session = await s.open('jj');
+    const t1 = await s.turn({ session, text: IDEA });
+    const d = await s.post('/api/talk/draft', { session, conversation_id: t1.id, text: 'ready' });
+    assert.doesNotMatch(d[1].brief.task, /at runtime/, 'drafted before the lesson existed');
+    // a member accepts a new lesson while the draft waits
+    acceptLesson(s.cfg.files.lessons, lesson('append'), { member: 'michael', approval: { signature: 'x' }, at: '2026-11-14T06:00:00.000Z' });
+    const sent = await s.sendAs('jj', t1.id);
+    assert.equal(sent[0], 200, JSON.stringify(sent[1]));
+    assert.deepEqual(sent[1].relinted.map((x) => x.lesson), ['no-build-time-fetch-append'], 'the response says which lesson changed the brief');
+    assert.notEqual(sent[1].ticket_sha256, d[1].ticket_sha256, 'so the council signs the brief as it is now');
+    const entry = JSON.parse(readFileSync(join(s.data, 'tickets', `${sent[1].ticket_id}.json`), 'utf8'));
+    assert.ok(entry.ticket.task.endsWith(RUNTIME_LINE));
+    assert.ok(entry.lint.applied.some((x) => x.lesson === 'no-build-time-fetch-append'), 'the brief names the new lesson, and so will its receipt');
+    assert.equal(entry.ticket.conversation.sha256, d[1].brief.conversation.sha256, 'the conversation it came from is unchanged');
+    assert.equal(ticketHash(entry.ticket), sent[1].ticket_sha256);
+  } finally { s.done(); }
+  // the planned failure, as an idea: with the lesson accepted as "refuse", such a brief no longer gets to the council
+  const lessons = [{ ...lesson('refuse'), applies_to: ['brief', 'ticket'] }];
+  const asked = { ...base, goal: 'A page that shows the current NEAR price, fetched live when the page is built.' };
+  const r = lintBrief(asked, { lessons, products: [{ id: 'tides' }] });
+  assert.deepEqual(r.refused.map((x) => x.lesson), ['no-build-time-fetch-refuse']);
+  assert.match(r.refused[0].why, /the goal asks for data to be fetched while building/);
+  const fine = lintBrief({ ...base, goal: 'A page that shows the current NEAR price, fetched in the browser when the page opens.' }, { lessons, products: [{ id: 'tides' }] });
+  assert.deepEqual(fine.refused, []); assert.ok(fine.brief.task.endsWith(RUNTIME_LINE));
+  assert.equal(typeof parseLessons, 'function');
+});
