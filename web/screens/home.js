@@ -9,7 +9,7 @@ import { memberCard } from './approvals.js';
 
 const COMPOUNDS = [
   ['What we build.', 'Every failure becomes a rule the collective signs. Every later brief is checked against it.', null],
-  ['How it looks.', 'Every product ships in the collective’s own design language, not generic AI defaults.', null],
+  ['How it looks.', 'Every product is built with the collective’s own design rules and tokens.', null],
   ['How it sells.', 'Which channels worked, which campaigns paid back, what users kept. Each launch teaches the next one.', 'Next'],
 ];
 
@@ -54,8 +54,7 @@ export async function render(root) {
           h('span.big', { class: value ? '' : 'is-none' }, value || 'Not recorded'), h('span.sub', {}, note))))),
 
     section('capital', 'Idle capital, put to work.',
-      'Most capital in this ecosystem sits still, in treasuries, staked tokens and funds waiting to deploy. '
-      + 'NEAR AI lets you stake NEAR and receive AI compute credits in return. The NEAR stays staked and stays yours. '
+      'NEAR AI lets you stake NEAR and receive AI compute credits in return. The NEAR stays staked and stays yours. '
       + 'Cambrian puts the credits to work, and the collective decides what they build.',
       capitalCards(stake),
       h('p.sub', {}, h('a.link', { href: '#/stake' }, 'See the figures'))),
