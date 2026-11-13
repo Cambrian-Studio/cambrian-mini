@@ -10,6 +10,10 @@ Cambrian is a product studio run by one intelligence and owned by its members: a
 2. **`npm run judge`.** Clone, `npm ci`, `npm run judge`. You see 16 numbered checks run on your machine with no keys, ending `judge: 16 checks — 12 ok, 4 skipped, 0 failed`. Each skip prints its reason. Check 16 reads NEAR mainnet from a public archival node; without a connection it skips and the line ends `11 ok, 5 skipped`.
 3. **Solo mode.** One live build with your own NEAR AI key, as a council of one. This is not built yet. Until it is, `npm run demo` sends one brief through the real build path with a stand-in agent and a throwaway test council, and you see `state     green-no-preview`.
 
+## Treasury and council
+
+Cambrian separates two decisions. Members' capital sits in a Sputnik DAO treasury (cambrian.sputnik-dao.near, managed through Trezu), controlled by those who contribute NEAR. What gets built is decided by the council, which signs briefs with passkeys, so creatives need no wallet. We set out to fund NEAR AI compute directly from the DAO. NEAR AI confirmed that a DAO cannot yet bind as a funding wallet: the ownership signature it requires is something a contract account cannot produce, and a fix needs changes in Trezu, Sputnik DAO and NEAR AI. Until then, the collective's account cambriancollective.near stakes into NEAR AI. Next: the treasury stakes directly once DAO binding exists, and council approvals move on chain as DAO proposals.
+
 ## What is live today, and what is next
 
 Live today:
