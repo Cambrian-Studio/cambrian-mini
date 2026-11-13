@@ -62,7 +62,7 @@ async function setup({ exposed = true } = {}) {
   cpSync(join(root, 'data/runs'), join(data, 'runs'), { recursive: true });
   cpSync(join(root, 'lessons/lessons.json'), join(dir, 'lessons.json'));
   const base = appConfig();
-  const cfg = { ...base, mode: 'live', data, state, exposed, rp: { id: null, origin: null }, lineOverrides: { offline: true },
+  const cfg = { ...base, dailyCapUsd: 5, mode: 'live', data, state, exposed, rp: { id: null, origin: null }, lineOverrides: { offline: true },
     nearai: { ...base.nearai, briefModel: null },
     files: { council: join(data, 'council.json'), stake: join(data, 'stake.json'), products: join(data, 'products.json'), lessons: join(dir, 'lessons.json'),
       talk: join(data, 'talk.json'), tickets: join(data, 'tickets'), runs: join(data, 'runs'), invites: join(state, 'invites.json') } };

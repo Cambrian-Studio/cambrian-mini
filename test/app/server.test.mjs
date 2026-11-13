@@ -79,3 +79,19 @@ test('with a key file present the server boots in LIVE mode (and still listens o
     assert.equal(cross.status, 403, 'a page on another site cannot drive the LIVE routes');
   } finally { child.kill(); rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('the daily cap can be raised for one named UTC day only; the next day it is the configured cap again', async () => {
+  const { dayCap } = await import('../../app/config.mjs');
+  const { mkdtempSync, writeFileSync: w, rmSync: rm } = await import('node:fs');
+  const dir = mkdtempSync(join((await import('node:os')).tmpdir(), 'cambrian-mini-cap-test-'));
+  try {
+    const f = join(dir, 'daily-cap.json');
+    assert.equal(dayCap(f, 5, '2026-11-13'), 5, 'no file: the configured cap');
+    w(f, JSON.stringify({ day: '2026-11-13', usd: 10 }));
+    assert.equal(dayCap(f, 5, '2026-11-13'), 10);
+    assert.equal(dayCap(f, 5, '2026-11-14'), 5, 'it ends with the day');
+    w(f, JSON.stringify({ day: '2026-11-13', usd: 1 }));
+    assert.equal(dayCap(f, 5, '2026-11-13'), 5, 'the file never lowers the cap');
+    w(f, 'not json'); assert.equal(dayCap(f, 5, '2026-11-13'), 5);
+  } finally { rm(dir, { recursive: true, force: true }); }
+});

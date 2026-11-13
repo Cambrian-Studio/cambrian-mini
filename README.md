@@ -46,10 +46,10 @@ npm ci
 **1. `npm test`** — unit tests and attack tests. Expect the last line:
 
 ```
-264 passed, 0 failed
+266 passed, 0 failed
 ```
 
-On macOS the last line is `263 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only. On Linux install bubblewrap first (`sudo apt-get install bubblewrap`); without any sandbox the wall tests print their reason and skip, and the line itself refuses to execute anything.
+On macOS the last line is `265 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only. On Linux install bubblewrap first (`sudo apt-get install bubblewrap`); without any sandbox the wall tests print their reason and skip, and the line itself refuses to execute anything.
 
 **2. `npm run judge`** — re-derives the claims on your machine, offline. Expect 16 numbered lines, each with a detail after a dash; these eight and the summary, shortened here to their titles:
 
@@ -133,6 +133,7 @@ Every claim, its `file:line`, its test and its status are in [CLAIMS.md](CLAIMS.
 - **The repository is private until submission.** Until it is public the clone command above fails.
 - **The enrolment trusts the browser for the public key.** A passkey's public key is taken from the browser at enrolment, behind a one-time invite; the attestation statement of the authenticator is not checked.
 - **Intent, revisions, images, taste notes and the house kit are tested, not yet used.** No enrolled member has sent a message, so every test of them uses a stand-in model and a test council. The intent step adds one model call to every message. Attached images are kept but there is no screen that shows them, because the app has no sign-in to show them behind; the builder does not see them either. The house kit is placed in the workspace and the builder is told to follow it; no check enforces that a build did. A revision can only be built when the build it revises was made by this repository's build path.
+- **One failure is planned.** The first idea the founding council sends through this repository's build path is chosen to fail: "A page that shows the current NEAR price, fetched live when the page is built." A build has no network beyond the npm registry, so the fetch cannot work. We planned it to show the learning loop on the record: a failed build, the rule Cambrian drafts from it, a member's signature on that rule, and the next briefs checked against it. The rule we expect is that products never fetch data at build time and fetch live data in the browser at runtime. If the build does not fail, or the rule comes out differently, the record will say what happened.
 
 ## Repository map
 
