@@ -278,8 +278,31 @@ test('an overloaded brief model: the same model is asked once more, then the nex
     const t1 = await s.turn({ session, text: IDEA });
     assert.match(t1.text, /^That is two products\./, 'the conversation went on');
     assert.deepEqual(asked, [BRIEF_MODEL, BRIEF_MODEL, 'Qwen/Qwen3.6-35B-A3B-FP8']);
+    const before = asked.length;
     const d = await s.post('/api/talk/draft', { session, conversation_id: t1.id, text: 'ready' });
     assert.equal(d[0], 200, JSON.stringify(d[1]));
     assert.equal(d[1].brief.drafted.model, 'Qwen/Qwen3.6-35B-A3B-FP8', 'the brief names the model that answered, not the one that was overloaded');
+    assert.equal(asked.slice(before).includes(BRIEF_MODEL), false, 'a model that just failed is not asked again for a while');
   } finally { s.done(); }
+});
+
+test('a brief model that does not answer at all is given up on after the time limit, and the next model is asked', async () => {
+  const near = stubNear({ stream: false }); const inner = near.chat; let aborted = false;
+  near.chat = (a) => (a.model === BRIEF_MODEL ? new Promise(() => { a.signal.addEventListener('abort', () => { aborted = true; }); }) : inner(a));
+  const s = await setup({ near }); s.cfg.modelWaitMs = 30;
+  try {
+    const live = await makeLive({ ...s.cfg, modelWaitMs: 30 }, { near });
+    const req = { socket: { remoteAddress: '127.0.0.1' }, headers: {} };
+    const d = await live._test.handlers['/api/talk/draft']({ text: 'a page that lists three facts about tide pools for a child' }, req);
+    assert.equal(d[0], 403, 'exposed: a guest is still refused first');
+  } finally { s.done(); }
+  const local = await setup({ near, exposed: false });
+  try {
+    const live = await makeLive({ ...local.cfg, modelWaitMs: 30 }, { near });
+    const req = { socket: { remoteAddress: '127.0.0.1' }, headers: {} };
+    const d = await live._test.handlers['/api/talk/draft']({ text: 'a page that lists three facts about tide pools for a child' }, req);
+    assert.equal(d[0], 200, JSON.stringify(d[1])); assert.equal(d[1].version, 1);
+    assert.equal(d[1].brief.drafted.model, 'Qwen/Qwen3.6-35B-A3B-FP8');
+    assert.equal(aborted, true, 'the call that hung was aborted, not left running');
+  } finally { local.done(); }
 });

@@ -99,15 +99,29 @@ export async function makeLive(cfg, { near = nearai } = {}) {
   const spentToday = () => Number((sideSpend().usd + runSpendToday()).toFixed(6));
   // NEAR AI answers 429 or 503 when a model is overloaded. The same model is asked once more after a pause, then each fallback
   // in turn. Whichever model answered is the one recorded: a brief never names a model that did not write it.
-  const overloaded = (r) => r?.status === 429 || r?.status === 503;
+  // A model that does not answer within the time limit is given up on (the request is aborted) and treated the same way.
+  // A model that just failed this way is skipped for five minutes, so a conversation does not wait on it at every turn.
+  const overloaded = (r) => r?.status === 429 || r?.status === 503 || r?.timed_out === true;
   const pause = () => new Promise((done) => setTimeout(done, cfg.retryMs ?? 1500));
+  const MODEL_WAIT_MS = cfg.modelWaitMs ?? 60000; const sick = new Map();
+  const timed = async (call, m) => {
+    const ctl = new AbortController(); let timer;
+    const late = new Promise((done) => { timer = setTimeout(() => { ctl.abort(); done({ ok: false, status: 0, usd: null, timed_out: true,
+      error: `no answer in ${Math.round(MODEL_WAIT_MS / 1000)} s` }); }, MODEL_WAIT_MS); });
+    try { return await Promise.race([call(m, ctl.signal), late]); } finally { clearTimeout(timer); }
+  };
   const overModels = async (call) => {
-    const order = [model(), model(), ...(cfg.nearai.briefFallbacks ?? BRIEF_FALLBACKS)];
+    const all = [model(), ...(cfg.nearai.briefFallbacks ?? BRIEF_FALLBACKS)];
+    const well = all.filter((m) => !(sick.get(m) > Date.now()));
+    const order = well.length ? well : all;
     let r = null; let asked = null;
     for (const [i, m] of order.entries()) {
-      if (i) await pause();
-      asked = m; r = await call(m);
+      asked = m; r = await timed(call, m);
+      // a plain "overloaded" answer gets one more try on the same model after a pause; a model that hung does not
+      if (overloaded(r) && !r.timed_out) { await pause(); r = await timed(call, m); }
       if (!overloaded(r)) break;
+      sick.set(m, Date.now() + 5 * 60 * 1000);
+      if (i < order.length - 1) await pause();
     }
     return { r, asked };
   };
@@ -115,8 +129,9 @@ export async function makeLive(cfg, { near = nearai } = {}) {
     // briefs and lesson drafts are paid from the same day's cap as builds: once it is spent, no model call
     if (spentToday() >= cfg.dailyCapUsd) return { ok: false, usd: 0, why: 'the daily cap is spent' };
     if (totalSpent() >= TOTAL_CAP_USD) return { ok: false, usd: 0, why: 'the total cap is spent' };
-    const { r, asked } = await overModels(async (asked) => near.chat({ model: asked, messages, max_tokens, keyFile: cfg.nearai.keyFile,
-      base: cfg.nearai.base, pricing: await getPricing() }));
+    const pricing = await getPricing();
+    const { r, asked } = await overModels((asked, signal) => near.chat({ model: asked, messages, max_tokens, keyFile: cfg.nearai.keyFile,
+      base: cfg.nearai.base, pricing, signal }));
     addSideSpend(r.usd); return { ...r, requested_model: asked, why: r.error };
   };
 
@@ -229,8 +244,8 @@ export async function makeLive(cfg, { near = nearai } = {}) {
     if (spentToday() >= cfg.dailyCapUsd) return { ok: false, usd: 0, why: 'the daily cap is spent' };
     if (totalSpent() >= TOTAL_CAP_USD) return { ok: false, usd: 0, why: 'the total cap is spent' };
     const pricing = await getPricing();
-    const { r } = await overModels(async (asked) => {
-      const args = { model: asked, messages, max_tokens: THINK_MAX_TOKENS, keyFile: cfg.nearai.keyFile, base: cfg.nearai.base, pricing };
+    const { r } = await overModels(async (asked, signal) => {
+      const args = { model: asked, messages, max_tokens: THINK_MAX_TOKENS, keyFile: cfg.nearai.keyFile, base: cfg.nearai.base, pricing, signal };
       if (typeof near.chatStream === 'function') return near.chatStream({ ...args, onText });
       const one = await near.chat(args); if (one.ok && one.content) onText(one.content); return one;
     });
