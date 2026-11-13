@@ -218,6 +218,8 @@ export function creditSplit(doc) {
 
 // The capital cards: staked, credits received, spent on products. Only a figure the record holds is shown;
 // a missing one leaves its card out. None of them says the stake paid for a build.
+const DAY = { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' };
+const day = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', DAY);
 export function capitalFigures(doc) {
   const real = Boolean(doc) && doc.placeholder !== true;
   const s = doc?.stake || {};
@@ -229,6 +231,11 @@ export function capitalFigures(doc) {
     out.push({ label: 'Staked', value: `${num(s.amount_near) ? count(s.amount_near) : s.amount_near} NEAR`,
       href: safeUrl(s.tx_url), note: 'See the transaction' });
   }
+  const e = doc?.estimate || {};
+  // An estimate is shown as NEAR AI's, with its date, and only beside a recorded stake. It is not credits received.
+  if (out.length && num(e.usd_per_month) && e.as_of) {
+    out.push({ label: 'NEAR AI’s estimate', value: `~${usd(e.usd_per_month).replace(/\.00$/, '')}/month in credits`, note: day(e.as_of) });
+  }
   if (real && num(c.earned_from_stake_usd)) out.push({ label: 'Credits received', value: usd(c.earned_from_stake_usd) });
   if (num(spend.mini_line_usd) || num(spend.private_line_usd)) {
     out.push({ label: 'Spent on products', value: usd((Number(spend.mini_line_usd) || 0) + (Number(spend.private_line_usd) || 0)) });
@@ -237,7 +244,7 @@ export function capitalFigures(doc) {
 }
 export function capitalCards(doc) {
   return h('div.capital', {}, capitalFigures(doc).map((f) => card(f.href ? 'a.pad.capcard' : 'div.pad.capcard',
-    { tl: f.label, br: f.href ? f.note : null }, f.href ? { href: f.href, target: '_blank', rel: 'noopener noreferrer' } : {},
+    { tl: f.label, br: f.note || null }, f.href ? { href: f.href, target: '_blank', rel: 'noopener noreferrer' } : {},
     h('span.big', {}, f.value))));
 }
 

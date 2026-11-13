@@ -16,12 +16,14 @@ Live today:
 
 - The path from a signed brief to a checked build: passkey signatures verified before anything runs, a sealed workspace, every model call priced through NEAR AI and stopped at the signed budget, the brief's checks, and a record with a hash. It is covered by the tests and the judge, and was exercised in rehearsal builds with a test council.
 - The replay: three recorded builds of one product, Upread, made on Cambrian's private setup on 9 November. One failed, two passed, $5.36 in total. They are imported with their numbers unchanged and labelled as imported.
+- The stake: the collective's account, `cambriancollective.near`, staked 3,045 NEAR into NEAR AI on 13 November ([transaction](https://nearblocks.io/txns/9US5CcTaSYiX2DS7pGLWoS4sYpBZ4s9BvSEq1CgoJ6eo)). NEAR AI's estimate on that date: about $60 a month in credits. No credits received are recorded yet.
 
 Next, and not true yet:
 
+- The stake is held by the collective's account, not by its treasury. The Sputnik DAO treasury, `cambrian.sputnik-dao.near`, is set up, and NEAR AI confirmed that a DAO cannot be bound as a funding wallet yet; that needs changes in Trezu, Sputnik DAO and NEAR AI.
+
 - No council member has enrolled a passkey, so no build signed by the founding council is recorded here.
 - Nothing is recorded on NEAR. The contract that logs a build record's hash is written and tested, not deployed.
-- The stake is not recorded, so the home page shows no staked amount and no credits received.
 - Upread has no public link.
 - Solo mode, a collective larger than the founding council of 3, and the on-chain council are not built.
 
@@ -93,7 +95,7 @@ Add `--approvals 1` (`node line/run-cli.mjs --offline --ticket test/line/fixture
 | NEAR AI response signatures and TEE attestation | Two levels, and the receipt says which. **Model-signed:** the brief is written by an open model inside a GPU TEE, and its response is signed inside that TEE. **Gateway-signed:** build calls go to a model NEAR AI routes to an outside provider; NEAR AI's attested gateway signs `sha256(request):sha256(response)` for each call, which shows what was relayed, not where the model ran. Signatures, the hashes they bind and the Intel TDX quote chain are verified offline (`near/nearai.mjs`, findings in `near/ATTESTATION.md`). | built, tested on recorded real responses; exercised in rehearsal builds |
 | Receipt contract | Raw Rust, no SDK, 1.8 kB: one method, `record_receipt(32 bytes)`, that emits one event log. No state, no deposit (`contracts/receipts`). A receipt is "on NEAR" when a transaction signed by the recorder account logged its hash; `scripts/verify-receipt.mjs` checks that with read-only RPC calls. | built, tested by executing the wasm; **not deployed** |
 | Function-call access keys | The recorder signs with a key limited to `record_receipt` on the receipt contract and refuses a full-access key (`near/record.mjs`). | built, tested against a stub node; never sent a real transaction |
-| Staking | The Stake screen shows the stake, its account and transaction, and NEAR AI's published staking-for-inference formula as separate facts (`data/stake.json`). | placeholder until the stake transaction is recorded |
+| Staking | The Stake screen shows the stake, its account and transaction, and NEAR AI's published staking-for-inference formula as separate facts (`data/stake.json`). | recorded: 3,045 NEAR from the collective's account, with its transaction; credits received not recorded |
 | Named accounts | The contract account and the one recorder account will be named accounts, written to `data/chain.json` at deploy time. The recorder's signature is what gives a logged hash its meaning. | pending the deploy |
 | Sputnik DAO approval via Trezu | The 2-of-3 approval as an on-chain DAO vote (`approvals/dao.mjs`). | **not built**: a stub that says so |
 
@@ -105,7 +107,7 @@ Every claim, its `file:line`, its test and its status are in [CLAIMS.md](CLAIMS.
 
 - **Nothing is on chain yet.** The receipt contract is written, tested and built, not deployed. It is log-only: anyone can call it and log any hash, so a record counts only when its transaction was signed by the named recorder account. The wasm has been executed in tests, never on a NEAR node. Receipts show "hash computed, not yet on chain". No mainnet transaction has been signed by this project.
 - **On-chain approval is next, not now.** Approval today is 2 of 3 passkey signatures checked by this code. The Sputnik DAO vote is a stub.
-- **One stake, and it is not recorded here yet.** `data/stake.json` is a placeholder. When it is filled, it is one member's stake. The stake did not by itself pay for the builds; inference is paid in NEAR AI credits, and the Stake screen shows the stake and the spend as separate facts.
+- **One stake, made after the recorded builds.** `data/stake.json` holds one stake: the collective's account staked 3,045 NEAR into NEAR AI on 13 November. The three recorded builds ran on 9 November, so this stake did not pay for them. The $60 a month is NEAR AI's estimate, not credits received. The treasury (`cambrian.sputnik-dao.near`) holds no stake: NEAR AI confirmed a DAO cannot be bound as a funding wallet yet. The stake does not by itself pay for builds; inference is paid in NEAR AI credits, and the Stake screen shows the stake and the spend as separate facts.
 - **What is replay.** The hosted demo and `npm start` without a key show recorded runs. The three Upread runs were built on Cambrian's private line on 9 November and imported here by a converter that is not published, because it has to name the private record's fields to read them. `test/import/committed-runs.test.mjs` checks the result. They were approved there by one council member's passkey; that signature is not in this repository and is not verifiable from it. They used a different model (`anthropic/claude-opus-5-5`, as their records say), captured no signatures, and their dollars are the private line's own rate table times reported usage, not this repository's pricing. Their two GREEN runs say `green-preview` because the private line made previews; those previews sat behind a sign-in, so no address is shown.
 - **The collective is three people today.** "The collective signs" means, today, 2 of a founding council of 3. A larger collective deciding by quorum is a parameter away in code and not yet a fact.
 - **The council is not enrolled yet.** `data/council.json` names three members and holds no passkey until each enrols. Until a live build is recorded, the 2-of-3 rule is proven with software passkeys in tests, against the real verifier.

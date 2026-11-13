@@ -28,7 +28,8 @@ test('the public nav has four items, and Request access is in the header', () =>
 });
 
 test('capital cards: a figure the record does not hold leaves its card out', () => {
-  const placeholder = { ...json('data/stake.json'), inference_spend: { mini_line_usd: 0, private_line_usd: 5.363208 } };
+  const placeholder = { placeholder: true, stake: { amount_near: null, tx: null }, estimate: { usd_per_month: 60, as_of: '2026-11-13' },
+    inference_spend: { mini_line_usd: 0, private_line_usd: 5.363208 } };
   assert.deepEqual(capitalFigures(placeholder).map((f) => [f.label, f.value]), [['Spent on products', '$5.36']]);
   assert.deepEqual(capitalFigures({ placeholder: true }), []);
   assert.deepEqual(capitalFigures(null), []);
@@ -37,6 +38,11 @@ test('capital cards: a figure the record does not hold leaves its card out', () 
   assert.deepEqual(recorded.map((f) => f.label), ['Staked', 'Credits received', 'Spent on products']);
   assert.equal(recorded[0].value, '100 NEAR');
   assert.equal(recorded[0].href, 'https://example.org/tx/abc');
+  const committed = capitalFigures({ ...json('data/stake.json'), inference_spend: { mini_line_usd: 0, private_line_usd: 5.363208 } });
+  assert.deepEqual(committed.map((f) => [f.label, f.value, f.note]), [['Staked', '3,045 NEAR', 'See the transaction'],
+    ['NEAR AI’s estimate', '~$60/month in credits', '13 Nov 2026'], ['Spent on products', '$5.36', undefined]],
+    'the NEAR amount and its transaction first; a dollar estimate only with its date; no credits received until recorded');
+  assert.match(committed[0].href, /^https:\/\/nearblocks\.io\/txns\/[1-9A-HJ-NP-Za-km-z]{43,44}$/);
   assert.deepEqual(capitalFigures({ placeholder: false, stake: { amount_near: 100, tx: null }, credits: { earned_from_stake_usd: '3' } }), [],
     'a stake without its transaction, or a credit figure that is not a number, is not shown');
 });

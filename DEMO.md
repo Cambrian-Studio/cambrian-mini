@@ -2,7 +2,7 @@
 
 Each shot of the demo video, what it shows, and how to see the same thing yourself. Shots marked **LIVE** need the build machine (a NEAR AI key and enrolled council passkeys); everything else works from a clone with `npm start` or on the hosted replay.
 
-Status: the video is not recorded yet. Shots 2–6 use the first live build, which does not exist yet; shot 9 shows a stake transaction that is not recorded yet (the screen says so until it is). Until then, the commands in the last column show the same behaviour offline.
+Status: the video is not recorded yet. Shots 2–6 use the first live build, which does not exist yet; shot 9 shows the stake transaction, recorded on 13 November. Until then, the commands in the last column show the same behaviour offline.
 
 | # | Shot | Screen | What it proves | See it yourself |
 |---|---|---|---|---|

@@ -58,7 +58,7 @@ Status words:
 | 33 | The recorder signs with a function-call-only key limited to `record_receipt`; a full-access key is refused. | `near/record.mjs:165` | `test/near/record.test.mjs` › "cli: refuses a FullAccess key and a key for other methods or contracts; nothing is sent" | tested (against a stub node) |
 | 34 | Mainnet is refused without an explicit human flag. | `near/record.mjs:23` | `test/near/record.test.mjs` › "cli: refuses mainnet without the human flag, with no request made; with the flag it goes on" | tested |
 | 35 | The contract is deployed and receipts are recorded on NEAR. | `scripts/verify-receipt.mjs:74` | — | pending (not deployed; receipts say "hash computed, not yet on chain") |
-| 36 | Members' staked NEAR is shown with its transaction. | `data/stake.json:3` | — | pending (placeholder until the stake transaction is recorded) |
+| 36 | The collective's account staked NEAR into NEAR AI, and the stake is shown with its transaction. The Sputnik DAO treasury (`cambrian.sputnik-dao.near`) is set up but holds no stake: NEAR AI confirmed a DAO cannot be bound as a funding wallet yet (needs changes in Trezu, Sputnik DAO and NEAR AI). | `data/stake.json:9` | `test/web/mini.test.mjs` › "capital cards: a figure the record does not hold leaves its card out" | recorded (3,045 NEAR on mainnet; anyone can read the transaction on a NEAR node. The $60 a month is NEAR AI's estimate; credits received are not recorded) |
 
 ## Receipts and lessons
 
