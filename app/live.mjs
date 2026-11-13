@@ -9,7 +9,7 @@
 // A guest can read everything and propose; nothing is built without the council's signatures, and the line
 // checks those signatures again itself (line/run.mjs) — this file is the door, not the lock.
 import { randomBytes } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { sendJson } from './http.mjs';
 import { council, listTickets, readTicketEntry, writeTicketEntry, writeJson, listRuns, readRun, attestationSummary } from './store.mjs';
@@ -241,6 +241,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       // proposed_by keeps the verified passkey assertion over the idea, so it can be checked again; null for a local guest.
       // It is NOT an approval: it signs another challenge and is never counted toward the 2 of 3.
       // images: beside the ticket, named by position; never sent to a model, never served
+      mkdirSync(cfg.files.tickets, { recursive: true });   // the first brief on a new machine: the folder may not exist yet
       const kept = img.files.map((f) => { const name = `${r.brief.id}.attach-${f.n}.${f.type === 'png' ? 'png' : 'jpg'}`;
         writeFileSync(join(cfg.files.tickets, name), f.buf, { mode: 0o600 }); return { file: name, type: f.type, bytes: f.bytes, sha256: f.sha256 }; });
       const entry = { ticket: r.brief, created: at, idea: convo.messages[0].text, lint: r.lint, intent: intent.intent,

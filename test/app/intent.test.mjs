@@ -55,7 +55,7 @@ function stubNear() {
 }
 async function setup({ exposed = true } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'cambrian-mini-intent-test-'));
-  const data = join(dir, 'data'), state = join(dir, 'state'); mkdirSync(join(data, 'tickets'), { recursive: true }); mkdirSync(state, { recursive: true });
+  const data = join(dir, 'data'), state = join(dir, 'state'); mkdirSync(data, { recursive: true }); mkdirSync(state, { recursive: true });
   const tc = makeTestCouncil(); const near = stubNear();
   writeFileSync(join(data, 'council.json'), JSON.stringify(tc.council));
   cpSync(join(root, 'data/products.json'), join(data, 'products.json'));
@@ -69,7 +69,7 @@ async function setup({ exposed = true } = {}) {
   const live = await makeLive(cfg, { near });
   const post = (path, body) => live._test.handlers[path](body, { socket: { remoteAddress: '127.0.0.1' }, headers: {} });
   const say = (member, idea, extra = {}, shas = []) => post('/api/ideas', { idea, ...tc.signIdea(member, idea, undefined, shas), ...extra });
-  return { dir, cfg, tc, near, post, say, data, tickets: () => readdirSync(join(data, 'tickets')) };
+  return { dir, cfg, tc, near, post, say, data, tickets: () => (existsSync(join(data, 'tickets')) ? readdirSync(join(data, 'tickets')) : []) };
 }
 const done = (s) => rmSync(s.dir, { recursive: true, force: true });
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('not a real image, only its first bytes')]);
