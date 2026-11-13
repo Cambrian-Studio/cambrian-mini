@@ -23,14 +23,20 @@ const root = appConfig().root;
 const ticket = () => parseTicket(readFileSync(join(root, 'test/line/fixtures/tickets/facts-page-1.json')));
 const sha = (x) => createHash('sha256').update(x).digest('hex');
 const BRIEF_MODEL = 'deepseek-ai/DeepSeek-V4.1-Flash-1017';
+const INTENT_SYSTEM = (await import('../../tickets/intent.mjs')).INTENT_SYSTEM;
 // A stand-in for near/nearai.mjs: one fixed completion with an id, the exact bodies and their hashes; a report; a signature.
-function stubNear({ answer, attestation = 'ok' } = {}) {
-  const seen = { chat: 0, order: [], last: null };
+// The intent question (what is this message) is answered apart from the drafting calls, so the counts below are of drafts.
+function stubNear({ answer, attestation = 'ok', intent = { intent: 'new' } } = {}) {
+  const seen = { chat: 0, intent: 0, order: [], last: null };
   return { seen, detachReport,
     fetchPricing: async () => ({ models: {} }),
     fetchReport: async ({ model, signingAlgo, nonce }) => { seen.order.push('report'); seen.report = { model, signingAlgo, nonce };
       return { stub: 'report', nonce }; },
     chat: async ({ model, messages, max_tokens }) => {
+      if (String(messages[0]?.content).startsWith(INTENT_SYSTEM)) {
+        seen.intent++; seen.intentContext = messages[0].content;
+        return { ok: true, status: 200, model, usd: 0, content: JSON.stringify(typeof intent === 'function' ? intent(messages.at(-1).content) : intent) };
+      }
       seen.chat++; seen.order.push('chat'); seen.last = { model, max_tokens };
       const content = answer ?? JSON.stringify(good);
       const request_body = JSON.stringify({ model, messages, max_tokens });
@@ -55,7 +61,7 @@ function stubNear({ answer, attestation = 'ok' } = {}) {
 }
 const IDEA = 'a page that lists three facts about tide pools';
 async function setup({ exposed = false, near = stubNear(), over = {} } = {}) {
-  const dir = mkdtempSync(join(tmpdir(), 'baby-cambrian-live-test-'));
+  const dir = mkdtempSync(join(tmpdir(), 'cambrian-mini-live-test-'));
   const data = join(dir, 'data'), state = join(dir, 'state'); mkdirSync(join(data, 'tickets'), { recursive: true }); mkdirSync(state, { recursive: true });
   const tc = makeTestCouncil();
   writeFileSync(join(data, 'council.json'), JSON.stringify(tc.council));
@@ -256,7 +262,7 @@ test('the total cap: every dollar ever spent counts; at the cap an idea is refus
   const s = await setup({ over: { totalCapUsd: 1 } });
   try {
     // what counts: runs of this line (not imported ones), plus every brief and lesson draft ever
-    for (const [id, origin, usd] of [['mine-one', 'baby', 0.25], ['theirs-one', 'private-line', 9]]) {
+    for (const [id, origin, usd] of [['mine-one', 'mini', 0.25], ['theirs-one', 'private-line', 9]]) {
       mkdirSync(join(s.cfg.files.runs, id), { recursive: true });
       writeFileSync(join(s.cfg.files.runs, id, 'run.json'), JSON.stringify({ ticket: { id }, origin, started: '2026-11-01T00:00:00.000Z',
         attempts: [{ bridge: { computed_usd: usd } }] }));
@@ -285,7 +291,7 @@ test('the judge\'s check of a drafted ticket: a real recorded model signature ho
   async () => {
   // real bytes recorded from NEAR AI Cloud (test/near/fixtures): the request, the response, the model TEE's report and signature
   const FIX = join(root, 'test/near/fixtures'); const source = JSON.parse(readFileSync(join(FIX, 'source.json'), 'utf8'));
-  const dir = mkdtempSync(join(tmpdir(), 'baby-cambrian-provenance-test-'));
+  const dir = mkdtempSync(join(tmpdir(), 'cambrian-mini-provenance-test-'));
   try {
     const keyFile = join(dir, 'not-a-key'); writeFileSync(keyFile, 'offline-replay-no-key', { mode: 0o600 });
     const serve = async (url) => { const u = new URL(url);

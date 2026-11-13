@@ -95,14 +95,14 @@ const STATES = {
   'running': ['Running', 'now'], 'green-preview': ['Green', 'fill'], 'green-no-preview': ['Green, no preview', 'fill'],
   'red': ['Red', 'open'], 'refused': ['Refused', 'open'], 'blocked': ['Blocked', 'open'], 'error': ['Error', 'open'],
   'awaiting-approval': ['Waiting for the council', 'open'], 'approved': ['Signed', 'fill'],
-  'released': ['Released to the line', 'dot'],
+  'released': ['Released to the build', 'dot'],
 };
 export function stateChip(state) {
   const [label, mark] = STATES[state] || [String(state || 'unknown'), 'open'];
   return h('span.state', {}, mark === 'dot' ? dot() : h('i.ring', { class: 'is-' + mark, 'aria-hidden': 'true' }), label);
 }
 
-export const IMPORTED = "earlier run on Cambrian's private line";
+export const IMPORTED = "earlier build on Cambrian's private setup";
 export const isImported = (x) => x?.origin === 'private-line';
 export const originChip = (x) => (isImported(x) ? h('span.origin', {}, IMPORTED) : null);
 
@@ -189,7 +189,7 @@ export function briefCard(brief, lint, extra, att, meta = {}) {
   h('div.kvs', {},
     kv('Budget', [usd(budget.usd), budget.calls ? `${budget.calls} calls` : null,
       budget.minutes ? `${budget.minutes} min` : null].filter(Boolean).join(' · ')),
-    kv('Compute', 'NEAR AI, built behind walls'),
+    kv('Compute', 'NEAR AI, built in a sealed workspace'),
     d ? kv('Brief model', modelSigned(att) ? 'model-signed, ' : 'not verified here, ', raw(d.model)) : null),
   lintChips(lint), provenance(d, att), extra || null);
 }
@@ -211,30 +211,54 @@ export function creditSplit(doc) {
   const c = doc?.credits || {};
   const spend = doc?.inference_spend || {};
   const money = (n) => (typeof n === 'number' && Number.isFinite(n) ? usd(n) : 'not recorded yet');
-  const known = typeof spend.baby_line_usd === 'number' || typeof spend.private_line_usd === 'number';
-  const spent = known ? (Number(spend.baby_line_usd) || 0) + (Number(spend.private_line_usd) || 0) : null;
+  const known = typeof spend.mini_line_usd === 'number' || typeof spend.private_line_usd === 'number';
+  const spent = known ? (Number(spend.mini_line_usd) || 0) + (Number(spend.private_line_usd) || 0) : null;
   return [['earned from the stake', money(c.earned_from_stake_usd)], ['bought', money(c.bought_usd)], ['spent', money(spent)]];
 }
 
-// The four capital cards: idle, staked, credits, compute. Each is its own fact; a figure that is
-// not in the record reads "Not yet recorded" and none of them says the stake paid for a build.
-export function capitalCards(doc) {
-  const empty = doc?.placeholder === true;
+// The capital cards: staked, credits received, spent on products. Only a figure the record holds is shown;
+// a missing one leaves its card out. None of them says the stake paid for a build.
+const DAY = { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' };
+const day = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', DAY);
+export function capitalFigures(doc) {
+  const real = Boolean(doc) && doc.placeholder !== true;
   const s = doc?.stake || {};
+  const c = doc?.credits || {};
   const spend = doc?.inference_spend || {};
-  const amount = empty || !s.amount_near ? null
-    : `${typeof s.amount_near === 'number' ? count(s.amount_near) : s.amount_near} NEAR`;
-  const known = typeof spend.baby_line_usd === 'number' || typeof spend.private_line_usd === 'number';
-  const total = (Number(spend.baby_line_usd) || 0) + (Number(spend.private_line_usd) || 0);
-  const one = (caps, value, note) => card('div.pad.capcard', caps, {},
-    h('span.big', { class: value ? '' : 'is-none' }, value || 'Not yet recorded'), h('span.sub', {}, note));
-  return h('div.capital', {},
-    one({ tl: 'Idle', tr: '01' }, null, 'NEAR before it is staked'),
-    one({ tl: 'Staked', tr: '02', bl: !empty && s.tx ? `tx ${short(s.tx, 8)}…` : null }, amount, 'the stake transaction'),
-    one({ tl: 'Credits', tr: '03' }, null, 'NEAR AI publishes a formula, not a fixed rate'),
-    one({ tl: 'Compute', tr: '04' }, known ? usd(total) : null,
-      typeof spend.runs === 'number' ? `model calls, ${plural(spend.runs, 'run')} in this record` : 'model calls in this record'));
+  const num = (n) => typeof n === 'number' && Number.isFinite(n);
+  const out = [];
+  if (real && s.amount_near && s.tx) {
+    out.push({ label: 'Staked', value: `${num(s.amount_near) ? count(s.amount_near) : s.amount_near} NEAR`,
+      href: safeUrl(s.tx_url), note: 'See the transaction' });
+  }
+  const e = doc?.estimate || {};
+  // An estimate is shown as NEAR AI's, with its date, and only beside a recorded stake. It is not credits received.
+  if (out.length && num(e.usd_per_month) && e.as_of) {
+    out.push({ label: 'NEAR AI’s estimate', value: `~${usd(e.usd_per_month).replace(/\.00$/, '')}/month in credits`, note: day(e.as_of) });
+  }
+  if (real && num(c.earned_from_stake_usd)) out.push({ label: 'Credits received', value: usd(c.earned_from_stake_usd) });
+  if (num(spend.mini_line_usd) || num(spend.private_line_usd)) {
+    out.push({ label: 'Spent on products', value: usd((Number(spend.mini_line_usd) || 0) + (Number(spend.private_line_usd) || 0)) });
+  }
+  return out;
 }
+export function capitalCards(doc) {
+  return h('div.capital', {}, capitalFigures(doc).map((f) => card(f.href ? 'a.pad.capcard' : 'div.pad.capcard',
+    { tl: f.label, br: f.note || null }, f.href ? { href: f.href, target: '_blank', rel: 'noopener noreferrer' } : {},
+    h('span.big', {}, f.value))));
+}
+
+// Where "Request access" and "Run it yourself" lead.
+export const ACCESS = 'https://members.cambriancollective.xyz';
+export const REPO = 'https://github.com/Cambrian-Studio/cambrian-line';
+
+/** The small label under "The collective decides", from the council file. */
+export const councilLine = (council) => {
+  const n = council?.members?.length; const m = council?.threshold;
+  if (!n || !m) return 'The threshold grows with the collective.';
+  const label = String(council.label || 'council');
+  return `${label.charAt(0).toUpperCase()}${label.slice(1)}: ${m} of ${n} signatures. The threshold grows with the collective.`;
+};
 
 // ---- toasts -----------------------------------------------------------------------------------
 

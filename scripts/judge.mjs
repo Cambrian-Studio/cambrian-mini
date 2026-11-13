@@ -40,7 +40,7 @@ const ok = (t, d) => say('ok', t, d), skip = (t, d) => say('skip', t, d), fail =
 async function check(title, fn) { try { await fn(); } catch (e) { fail(title, `the check itself failed: ${String(e.message).slice(0, 200)}`); } }
 
 const runs = listRuns(cfg);
-const baby = runs.filter((r) => (r.origin ?? 'baby') === 'baby');
+const baby = runs.filter((r) => (r.origin ?? 'mini') === 'mini');
 const imported = runs.filter((r) => r.origin === 'private-line');
 const scratch = mkdtempSync(join(tmpdir(), 'cambrian-judge-'));
 const fixtureTicket = (name) => parseTicket(readFileSync(join(ROOT, 'test/line/fixtures/tickets', `${name}.json`)));

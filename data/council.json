@@ -4,7 +4,7 @@
   "threshold": 2,
   "rp": {
     "id": "cambrian-mini.tail176671.ts.net",
-    "name": "baby Cambrian",
+    "name": "Cambrian Mini",
     "origins": [
       "https://cambrian-mini.tail176671.ts.net"
     ]
@@ -21,14 +21,14 @@
       "id": "jj",
       "name": "JJ",
       "role": "Design",
-      "figure": null,
+      "figure": "assets/members/jj.png",
       "credentials": []
     },
     {
       "id": "michael",
       "name": "Michael",
       "role": "Engineering",
-      "figure": null,
+      "figure": "assets/members/michael.png",
       "credentials": []
     }
   ]

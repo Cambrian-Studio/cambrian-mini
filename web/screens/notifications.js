@@ -31,7 +31,7 @@ export async function render(root) {
     .map((a) => ({ ts: a.at, kind: 'SIGNED', ticket: t.ticket?.id, title: t.ticket?.title, member: name(a.member) })));
   const list = [...waiting, ...[...notifications, ...signed].sort((a, b) => String(b.ts).localeCompare(String(a.ts)))];
   put(root,
-    h('header.head', {}, h('p.eyebrow', {}, 'Notifications'), h('h1.statement', {}, 'What the line told the council.'),
+    h('header.head', {}, h('p.eyebrow', {}, 'Notifications'), h('h1.statement', {}, 'What Cambrian told the council.'),
       h('p.lede', {}, 'A brief is waiting, a member signed, a run went green, a run went red.')),
     list.length ? h('ul.notes', {}, list.map((n) => {
       const href = n.run ? '#/receipts/' + encodeURIComponent(n.run)

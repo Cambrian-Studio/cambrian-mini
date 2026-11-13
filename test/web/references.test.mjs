@@ -62,8 +62,10 @@ test('every module imports only files that exist, and nothing from npm', () => {
 });
 
 test('asset paths written in the screens exist', () => {
-  // one figure is published today; the other two members are drawn without one until they agree to theirs
-  assert.deepEqual(readdirSync(join(web, 'assets/members')).sort(), ['clemens.png']);
+  // all three council members agreed to their figures being published
+  assert.deepEqual(readdirSync(join(web, 'assets/members')).sort(), ['clemens.png', 'jj.png', 'michael.png']);
+  const council = JSON.parse(readFileSync(join(web, '..', 'data', 'council.json'), 'utf8'));
+  for (const m of council.members) assert.equal(m.figure, `assets/members/${m.id}.png`, m.id);
 });
 
 test('the serializer is the server\'s file, not a copy kept under web/', () => {

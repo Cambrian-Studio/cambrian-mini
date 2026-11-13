@@ -13,7 +13,10 @@ record_receipt(<32 raw bytes: the sha256 of a receipt>)   →   one log line, no
 - **No deposit.** A call that attaches any deposit panics (`record_receipt: no deposit`).
 - **Anyone can call it.** See "What it does NOT prove" below: this is deliberate, and it matters.
 
-**Deployment status: not deployed. The owner creates and funds the account.** Nothing in this
+**Deployment status: on NEAR mainnet since 13 November 2026, at
+`b9d43a067f9063ac38b7adcbbdf900eb7841b82adef3de31ae0e21d4b64f6de2`.**
+The account's only key was deleted after the deploy, so the code cannot be changed (`data/chain.json`
+lists the transactions). The owner funded the account and ran each step by hand; nothing in this
 repository deploys the contract, creates an account or key, or sends a transaction on its own.
 
 ## Why this shape

@@ -13,7 +13,8 @@ const DEFAULT_CAP_USD = 5;
 const CHECK_ID = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const CTRL = /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/; // tab, newline and carriage return are text; the rest are not
 const KINDS = ['run', 'file', 'no_external_hosts'];
-const TICKET_KEYS = ['kind', 'v', 'id', 'product', 'title', 'task', 'goal', 'out_of_scope', 'green', 'budget', 'base', 'branch', 'drafted'];
+const TICKET_KEYS = ['kind', 'v', 'id', 'product', 'title', 'task', 'goal', 'out_of_scope', 'green', 'budget', 'base', 'branch', 'drafted', 'revision'];
+const REVISION_KINDS = ['design-pass', 'fix', 'feature'];
 const HEX64 = /^[0-9a-f]{64}$/;
 
 /** The daily cap in USD: 5, unless the environment raises it. It is also the most one ticket may carry. */
@@ -125,6 +126,31 @@ function parseDrafted(d) {
     request_sha256: d.request_sha256, response_sha256: d.response_sha256 };
 }
 
+// A revision names the build it revises, what kind of change it is, who asked for it, and the images kept
+// with it (by hash). It is part of the ticket, so the council's signatures cover it.
+function parseRevision(r, product) {
+  const at = 'build ticket: revision';
+  if (!r || typeof r !== 'object' || Array.isArray(r)) throw new Error(`${at} — {of, kind, by, product, attachments?}`);
+  only(r, ['of', 'kind', 'by', 'product', 'attachments'], at);
+  if (typeof r.of !== 'string' || !TICKET_ID.test(r.of)) throw new Error(`${at}.of: the id of the build it revises`);
+  if (!REVISION_KINDS.includes(r.kind)) throw new Error(`${at}.kind: one of ${REVISION_KINDS.join(', ')}`);
+  if (typeof r.by !== 'string' || !/^[a-z0-9][a-z0-9-]{0,39}$/.test(r.by)) throw new Error(`${at}.by: a member id`);
+  if (r.product !== product) throw new Error(`${at}.product: must be the ticket's own product`);
+  const out = { of: r.of, kind: r.kind, by: r.by, product };
+  if (r.attachments !== undefined) {
+    if (!Array.isArray(r.attachments) || r.attachments.length < 1 || r.attachments.length > 3) throw new Error(`${at}.attachments: 1..3 images`);
+    out.attachments = r.attachments.map((a, i) => {
+      if (!a || typeof a !== 'object') throw new Error(`${at}.attachments[${i}]: {type, bytes, sha256}`);
+      only(a, ['type', 'bytes', 'sha256'], `${at}.attachments[${i}]`);
+      if (!['png', 'jpeg'].includes(a.type)) throw new Error(`${at}.attachments[${i}].type: png or jpeg`);
+      if (!Number.isInteger(a.bytes) || a.bytes < 1 || a.bytes >= 5 * 1024 * 1024) throw new Error(`${at}.attachments[${i}].bytes: under 5 MB`);
+      if (typeof a.sha256 !== 'string' || !HEX64.test(a.sha256)) throw new Error(`${at}.attachments[${i}].sha256: 64 lowercase hex characters`);
+      return { type: a.type, bytes: a.bytes, sha256: a.sha256 };
+    });
+  }
+  return out;
+}
+
 function toObject(input) {
   if (input && typeof input === 'object' && !Buffer.isBuffer(input) && !(input instanceof Uint8Array)) return input;
   const buf = Buffer.isBuffer(input) || input instanceof Uint8Array ? Buffer.from(input) : Buffer.from(String(input ?? ''), 'utf8');
@@ -191,6 +217,7 @@ export function parseTicket(input, id = undefined) {
     throw new Error(`build ticket: budget.minutes — 1..${cap.minutes}`);
   }
   const drafted = t.drafted === undefined ? undefined : parseDrafted(t.drafted);
+  const revision = t.revision === undefined ? undefined : parseRevision(t.revision, t.product);
   return {
     kind: 'build-ticket',
     v: 1,
@@ -205,5 +232,6 @@ export function parseTicket(input, id = undefined) {
     base,
     branch,
     ...(drafted ? { drafted } : {}),
+    ...(revision ? { revision } : {}),
   };
 }

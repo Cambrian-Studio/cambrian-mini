@@ -1,6 +1,7 @@
 // Products: a card per product and a sheet with its cost and the runs that built it.
 
 import * as api from '../lib/api.js';
+import { revisionLine } from '../lib/mini.js';
 import {
   h, put, cap, card, dot, kv, raw, usd, count, when, ext, stateChip, isImported, IMPORTED, openSheet, squircle, field,
 } from '../lib/ui.js';
@@ -34,8 +35,18 @@ function signedBy(p, tickets, council) {
   const mine = tickets.filter((e) => e.ticket?.product === p.id);
   const who = [...new Set(mine.flatMap((e) => e.release?.valid || []))].map(name);
   if (who.length) return who.join(', ');
-  if ((p.runs || []).some(isImported)) return 'on Cambrian’s private line, not verifiable here';
+  if ((p.runs || []).some(isImported)) return 'on Cambrian’s private setup, not verifiable here';
   return 'no signature recorded';
+}
+
+// "Design pass by JJ · v1 → v2", with both previews linked when the record holds them.
+export function revisionNote(run, runs, council) {
+  const rev = revisionLine(run, runs, council);
+  if (!rev) return null;
+  const out = { target: '_blank', rel: 'noopener noreferrer' };
+  return h('span.small.revision', {}, [rev.text, rev.versions].filter(Boolean).join(' · '),
+    rev.previews[0] ? [' · ', h('a.link', { href: rev.previews[0], ...out }, 'preview before')] : null,
+    rev.previews[1] ? [' · ', h('a.link', { href: rev.previews[1], ...out }, 'preview after')] : null);
 }
 
 function sheet(p, { lessons, tickets, council }) {
@@ -47,6 +58,7 @@ function sheet(p, { lessons, tickets, council }) {
       h('div', {}, h('h2.product-name', {}, p.name || p.id), h('p', {}, p.tagline || ''))),
     h('div.kvs', {},
       kv('Builds', builds(p)), kv('Compute', usd(p.cost_usd)), kv('Lessons', count(learned)), kv('Signed', signedBy(p, tickets, council))),
+    h('a.link', { href: '#/lessons' }, 'Read the lessons'),
     p.cost_note ? h('p.small.dim', {}, p.cost_note) : null,
     h('div.kvs', {},
       p.status ? kv('Status', p.status) : null,
@@ -57,7 +69,8 @@ function sheet(p, { lessons, tickets, council }) {
         h('a', { href: '#/receipts/' + encodeURIComponent(r.id) },
           h('span', {}, r.title || r.id),
           h('span.row.start', {}, stateChip(r.state), h('span.mono.small', {}, usd(r.usd)))),
-        h('span.small.dim', {}, [when(r.finished), isImported(r) ? IMPORTED : null].filter(Boolean).join(' · ')))))
+        h('span.small.dim', {}, [when(r.finished), isImported(r) ? IMPORTED : null].filter(Boolean).join(' · ')),
+        revisionNote(r, runs, council))))
         : h('p.plain', {}, 'No run is linked to this product yet.')),
     p.live_url
       ? h('p', {}, h('a.btn', { href: p.live_url, target: '_blank', rel: 'noopener noreferrer' }, `Try ${p.name || 'it'}`))
@@ -69,7 +82,7 @@ function sheet(p, { lessons, tickets, council }) {
 export async function render(root, arg) {
   const { products = [] } = await api.get('products.json');
   put(root,
-    h('header.head', {}, h('p.eyebrow', {}, 'Products'), h('h1.statement', {}, 'What the line has built.'),
+    h('header.head', {}, h('p.eyebrow', {}, 'Products'), h('h1.statement', {}, 'What Cambrian has built.'),
       h('p.lede', {}, 'Each product links to every run that built it, red ones included.')),
     products.length ? h('div.products', {}, products.map(productCard))
       : h('p.plain', {}, 'No product is recorded yet.'));

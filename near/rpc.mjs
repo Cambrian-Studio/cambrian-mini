@@ -100,7 +100,7 @@ export async function rpcCall({ rpcUrl, method, params, fetchImpl = globalThis.f
     response = await fetchImpl(rpcUrl, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 'baby-cambrian', method, params }),
+      body: JSON.stringify({ jsonrpc: '2.0', id: 'cambrian-mini', method, params }),
       signal: controller.signal,
     });
   } catch (err) {

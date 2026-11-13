@@ -9,7 +9,7 @@ const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o?.[k] !== undef
 
 /** The approvals as the receipt carries them: who signed, with which passkey, and the signature itself. */
 const approvalRows = (run) => (run.approvals ?? []).map((a) => pick(a, [
-  'member', 'credential_id', 'ticket_sha256', 'authenticator_data', 'client_data_json', 'signature', 'at',
+  'member', 'credential_id', 'ticket_sha256', 'authenticator_data', 'client_data_json', 'signature', 'at', 'taste_note',
 ]));
 
 function callRows(run) {
@@ -39,7 +39,7 @@ export function buildReceipt(run) {
   return {
     kind: 'cambrian-receipt', v: 1,
     run_id: run.ticket?.id ?? null,
-    origin: run.origin ?? 'baby',
+    origin: run.origin ?? 'mini',
     mode: run.mode ?? null,
     ticket: { ...pick(run.ticket ?? {}, ['id', 'title', 'product', 'branch', 'budget']), sha256: run.ticket_sha256 ?? null },
     approvals: { threshold: run.release?.threshold ?? null, valid: run.release?.valid ?? [], note: run.release?.note ?? null, signatures: approvalRows(run) },
@@ -54,6 +54,8 @@ export function buildReceipt(run) {
     attempts: (run.attempts ?? []).map((a) => ({ n: a.n, commit: a.commit ?? null, green: a.green === true, failing: a.failing ?? [],
       agent: pick(a.agent ?? {}, ['kind', 'exit', 'seconds', 'model']) })),
     checks: (last?.checks ?? []).map((c) => pick(c, ['id', 'name', 'kind', 'pass', 'unverified', 'detail'])),
+    ...(run.revision ? { revision: run.revision } : {}),
+    ...(run.house_kit ? { house_kit: run.house_kit } : {}),
     preview: run.preview?.url ? { url: run.preview.url, public: run.preview.public ?? null, deployment_id: run.preview.deployment_id ?? null } : null,
     calls,
     totals: {

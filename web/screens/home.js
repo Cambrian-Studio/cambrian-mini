@@ -1,130 +1,79 @@
-// Home: seven beats, top to bottom. The thesis, the collective, the capital, the decision, the machine,
-// the proof and the door. Every figure is read from the record; one that is missing says so.
+// Home: one scrolling page. The thesis, how an idea goes live, why it compounds, the capital, the collective,
+// how to check it, and the door. Every figure is read from the record; a figure the record does not hold is
+// left out, never estimated.
 
 import * as api from '../lib/api.js';
-import {
-  h, put, card, dot, kv, usd, count, short, plural, stateChip, originChip, capitalCards, capitalCopy, quorumLabel,
-} from '../lib/ui.js';
+import { h, put, card, dot, capitalCards, councilLine, ACCESS, REPO } from '../lib/ui.js';
+import { STEPS, compounding } from '../lib/mini.js';
 import { memberCard } from './approvals.js';
-import { productCard } from './products.js';
 
-const REPO = 'https://github.com/Cambrian-Studio/cambrian-line';
-const STATIONS = [
-  [{ tl: 'Brief', tr: '01' }, 'Cambrian turns the idea into a ticket with checks and a budget.'],
-  [{ tl: 'Build', tr: '02', bl: 'Behind walls' },
-    'Agents write the code inside a sandbox. Every model call goes through NEAR AI and is priced.'],
-  [{ tl: 'Checks', tr: '03' }, 'Every check runs on a fresh clone. A red run stops the line and drafts a lesson.'],
-  [{ tl: 'Preview', tr: '04' }, 'A green build is pushed to its own branch and deployed as a preview.'],
+const COMPOUNDS = [
+  ['What we build.', 'Every failure becomes a rule the collective signs. Every later brief is checked against it.', null],
+  ['How it looks.', 'Every product ships in the collective’s own design language, not generic AI defaults.', null],
+  ['How it sells.', 'Which channels worked, which campaigns paid back, what users kept. Each launch teaches the next one.', 'Next'],
 ];
 
-const beat = (eyebrow, title, body, ...kids) => h('section.beat', {},
-  h('p.eyebrow', {}, eyebrow), h('h2.h2', {}, title), body ? h('p.body', {}, body) : null, kids);
-
-// The decision: the newest brief with the council's seats. With no brief in the record, it says so.
-function decision(tickets, council) {
-  const members = council?.members || [];
-  const entry = tickets[0] || null;
-  const valid = entry?.release?.valid || [];
-  const t = entry?.ticket || {};
-  const applied = (entry?.lint?.applied || [])[0];
-  const brief = entry
-    ? card('a.pad.brief-mini', {
-      tl: 'Brief', tr: entry.proposed_by?.member ? `From ${nameOf(members, entry.proposed_by.member)}` : null,
-      bl: `${short(entry.ticket_sha256)}…`, br: stateChip(entry.status),
-    }, { href: '#/approvals/' + encodeURIComponent(t.id) },
-    h('span.title', {}, t.title || t.id), h('span.line', {}, t.goal || t.task || ''), h('span.spacer'),
-    h('div.kvs', {}, kv('Checks', count((t.green || []).length)), kv('Budget', usd(t.budget?.usd)),
-      applied ? kv('Lesson applied', applied.lesson || applied.id || String(applied)) : null))
-    : card('div.pad.brief-mini', { tl: 'Brief', br: 'None in this record' }, {},
-      h('span.line', {}, 'No brief has been signed in this record yet. The recorded Upread runs were approved on '
-        + 'Cambrian’s private line; that signature is not in this record and cannot be checked here.'),
-      h('span.spacer'), h('a.link', { href: '#/approvals' }, 'See the council'));
-  const seats = members.map((m) => {
-    const signed = valid.includes(m.id);
-    return memberCard(m, { small: true, selected: signed, br: signed ? [dot(), 'Signed'] : (entry ? 'Waiting' : null) });
-  });
-  return h('div.decision', {}, brief, seats);
-}
-
-const nameOf = (members, id) => members.find((m) => m.id === id)?.name || id;
-
-function receiptsCard(receipts) {
-  const latest = [...receipts].sort((a, b) => String(b.finished).localeCompare(String(a.finished)));
-  const total = receipts.reduce((sum, r) => sum + (Number(r.usd) || 0), 0);
-  return card('div.pad.listcard', { tl: 'Receipts', tr: 'Every run', br: receipts.length ? `${usd(total)} total` : null }, {},
-    latest.slice(0, 4).map((r) => h('a.item', { href: '#/receipts/' + encodeURIComponent(r.id) },
-      h('span', {}, h('span', {}, r.title || r.id),
-        h('span.cap', {}, stateChip(r.state), ` · ${plural(r.calls, 'call')}`), originChip(r)),
-      h('span', {}, usd(r.usd)))),
-    latest.length ? null : h('p.plain', {}, 'No run has finished yet.'),
-    h('span.spacer'),
-    latest.length ? h('a.btn.ghost', { href: '#/receipts/' + encodeURIComponent(latest[0].id) }, 'Verify a receipt') : null);
-}
-
-function lessonsCard(lessons, runs) {
-  const title = (id) => runs.find((r) => r.id === id)?.title || id;
-  return card('div.pad.listcard', {
-    tl: 'Lessons', tr: lessons.length ? plural(lessons.length, 'rule') : null, bl: 'Checked on every new brief',
-  }, {},
-  lessons.slice(0, 3).map((l) => h('div.item', {}, h('span', {}, h('span.clamp', {}, l.rule || l.id),
-    h('span.sub', {}, l.from_run ? `From the run “${title(l.from_run)}”.` : 'Not tied to one run.')))),
-  lessons.length ? null : h('p.plain', {}, 'No rule is recorded yet.'),
-  h('span.spacer'), h('a.btn.ghost', { href: '#/lessons' }, 'Read the lessons'));
-}
+const section = (name, title, body, ...kids) => h('section.beat', { 'data-section': name },
+  h('h2.h2', {}, title), body ? h('p.body', {}, body) : null, kids);
 
 export async function render(root) {
-  const names = ['runs.json', 'products.json', 'receipts.json', 'stake.json', 'tickets.json', 'council.json', 'lessons.json'];
+  const names = ['runs.json', 'products.json', 'stake.json', 'council.json', 'lessons.json'];
   const read = await Promise.allSettled(names.map((n) => api.get(n)));
   const doc = (i) => (read[i].status === 'fulfilled' ? read[i].value : {});
   const runs = doc(0).runs || [];
   const products = doc(1).products || [];
-  const receipts = doc(2).receipts || [];
-  const stake = doc(3);
-  const tickets = doc(4).tickets || [];
-  const council = read[5].status === 'fulfilled' ? doc(5) : null;
-  const lessons = doc(6).lessons || [];
-  const live = api.isLive();
-  // the latest live product, else the latest one recorded
-  const index = Math.max(products.findLastIndex((p) => p.live_url), products.length - 1);
-  const product = products[index] || null;
-  const capital = capitalCopy(stake);
+  const stake = doc(2);
+  const council = read[3].status === 'fulfilled' ? doc(3) : null;
+  const lessons = doc(4).lessons || [];
+  const out = { target: '_blank', rel: 'noopener noreferrer' };
 
   put(root,
-    h('section.beat.hero', {},
-      h('p.eyebrow', {}, 'NEAR HACKATHON'),
+    h('section.beat.hero', { 'data-section': 'hero' },
+      h('p.eyebrow', {}, 'CAMBRIAN MINI · NEAR HACKATHON'),
       h('h1', {}, 'Machines build. The collective decides.'),
-      h('p.lede', {}, 'The design: pool the ecosystem’s idle capital and talent into productive use. '
-        + 'Members bring the ideas and the taste. Cambrian builds. The council decides what gets built.'),
+      h('p.lede', {}, 'Cambrian is a product studio run by one intelligence and owned by its members. '
+        + 'Members bring ideas, taste and capital. Cambrian turns them into products, and gets better with every one it ships.'),
       h('div.actions', {},
-        h('a.btn.tall', { href: '#/line' }, live ? 'Watch the line' : 'Watch a build, replayed'),
-        h('a.btn.ghost.tall', { href: REPO, target: '_blank', rel: 'noopener noreferrer' }, 'Read the repo'))),
+        h('a.btn.tall', { href: '#/line' }, 'Watch an idea become a product'),
+        h('a.btn.ghost.tall', { href: ACCESS, ...out }, 'Request access')),
+      h('p.sub.fine', {}, 'Cambrian Mini is the part of Cambrian we opened for the NEAR hackathon: '
+        + 'the path from an idea to a live product, with every step on the record.')),
 
-    beat('The collective', 'Builders, thinkers and doers with one shared context.',
-      'Cambrian is the intelligence that serves them. It knows the work, proposes and builds. People decide.',
-      council ? h('div.cb-members.flush', {}, council.members.map((m) => memberCard(m, {
-        bl: m.role || 'Council', br: [dot(), 'Team'], attrs: { tabindex: '0' },
-      }))) : h('p.plain', {}, 'The council record could not be read.')),
+    section('steps', 'From an idea to a live product, in seven steps.', null,
+      h('ol.steps', {}, STEPS.map(([title, line], i) => h('li', {},
+        h('a', { href: `#/line/${i + 1}`, 'aria-label': `Step ${i + 1}: ${title} Open the recorded example.` },
+          h('span.num', {}, String(i + 1).padStart(2, '0')),
+          h('b', {}, title), h('span', {}, line),
+          i === 2 ? h('span.cap', {}, councilLine(council)) : null))))),
 
-    beat('The capital', capital.title, capital.body,
+    section('compounds', 'Every product makes the next one better.', null,
+      h('div.trio', {}, COMPOUNDS.map(([title, line, next]) => card('div.pad.say', { br: next }, {},
+        h('b', {}, title), h('span', {}, line)))),
+      card('div.pad.cb-card2.panel', {}, {}, compounding({ products, lessons, runs }).map(([label, value, note]) =>
+        h('div.stat', {}, h('span.cap', {}, label),
+          h('span.big', { class: value ? '' : 'is-none' }, value || 'Not recorded'), h('span.sub', {}, note))))),
+
+    section('capital', 'Idle capital, put to work.',
+      'Most capital in this ecosystem sits still, in treasuries, staked tokens and funds waiting to deploy. '
+      + 'NEAR AI lets you stake NEAR and receive AI compute credits in return. The NEAR stays staked and stays yours. '
+      + 'Cambrian puts the credits to work, and the collective decides what they build.',
       capitalCards(stake),
-      h('p.sub', {}, 'Pooling the collective’s capital is next. ', h('a.link', { href: '#/stake' }, 'See the figures'))),
+      h('p.sub', {}, h('a.link', { href: '#/stake' }, 'See the figures'))),
 
-    beat('The decision', 'Nothing is built until the collective signs.',
-      'A member brings an idea. Cambrian writes the brief: what it is, the checks it must pass, the budget. '
-      + `The collective signs with passkeys, and the line refuses anything below the threshold. Today: ${quorumLabel(council)}.`,
-      decision(tickets, council)),
+    section('collective', 'A collective, not a crowd.',
+      'Cambrian Collective is invitation-only. Builders, designers, engineers and backers shape what gets made, '
+      + 'with their work or their capital. Three founding members today. Built for a hundred.',
+      h('div.cb-members.flush.four', {},
+        (council?.members || []).map((m) => memberCard(m, { bl: m.role || 'Council', br: [dot(), 'Team'] })),
+        card('a.cb-member.invite', { br: 'By invitation' }, { href: ACCESS, ...out, 'aria-label': 'By invitation. Request access.' }))),
 
-    beat('The machine', 'Agents build behind walls, with NEAR AI.', null,
-      h('div.machine', {}, STATIONS.map(([caps, text]) => card('div.pad.cb-card2', caps, {}, h('span', {}, text))))),
+    section('check', 'Don’t take our word for it.',
+      'Every signature, every model call and every record of what a build cost can be checked without trusting our servers.',
+      h('div.actions', {},
+        h('a.btn.tall', { href: '#/receipts' }, 'Verify a build'),
+        h('a.btn.ghost.tall', { href: REPO, ...out }, 'Run it yourself'))),
 
-    beat('The proof', 'Every run left a receipt.',
-      'Every failure becomes a lesson: a red run drafts one, a council member accepts it, '
-      + 'and the next brief is checked against it.',
-      h('div.proof', {},
-        product ? productCard(product, index) : card('div.pad', { tl: 'Product' }, {}, h('p.plain', {}, 'No product is recorded yet.')),
-        receiptsCard(receipts), lessonsCard(lessons, runs))),
-
-    h('section.beat.door', {},
+    h('section.beat.door', { 'data-section': 'close' },
       h('h2.h2', {}, 'The Cambrian explosion has started. Join the collective driving it.'),
-      h('a.btn.tall', { href: 'https://cambriancollective.xyz', target: '_blank', rel: 'noopener' }, 'Request access')));
+      h('a.btn.tall', { href: ACCESS, ...out }, 'Request access')));
 }

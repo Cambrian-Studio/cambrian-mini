@@ -231,7 +231,7 @@ test('access key check: only a function-call key for this contract and record_re
 // ---- key file ----------------------------------------------------------------------------------
 
 test('loadKeyFile: a real file must be mode 600 (no key is written to disk here)', (t) => {
-  const dir = mkdtempSync(join(tmpdir(), 'baby-cambrian-keyfile-'));
+  const dir = mkdtempSync(join(tmpdir(), 'cambrian-mini-keyfile-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const path = join(dir, 'placeholder.txt');
   writeFileSync(path, 'this is not a key\n');

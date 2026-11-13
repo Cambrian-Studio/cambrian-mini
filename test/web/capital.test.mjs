@@ -28,7 +28,7 @@ test('the credit split: a figure that is not in the record reads "not recorded y
   assert.deepEqual(none, [['earned from the stake', 'not recorded yet'], ['bought', 'not recorded yet'], ['spent', 'not recorded yet']]);
   assert.deepEqual(creditSplit({}).map((r) => r[1]), ['not recorded yet', 'not recorded yet', 'not recorded yet']);
   const some = creditSplit({ credits: { earned_from_stake_usd: 1.5, bought_usd: 0 },
-    inference_spend: { baby_line_usd: 0.25, private_line_usd: 5.11 } });
+    inference_spend: { mini_line_usd: 0.25, private_line_usd: 5.11 } });
   assert.deepEqual(some, [['earned from the stake', '$1.50'], ['bought', '$0.00'], ['spent', '$5.36']]);
   assert.deepEqual(creditSplit({ credits: { earned_from_stake_usd: '3', bought_usd: NaN } }).map((r) => r[1]).slice(0, 2),
     ['not recorded yet', 'not recorded yet'], 'only a recorded number is shown');

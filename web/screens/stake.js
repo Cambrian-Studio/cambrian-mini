@@ -11,6 +11,7 @@ export async function render(root) {
   const rate = doc.credit_rate || {};
   const spend = doc.inference_spend || {};
   const credits = doc.credits || {};
+  const est = doc.estimate || {};
   const tx = s.tx_url ? ext(s.tx_url, 'the transaction on a NEAR explorer') : null;
   const money = (n) => (typeof n === 'number' ? usd(n) : 'not yet recorded');
 
@@ -22,14 +23,18 @@ export async function render(root) {
     capitalCards(doc),
     empty ? null : card('div.pad', { tl: 'The stake', tr: s.network ? `NEAR ${s.network}` : null }, {},
       h('div.kvs', {},
+        kv('Staked', typeof s.amount_near === 'number' ? `${count(s.amount_near)} NEAR` : 'not yet recorded'),
         kv('Account', s.account || 'not yet recorded'),
+        s.staked_with ? kv('Staked with', s.staked_with) : null,
         kv('Transaction', s.tx ? h('span.raw', {}, s.tx) : 'not yet recorded'),
         s.recorded_at ? kv('Recorded', when(s.recorded_at)) : null),
-      tx ? h('p.small', {}, tx) : null),
+      tx ? h('p.small', {}, tx) : null,
+      est.text && est.as_of ? h('p.small.dim', {}, `${est.by || 'NEAR AI'}’s estimate: ${est.text}, as of ${est.as_of}. `
+        + 'An estimate, not credits received.') : null),
     h('div.cb-card.cb-card2.formula', {},
       h('span.cap', {}, 'What NEAR AI publishes about credits'),
       rate.text ? h('span.rate', {}, rate.text) : h('p.plain', {}, 'Not yet recorded.'),
-      h('p.small.dim', {}, 'This is NEAR AI’s statement, not a measurement of this line. ',
+      h('p.small.dim', {}, 'This is NEAR AI’s statement, not a measurement of these builds. ',
         rate.source_url ? ext(rate.source_url, 'NEAR AI documentation') : null,
         rate.read_at ? ` · read ${rate.read_at}` : '',
         rate.calculator_url ? ' · ' : '', rate.calculator_url ? ext(rate.calculator_url, 'NEAR AI’s calculator') : null)),
@@ -41,8 +46,8 @@ export async function render(root) {
         ' Spent is the sum of the receipts below. No receipt says which credits paid for it.')),
     card('div.pad', { tl: 'Compute', tr: 'From the receipts' }, {},
       h('div.kvs', {},
-        kv('Model calls on this line', money(spend.baby_line_usd)),
-        kv('Model calls on Cambrian’s private line, imported runs', money(spend.private_line_usd)),
+        kv('Model calls on Cambrian Mini', money(spend.mini_line_usd)),
+        kv('Model calls on Cambrian’s private setup, imported builds', money(spend.private_line_usd)),
         typeof spend.runs === 'number' ? kv('Runs in this record', count(spend.runs)) : null,
         spend.source ? kv('Source', spend.source) : null)),
     card('div.pad', { tl: 'What this page does not claim' }, {},

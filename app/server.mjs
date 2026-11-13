@@ -32,6 +32,12 @@ export async function makeServer(cfg = appConfig()) {
   const server = createServer(async (req, res) => {
     try {
       const path = (req.url ?? '/').split('?')[0];
+      // Reachable from outside: one line per page load and per POST, so a member who cannot get in leaves a trace.
+      // No address, no body and no token is written: the time, the path, the status, and whether it came through the tunnel.
+      if (cfg.exposed && (path === '/' || req.method === 'POST')) {
+        res.on('finish', () => console.log(`${new Date().toISOString()} ${req.method} ${path} ${res.statusCode} `
+          + (req.headers['tailscale-funnel-request'] ? 'from outside' : 'from this network')));
+      }
       if (req.method === 'GET' && path === '/api/events') return live ? live.events(req, res) : sendJson(res, 409, { error: 'replay', why: 'No live runs in REPLAY mode.' });
       if (req.method === 'GET' && path.startsWith('/api/')) {
         const snap = snapshot(cfg, live ? live.modeExtra() : {});
@@ -59,7 +65,7 @@ export async function makeServer(cfg = appConfig()) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { server, cfg } = await makeServer();
   server.listen(cfg.port, cfg.host, () => {
-    console.log(`baby Cambrian — ${cfg.mode.toUpperCase()} mode${cfg.reasons.length ? ` (${cfg.reasons.join('; ')})` : ''}`);
+    console.log(`Cambrian Mini — ${cfg.mode.toUpperCase()} mode${cfg.reasons.length ? ` (${cfg.reasons.join('; ')})` : ''}`);
     console.log(`open http://localhost:${cfg.port}/`);
     if (cfg.mode === 'replay') console.log('REPLAY: recorded runs only. Nothing spends, nothing signs.');
   });

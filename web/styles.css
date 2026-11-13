@@ -439,3 +439,72 @@ tfoot td { border-top: 1px solid var(--selected-outline); border-bottom: 0; colo
 details { min-width: 0; }
 summary { cursor: pointer; font: 400 11.5px/1.5 var(--font-mono); color: var(--caption); padding: 6px 0; }
 details[open] > summary { margin-bottom: 6px; }
+
+/* ---- Cambrian Mini: four-item nav, the member's menu, and the home sections ---- */
+.nav .nav-link { width: auto; padding: 0 14px; font-size: 13.5px; white-space: nowrap; }
+.top .access { min-height: 36px; white-space: nowrap; text-decoration: none; }
+.member-menu { display: inline-flex; align-items: center; gap: 4px; }
+.textlink { font-size: 13.5px; color: var(--caption); text-decoration: none; padding: 0 8px; min-height: 44px; display: inline-flex; align-items: center; }
+.textlink:hover { color: var(--ink); }
+.fine { margin-top: 20px; max-width: 620px; }
+.beat > .steps, .beat > .trio, .beat > .panel, .beat > .actions { margin-top: 28px; }
+.beat > .panel { margin-top: var(--gutter); }
+
+.steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; list-style: none; padding: 0; counter-reset: none; }
+.steps li { min-width: 0; }
+.steps a { display: flex; flex-direction: column; gap: 6px; height: 100%; padding: 16px 0; border-top: 1px solid var(--edge); text-decoration: none; font-size: 14px; line-height: 1.4; color: var(--caption); }
+.steps a:hover b { text-decoration: underline; text-underline-offset: 3px; }
+.steps .num { font: 400 10px/12px var(--font-mono); letter-spacing: .2em; color: var(--muted); }
+.steps b { font-weight: 500; font-size: 16px; color: var(--ink); }
+.steps .cap { margin-top: 4px; white-space: normal; line-height: 15px; color: var(--muted); }
+
+.trio { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--gutter); }
+.say { min-height: 150px; gap: 8px; font-size: 15px; line-height: 1.4; color: var(--caption); }
+.say b { font-weight: 500; font-size: 18px; color: var(--ink); }
+.cb-card.panel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; }
+.stat { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.stat .cap { white-space: normal; line-height: 14px; }
+.stat .big { font-size: clamp(24px, 3vw, 36px); line-height: 1.05; }
+.stat .big.is-none { font-size: 16px; color: var(--muted); }
+
+.capital { grid-template-columns: minmax(0, 1fr); }
+.capital:empty { display: none; }
+a.capcard { text-decoration: none; }
+.cb-members.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.invite { display: block; background: none; box-shadow: none; border: 1px dashed var(--selected-outline); text-decoration: none; }
+.invite::before { display: none; }
+.invite:hover { border-color: var(--selected-ring); }
+
+.story { max-width: 760px; margin: 28px 0 0; }
+.story .said { font-size: 16px; line-height: 1.45; }
+.story li { padding-bottom: 22px; scroll-margin-top: 120px; }
+.story .link { font-size: 13.5px; align-self: flex-start; }
+.head.second { margin-top: 72px; }
+
+@media (max-width: 699px) {
+  .nav .nav-link { padding: 0 6px; font-size: 12.5px; }
+  .top { gap: 8px; }
+  .top .access { padding: 0 12px; font-size: 12.5px; }
+  .top .brand { font-size: 15px; gap: 8px; }
+}
+@media (min-width: 700px) {
+  .modeline { inset: 0 260px auto auto; }
+  :root.is-member .modeline { display: none; }
+  .steps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 var(--gutter); }
+  .trio { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .say { min-height: 200px; padding: 28px 22px 36px !important; }
+  .cb-card.panel { grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 28px 22px !important; }
+  .capital { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .head.second { margin-top: 112px; }
+}
+@media (min-width: 1105px) {
+  .steps { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0 16px; }
+  .steps a { font-size: 13px; }
+  .cb-members.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* a taste note with a signature, and what a revision build says about itself */
+.taste { width: 100%; max-width: 520px; font: inherit; color: var(--ink); background: transparent; border: 1px solid var(--edge);
+  border-radius: 10px; padding: 10px 12px; resize: vertical; }
+.taste-note { display: block; color: var(--caption); font-size: 13px; }
+.revision { display: block; color: var(--caption); }
