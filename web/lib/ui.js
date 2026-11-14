@@ -250,7 +250,7 @@ export function capitalCards(doc) {
 
 // Where "Request access" and "Run it yourself" lead.
 export const ACCESS = 'https://members.cambriancollective.xyz';
-export const REPO = 'https://github.com/Cambrian-Studio/cambrian-line';
+export const REPO = 'https://github.com/Cambrian-Studio/cambrian-mini';
 
 /** The small label under "The collective decides", from the council file. */
 export const councilLine = (council) => {

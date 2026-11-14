@@ -41,8 +41,8 @@ function defaults(home) {
     preview_poll_seconds: 3,
     bridge_port: null,
     proxy_port: null, // null = a free loopback port, picked for each attempt
-    commit_name: 'cambrian-line',
-    commit_email: 'cambrian-line@users.noreply.github.com',
+    commit_name: 'cambrian-mini',
+    commit_email: 'cambrian-mini@users.noreply.github.com',
     sandbox: null, // null = pick (kit/sandbox.mjs); 'none' = behave as if no sandbox exists
     stand_in: join(REPO, 'test', 'line', 'fixtures', 'stand-in'), // offline only: the stand-in agent and what it writes
     agent_stub: 'agent-stub.sh', // offline only: the script in stand_in that runs in place of the agent

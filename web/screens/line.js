@@ -81,6 +81,12 @@ export function replaySteps(run) {
 // The name each station carries on the timeline.
 const STEP = { brief: 'Brief', approved: 'Council', build: 'Build', test: 'Checks', preview: 'Preview', receipt: 'Receipt' };
 
+// Signers are shown by the name the council file gives them. Until the council has been read, an id is shown as it is.
+let memberName = (id) => id;
+export function setMembers(council) {
+  memberName = (id) => council?.members?.find((m) => m.id === id)?.name || id;
+}
+
 // One line per station, as a plain report of what the record says happened there.
 export function stationReport(run, name, state) {
   const s = run.stations || {};
@@ -89,7 +95,7 @@ export function stationReport(run, name, state) {
   if (name === 'brief') return 'The brief was written.';
   if (name === 'approved') {
     if (state === 'red') return `Refused: ${run.release?.why || run.waiting_on || 'the signatures did not verify'}. Nothing ran.`;
-    const who = (run.release?.valid || []).join(', ');
+    const who = listed((run.release?.valid || []).map(memberName));
     if (who) return `Signed by ${who}. Cambrian verified the signatures.`;
     const note = run.release?.note;
     if (isImported(run)) return 'Signed by one council member on Cambrian’s private setup. That signature is not in this record.';
@@ -270,6 +276,7 @@ export function liveStates(run) {
 export const STEP_MS = 2500;
 
 export async function render(root, arg) {
+  setMembers(await api.get('council.json').catch(() => null));
   const { runs = [] } = await api.get('runs.json');
   const list = h('div.runs');
   const rows = new Map();

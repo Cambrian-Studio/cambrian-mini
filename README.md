@@ -12,14 +12,14 @@ The record holds one product so far: Upread, an app that reads an article to you
 2. **`npm run judge`, seconds.** Clone, `npm ci`, `npm run judge`: 16 numbered checks on your machine with no keys, ending `judge: 16 checks — 15 ok, 1 skipped, 0 failed`. Measured from a fresh clone on 14 November: about 5 s on macOS, 3 s in a plain Linux container (`node:22-bookworm`). Each skip prints its reason. Check 16 reads NEAR mainnet from a public archival node.
 3. **Your own build, about a minute.** `npm run solo` with your own NEAR AI key: you talk an idea through, sign the brief with your own passkey as a council of one, and watch it build. Measured on 13 November from `git clone` to the first preview: 57 s and $0.015. The next section has the steps. Without a key, `npm run demo` sends one brief through the same build path with a stand-in agent and a throwaway test council, and you see `state     green-no-preview` (on Linux only where bubblewrap can build its sandbox; in a default Docker container you see `state     blocked`, see [Try it](#try-it)).
 
-In a plain Linux container without user namespaces, `npm test` ends `274 passed, 0 failed, 11 skipped (each prints its reason above)` and the judge ends `14 ok, 2 skipped, 0 failed`: every check that needs no sandbox passes, including the ones that re-verify the council's signatures and read mainnet. The 11 tests and the judge's check 10 skip there because they would run agent or product code, which this code refuses to do without a sandbox it can build (check 5 skips on every machine, for the reason given under [Try it](#try-it), which also has the command for the full run).
+In a plain Linux container without user namespaces, `npm test` ends `275 passed, 0 failed, 11 skipped (each prints its reason above)` and the judge ends `14 ok, 2 skipped, 0 failed`: every check that needs no sandbox passes, including the ones that re-verify the council's signatures and read mainnet. The 11 tests and the judge's check 10 skip there because they would run agent or product code, which this code refuses to do without a sandbox it can build (check 5 skips on every machine, for the reason given under [Try it](#try-it), which also has the command for the full run).
 
 ## Run your own line
 
 One person, one machine, one real build. It needs Node 22 or newer, git, and your own NEAR AI key (from cloud.near.ai) saved in a file only you can read. On Linux it also needs bubblewrap with user namespaces (see the note under [Try it](#try-it)); macOS has its sandbox built in.
 
 ```sh
-git clone https://github.com/Cambrian-Studio/cambrian-line && cd cambrian-line
+git clone https://github.com/Cambrian-Studio/cambrian-mini && cd cambrian-mini
 npm install
 chmod 600 /path/to/your-nearai.key
 NEARAI_KEY_FILE=/path/to/your-nearai.key npm run solo
@@ -68,22 +68,22 @@ The longer list is under [Honest limits](#honest-limits). This repository was wr
 Needs Node 22 or newer and git. No keys, no account, no dependencies to install.
 
 ```sh
-git clone https://github.com/Cambrian-Studio/cambrian-line && cd cambrian-line
+git clone https://github.com/Cambrian-Studio/cambrian-mini && cd cambrian-mini
 npm ci
 ```
 
 **1. `npm test`** — unit tests and attack tests. Expect the last line:
 
 ```
-285 passed, 0 failed
+286 passed, 0 failed
 ```
 
-On macOS the last line is `284 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only.
+On macOS the last line is `285 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only.
 
 **On Linux the sandbox needs unprivileged user namespaces.** Install bubblewrap first (`sudo apt-get install bubblewrap`). Bubblewrap can only build its sandbox where the kernel lets an ordinary user create a namespace. A default Docker container does not, and neither does Ubuntu 24.04 until you run `sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0` (CI does exactly that, in `.github/workflows/ci.yml`). Without it nothing is broken, but the build path refuses to run anything it cannot wall in, and you see this instead of the lines in this section:
 
 ```
-274 passed, 0 failed, 11 skipped (each prints its reason above)        npm test
+275 passed, 0 failed, 11 skipped (each prints its reason above)        npm test
 judge: 16 checks — 14 ok, 2 skipped, 0 failed                          npm run judge
 state     blocked — no sandbox on this machine (bwrap is installed but cannot create a namespace here; …)   npm run demo
 ```
@@ -186,7 +186,7 @@ Every claim, its `file:line`, its test and its status are in [CLAIMS.md](CLAIMS.
 - **Costs are as reported.** For runs of this line, a call's dollars are NEAR AI's published price times the token usage NEAR AI reports for that call. We do not independently measure usage. A ticket's dollar budget is checked before each call, so the call in flight when it is reached still completes.
 - **The eight starting lessons were carried over, not accepted here.** They come from the private line; three of them have no single run behind them. No lesson has yet been drafted from a RED run of this line and accepted by passkey.
 - **The judge and the demo are keyless, not network-free.** The stand-in build's install step may reach `registry.npmjs.org` through the line's allow-listed tunnel. They have not been run with the network off.
-- **The repository is private until submission.** Until it is public the clone commands above fail for anyone without access.
+- **This repository is one commit.** It was developed from 12 to 14 November 2026 in a private repository and published here as a single commit, so the commit history does not show the order of the work. The dates in the records under `data/`, the transactions on NEAR and `HACKATHON.md` do.
 - **The enrolment trusts the browser for the public key.** A passkey's public key is taken from the browser at enrolment, behind a one-time invite; the attestation statement of the authenticator is not checked.
 - **Revisions, images and taste notes are tested, not yet used.** The conversation, the draft and the hand-over to the council were used for both real briefs, and both builds got the house kit. No member has yet revised a product, attached an image or added a taste note; those are proven by tests with a stand-in model and a test council. Attached images are kept but no screen shows them, and the builder does not see them. No check enforces that a build followed the house kit. A revision can only be built when the build it revises was made by this repository's build path.
 - **No build here has failed yet.** Both council-signed builds passed on the first attempt. The path from a failed build to a lesson a member signs, and to the next brief being checked against it, is covered by tests and has not run on a real build of this repository.

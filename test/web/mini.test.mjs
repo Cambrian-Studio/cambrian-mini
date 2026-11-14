@@ -8,7 +8,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { capitalFigures, councilLine } from '../../web/lib/ui.js';
 import { compounding, STEPS } from '../../web/lib/mini.js';
-import { story, playerStates, liveStates, STEP_MS } from '../../web/screens/line.js';
+import { story, playerStates, liveStates, STEP_MS, stationReport, setMembers } from '../../web/screens/line.js';
 
 const at = (p) => fileURLToPath(new URL(`../../${p}`, import.meta.url));
 const json = (p) => JSON.parse(readFileSync(at(p), 'utf8'));
@@ -113,4 +113,12 @@ test('Watch a build tells a real build from its record and its brief: who sent i
   assert.equal(checks, 'Every check passed.');
   assert.match(live, /^A preview link went up/);
   assert.equal(record, 'Recorded on NEAR.');
+});
+
+test('a build card names its signers as the council file does', () => {
+  const run = allRuns.find((r) => r.ticket.id === 'upread-mini-086cdf');
+  setMembers(json('data/council.json'));
+  assert.equal(stationReport(run, 'approved', 'on'), 'Signed by Clemens and Michael. Cambrian verified the signatures.');
+  setMembers(null);
+  assert.equal(stationReport(run, 'approved', 'on'), 'Signed by clemens and michael. Cambrian verified the signatures.', 'without the council file the ids are shown as they are');
 });
