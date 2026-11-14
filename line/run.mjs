@@ -136,7 +136,9 @@ export function ticketText(t, findings) {
     '- You are working unattended; nobody will answer questions. Decide, build, verify, then stop and say in three lines what you built.',
     '- Write nothing outside this directory. Git is read-only for you here: do not commit — ' +
       'the harness commits your files when you stop.',
-    '- `registry.npmjs.org` is the only host you can reach; every other host is refused.',
+    (t.green ?? []).some((c) => c.kind === 'run' && c.network === 'registry')
+      ? '- `registry.npmjs.org` is the only host you can reach; every other host is refused.'
+      : '- You have no network at all: no host can be reached, not even the package registry. Install nothing.',
     '- `.oc/` is scratch space and is never committed.',
     ...(findings
       ? [
@@ -432,6 +434,10 @@ export async function runTicket(
       setTimeout(r, 2000);
     });
   };
+  // The package registry is reachable only for a brief that asks for it in a check (`network: "registry"`). Every other
+  // build has no network at all. The tunnel checks the name it is asked to connect to and nothing inside the connection,
+  // so it is a door to the registry's whole content network: it stays shut unless the brief the council signed opens it.
+  const needsRegistry = (ticket.green ?? []).some((c) => c.kind === 'run' && c.network === 'registry');
   /** Start a bridge for this attempt. model: {maxCalls, maxUsd, pricing} for the agent's bridge; null = the tunnel only. */
   const startBridge = async (aDir, name, ports, model) => {
     const secretFile = join(aDir, `${name}-secret`);
@@ -450,6 +456,7 @@ export async function runTicket(
       `${name}-${ticket.id}`,
     ];
     if (ports.sockDir) args.push('--unix-dir', ports.sockDir);
+    if (!needsRegistry) args.push('--allow', 'closed.invalid:0');   // nothing is tunnelled for this build
     if (model) {
       args.push(
         '--base',
@@ -655,7 +662,9 @@ export async function runTicket(
     }
     const wa = git(['worktree', 'add', '-q', '--no-track', '-b', ticket.branch, wt, startAt], { cwd: repoDir });
     if (wa.code !== 0) throw new Error(`worktree add failed: ${wa.err}`);
-    appendFileSync(join(repoDir, '.git/info/exclude'), "\n# the line: the agent's scratch space is never committed\n.oc/\n");
+    // .oc/ is the agent's scratch space. .github/ is never committed either: a workflow file on a pushed build branch
+    // would run on the repository's runners, chosen by model output.
+    appendFileSync(join(repoDir, '.git/info/exclude'), "\n# the line: never committed\n.oc/\n.github/\n");
     const linkBefore = readFileSync(join(wt, '.git'));
     say(`worktree on ${ticket.branch} at ${startAt.slice(0, 10)} (${ticket.revision ? `the build ${ticket.revision.of}` : 'main'} of ${ticket.product})`);
     save();
@@ -736,7 +745,7 @@ export async function runTicket(
         realpathSync(homedir()),
         secretsDir,
         String(other.address().port),
-        registry,
+        needsRegistry ? registry : 'closed',
       ], { timeout: 180_000, env: wallEnv(ports) });
       other.close();
       writeFileSync(join(aDir, 'sandbox-probe.txt'), probe.stdout + probe.stderr);

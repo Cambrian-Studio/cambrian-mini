@@ -122,11 +122,14 @@
       "signature": "0xe213096594a33558d294266a4747b4dc8ce9989d901e8ce23d81208ec1418741129cd2b55af0f491f8847cae3ff0be8e91399335b814ebcb9f0f3905e65889041b",
       "request_sha256": "2efb03d799b1e3d583fc3454f7cc33ea3b1dc591c1c60ce59f7d7b850df0d282",
       "response_sha256": "ca3ab5e57f2b24f366a3ca87ce5f16604bcf37d6f57c14d2d8f78cbb580dddc1",
-      "report": null,
-      "fetched_at": "2026-11-14T00:04:52.210Z"
+      "report": {
+        "detached": true,
+        "sha256": "5703a739e9dcf5b427a04a0de97c335d59c2fe2c6ad2d591cd52793d43a3576f"
+      },
+      "fetched_at": "2026-11-14T11:48:49.430Z"
     },
     "attestation_check": {
-      "ok": false,
+      "ok": true,
       "checks": [
         {
           "name": "signature",
@@ -140,33 +143,33 @@
         },
         {
           "name": "report_names_signer",
-          "ok": false,
-          "detail": "no TEE report for this signer"
+          "ok": true,
+          "detail": "ok"
         },
         {
           "name": "quote_parses",
-          "ok": false,
-          "detail": "no TEE report"
+          "ok": true,
+          "detail": "ok"
         },
         {
           "name": "quote_binds_signer",
-          "ok": false,
-          "detail": "no quote"
+          "ok": true,
+          "detail": "ok"
         },
         {
           "name": "quote_signature_chain",
-          "ok": false,
-          "detail": "no quote"
+          "ok": true,
+          "detail": "ok"
         },
         {
           "name": "config_measured",
-          "ok": false,
-          "detail": "no quote"
+          "ok": true,
+          "detail": "ok"
         },
         {
           "name": "event_log_replays",
-          "ok": false,
-          "detail": "no quote"
+          "ok": true,
+          "detail": "ok"
         },
         {
           "name": "tcb_status",
@@ -190,7 +193,7 @@
         }
       ]
     },
-    "attestation_note": "not verified: report_names_signer: no TEE report for this signer"
+    "attestation_note": "verified against a TEE report fetched at 2026-11-14T11:48:49.593Z, after the call (2026-11-14T00:04:52.210Z), so it shows the signing key is in a TEE now, not that it was at the moment of the call. When the brief was drafted this code recorded \"not verified\": NEAR AI's report named the signing key in two TEEs and the code accepted only a single match. That was corrected on 14 November."
   },
   "proposed_by": {
     "member": "clemens",

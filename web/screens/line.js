@@ -337,7 +337,8 @@ export async function render(root, arg) {
   if (loop.rows.length || loop.said) {
     told.children[1]?.querySelector('div')?.append(h('div.applied', {},
       h('span.step', {}, 'Lessons applied'),
-      loop.said ? h('span.said', {}, `In the conversation, ${loop.said_by === 'cambrian' ? 'Cambrian' : sender} wrote: “${loop.said}”`) : null,
+      loop.said ? h('span.said', {},
+        `In the conversation, ${loop.said_by === 'cambrian' ? 'Cambrian' : sender} wrote: “${loop.said}”`) : null,
       h('ul', {}, loop.rows.map((x) => h('li', {}, h('a.link', { href: `#/lessons` }, x.lesson), `: ${x.what}. `,
         x.from_run ? ['Learned from the earlier build ',
           h('a.link', { href: '#/receipts/' + encodeURIComponent(x.from_run) }, x.from_run), '.']
