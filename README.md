@@ -6,11 +6,13 @@ It is for a collective that wants AI-built products with a record anyone can ver
 
 The record holds one product so far: Upread, an app that reads an article to you one word at a time. Its three builds were made on Cambrian's private setup before this repository existed. They are imported here with their numbers unchanged and labelled as imported.
 
-## What you can check in five minutes
+## Three ways in
 
-1. **The hosted replay.** Open <https://cambrian-line-replay.vercel.app>, go to **Verify**, pick a build and press **Verify this receipt**. You see your own browser recompute the sha256 of that build's record and report that it matches.
-2. **`npm run judge`.** Clone, `npm ci`, `npm run judge`. You see 16 numbered checks run on your machine with no keys, ending `judge: 16 checks — 12 ok, 4 skipped, 0 failed`. Each skip prints its reason. Check 16 reads NEAR mainnet from a public archival node; without a connection it skips and the line ends `11 ok, 5 skipped`.
-3. **Your own build.** `npm run solo` with your own NEAR AI key: you talk an idea through, sign the brief with your own passkey as a council of one, and watch it build. You see a preview of the page it built and a record whose hash your browser recomputes. The next section has the steps. Without a key, `npm run demo` sends one brief through the same build path with a stand-in agent and a throwaway test council, and you see `state     green-no-preview`.
+1. **The hosted replay, instant.** Open <https://cambrian-line-replay.vercel.app/#/verify>, pick a build and press **Verify this receipt**. Your own browser recomputes the sha256 of that build's record and reports that it matches.
+2. **`npm run judge`, seconds.** Clone, `npm ci`, `npm run judge`: 16 numbered checks on your machine with no keys, ending `judge: 16 checks — 12 ok, 4 skipped, 0 failed`. Measured from a fresh clone on 14 November: 5 s on macOS, 1 s in a plain Linux container (`node:22-bookworm`). Each skip prints its reason. Check 16 reads NEAR mainnet from a public archival node.
+3. **Your own build, about a minute.** `npm run solo` with your own NEAR AI key: you talk an idea through, sign the brief with your own passkey as a council of one, and watch it build. Measured on 13 November from `git clone` to the first preview: 57 s and $0.015. The next section has the steps. Without a key, `npm run demo` sends one brief through the same build path with a stand-in agent and a throwaway test council, and you see `state     green-no-preview`.
+
+In a plain Linux container without user namespaces, `npm test` ends `LINUX_PLAIN_TESTS` and the judge ends `11 ok, 5 skipped`: every check that needs no sandbox passes, including the one that reads mainnet. The tests and the one judge check that skip are those that would run agent or product code, which this code refuses to do without a sandbox it can build; the note under [Try it](#try-it) has the command that gives the full run.
 
 ## Run your own line
 
@@ -48,6 +50,7 @@ Next, and not true yet:
 - The stake is held by the collective's account, not by its treasury. The Sputnik DAO treasury, `cambrian.sputnik-dao.near`, is set up, and NEAR AI confirmed that a DAO cannot be bound as a funding wallet yet; that needs changes in Trezu, Sputnik DAO and NEAR AI.
 
 - All three council members enrolled a passkey on 13 November (`data/council.json`). No build signed by the council is recorded here yet.
+- The one thing the line learns next: products that talk to Cambrian Mini, for shared data and for model calls paid from the stake. That unlocks Spot, a persona generator, and signed postmarks on NEAR.
 - Contribute the line's redacted build traces through NEAR AI Gateway, so the factory's own failures and fixes earn inference credits.
 - No council member's conversation has become a build yet. The conversation, the draft and its versions, and the hand-over to the council are tested with a stand-in model, and were run once for real in solo mode (see [Run your own line](#run-your-own-line)).
 - Upread Mini, the fresh build of Upread on this repository's build path, is on record with no build yet. The imported Upread builds are shown as its history; it does not continue their code.

@@ -54,7 +54,8 @@ export async function render(root) {
           h('span.big', { class: value ? '' : 'is-none' }, value || 'Not recorded'), h('span.sub', {}, note))))),
 
     section('capital', 'Idle capital, put to work.',
-      'NEAR AI lets you stake NEAR and receive AI compute credits in return. The NEAR stays staked and stays yours. '
+      'Most capital in this ecosystem sits still, in treasuries, staked tokens and funds waiting to deploy. '
+      + 'NEAR AI lets you stake NEAR and receive AI compute credits in return. The NEAR stays staked and stays yours. '
       + 'Cambrian puts the credits to work, and the collective decides what they build.',
       capitalCards(stake),
       h('p.sub', {}, h('a.link', { href: '#/stake' }, 'See the figures'))),
