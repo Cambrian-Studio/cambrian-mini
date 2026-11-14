@@ -42,7 +42,8 @@ export async function render(root) {
       h('p.eyebrow', {}, 'CAMBRIAN MINI · NEAR HACKATHON'),
       h('h1', {}, 'Machines build. The collective decides.'),
       h('p.lede', {}, 'Cambrian is a product studio run by one intelligence and governed by its members. '
-        + 'Members bring ideas, taste and capital. Cambrian turns them into products, and gets better with every one it ships.'),
+        + 'Members bring ideas, taste or capital; together they decide what gets built. '
+        + 'Cambrian turns their decisions into products, and gets better with every one it ships.'),
       h('div.actions', {},
         h('a.btn.tall', { href: '#/line' }, 'Watch an idea become a product'),
         h('a.btn.ghost.tall', { href: ACCESS, ...out }, 'Request access')),
@@ -76,7 +77,7 @@ export async function render(root) {
 
     section('collective', 'A collective, not a crowd.',
       'Cambrian Collective is invitation-only. Builders, designers, engineers and backers shape what gets made, '
-      + 'with their taste and their capital. Three founding members today. Built for a hundred.',
+      + 'with their taste or their capital. Three founding members today. Built for a hundred.',
       h('div.cb-members.flush.four', {},
         (council?.members || []).map((m) => memberCard(m, { bl: m.role || 'Council', br: [dot(), 'Team'] })),
         card('a.cb-member.invite', { br: 'By invitation' }, { href: ACCESS, ...out, 'aria-label': 'By invitation. Request access.' }))),
