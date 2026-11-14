@@ -66,7 +66,8 @@ async function setup({ exposed = true, near = stubNear(), cap = 5, handover = fa
   const committed = JSON.parse(readFileSync(join(root, 'data/products.json'), 'utf8'));
   const upread = { ...committed.products.find((p) => p.id === 'upread') }; delete upread.successor;
   writeFileSync(join(data, 'products.json'), JSON.stringify(handover ? committed : { v: 1, products: [upread] }));
-  cpSync(join(root, 'data/runs'), join(data, 'runs'), { recursive: true });
+  // the three imported builds only: the committed record grows with every real build
+  for (const id of readdirSync(join(root, 'data/runs')).filter((n) => n.startsWith('upread-v1-'))) cpSync(join(root, 'data/runs', id), join(data, 'runs', id), { recursive: true });
   cpSync(join(root, 'lessons/lessons.json'), join(dir, 'lessons.json'));
   const b = appConfig();
   const cfg = { ...b, dailyCapUsd: cap, retryMs: 0, mode: 'live', data, state, exposed, rp: { id: null, origin: null }, lineOverrides: { offline: true },
@@ -85,13 +86,16 @@ async function setup({ exposed = true, near = stubNear(), cap = 5, handover = fa
     return { answer, head, events, text: events.map((e) => e.t ?? '').join(''), id: events.find((e) => e.conversation_id)?.conversation_id };
   };
   const open = async (member) => {
-    const o = await post('/api/talk/open/options', { member });
-    const r = await post('/api/talk/open', { member, ...tc.authenticators[member].assert(o[1].challenge) });
+    // nobody is named: the passkey that signs says who it is
+    const o = await post('/api/talk/open/options', {});
+    const r = await post('/api/talk/open', { talk_sha256: o[1].talk_sha256, ...tc.authenticators[member].assert(o[1].challenge) });
+    assert.equal(r[1].member, member);
     return r[1].session;
   };
   const sendAs = async (member, conversation_id) => {
-    const o = await post('/api/talk/send/options', { member, conversation_id });
-    return post('/api/talk/send', { member, conversation_id, ...tc.authenticators[member].assert(o[1].challenge) });
+    // the conversation's own member is asked; `member` here is only whose device answers
+    const o = await post('/api/talk/send/options', { conversation_id });
+    return post('/api/talk/send', { conversation_id, ...tc.authenticators[member].assert(o[1].challenge) });
   };
   const tickets = () => (existsSync(join(data, 'tickets')) ? readdirSync(join(data, 'tickets')) : []);
   return { dir, cfg, tc, near, live, post, turn, open, sendAs, tickets, data, state, done: () => rmSync(dir, { recursive: true, force: true }) };
@@ -192,6 +196,14 @@ test('3. "Send to council" puts that exact ticket in Approvals, and every signat
     const altered = entry.conversation.messages.map((m, i) => (i === 0 ? { ...m, text: `${m.text} And a shop.` } : m));
     const forged = { ...entry.ticket, conversation: { ...entry.ticket.conversation, sha256: conversationHash(altered) } };
     assert.deepEqual(verifyRelease(forged, approvals, s.tc.council).valid, [], 'a ticket naming another conversation is another ticket');
+    // the judge's offline re-check of a brief that came from a conversation: the kept conversation, the sender's signature over
+    // its hash, and an approval given with a taste note all hold; a changed conversation is found
+    const { checkDrafted } = await import('../../tickets/provenance.mjs');
+    const noted = [s.tc.sign('clemens', entry.ticket, undefined, 'Keep it plain.'), s.tc.sign('michael', entry.ticket)];
+    const without = (r) => r.faults.filter((x) => x !== 'the model response was not kept');   // the stand-in model keeps no bytes
+    assert.deepEqual(without(checkDrafted({ dir: join(s.data, 'tickets'), entry: { ...entry, approvals: noted }, council: s.tc.council })), []);
+    assert.deepEqual(without(checkDrafted({ dir: join(s.data, 'tickets'), entry: { ...entry, conversation: { ...entry.conversation, messages: altered } },
+      council: s.tc.council })), ['the kept conversation is not the one the ticket names']);
     assert.equal((await s.sendAs('jj', t.id))[0], 409, 'it goes to the council once');
     assert.equal((await s.turn({ session, conversation_id: t.id, text: 'one more thing' })).answer[0], 409);
     assert.equal(JSON.parse(readFileSync(s.cfg.files.talk, 'utf8')).conversations[0].messages.at(-1).brief.id, entry.ticket.id);
@@ -389,5 +401,37 @@ test('a long message is kept whole: 7,500 characters reach the model, the conver
     assert.match(readFileSync(join(root, 'web/screens/talk.js'), 'utf8'), /maxlength: '8000'/, 'the box takes as much as the server does');
     const over = await s.turn({ session, text: 'y'.repeat(8001) });
     assert.equal(over.answer[0], 400); assert.match(over.answer[1].why, /under 8000 characters/);
+  } finally { s.done(); }
+});
+
+test('Talk knows who is writing from the passkey, shows a member their own open conversations, and keeps them across a restart', async () => {
+  const s = await setup();
+  try {
+    const o = await s.post('/api/talk/open/options', {});
+    assert.equal(o[1].allowCredentials.length, 3, 'every enrolled passkey is offered; the device answers with its own');
+    const jj = await s.open('jj'); const michael = await s.open('michael');
+    const t1 = await s.turn({ session: jj, text: IDEA });
+    const t2 = await s.turn({ session: jj, text: 'A second idea, about kelp forests and who lives in them.' });
+    await s.post('/api/talk/draft', { session: jj, conversation_id: t1.id, text: 'ready' });
+    const tm = await s.turn({ session: michael, text: 'An idea of my own, about lighthouses.' });
+    const list = await s.post('/api/talk/list', { session: jj });
+    assert.equal(list[1].member, 'jj');
+    assert.deepEqual(list[1].conversations.map((c) => c.id).sort(), [t1.id, t2.id].sort(), 'her own, and nobody else\'s');
+    assert.equal(list[1].conversations.find((c) => c.id === t1.id).drafts, 1);
+    assert.equal((await s.post('/api/talk/get', { session: jj, conversation_id: tm.id }))[0], 404, 'another member\'s conversation cannot be opened');
+    assert.equal((await s.post('/api/talk/list', {}))[0], 403, 'and nothing is listed without a passkey');
+    // the app restarts: same state on disk, a new process
+    const again = await makeLive(s.cfg, { near: s.near });
+    const post2 = (path, body) => again._test.handlers[path](body, { socket: { remoteAddress: '127.0.0.1' }, headers: {} });
+    const after = await post2('/api/talk/list', { session: jj });
+    assert.equal(after[0], 200, 'still signed in'); assert.equal(after[1].conversations.length, 2);
+    const got = await post2('/api/talk/get', { session: jj, conversation_id: t1.id });
+    assert.equal(got[1].messages[0].text, IDEA); assert.equal(got[1].draft.version, 1); assert.equal(got[1].draft.brief.title, 'Tide pool facts page');
+    // sending needs nobody named either: the conversation's member signs; another member's passkey is refused
+    const wrong = await s.sendAs('michael', t1.id);
+    assert.equal(wrong[0], 403);
+    const sent = await s.sendAs('jj', t1.id);
+    assert.equal(sent[0], 200, JSON.stringify(sent[1])); assert.equal(sent[1].proposed_by, 'jj');
+    assert.deepEqual((await s.post('/api/talk/list', { session: jj }))[1].conversations.map((c) => c.id), [t2.id], 'a sent conversation is no longer open');
   } finally { s.done(); }
 });

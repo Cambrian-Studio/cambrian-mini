@@ -62,7 +62,8 @@ async function setup({ exposed = true, handover = false } = {}) {
   const committed = JSON.parse(readFileSync(join(root, 'data/products.json'), 'utf8'));
   const upread = { ...committed.products.find((p) => p.id === 'upread') }; delete upread.successor;
   writeFileSync(join(data, 'products.json'), JSON.stringify(handover ? committed : { v: 1, products: [upread] }));
-  cpSync(join(root, 'data/runs'), join(data, 'runs'), { recursive: true });
+  // the three imported builds only: the committed record grows with every real build
+  for (const id of readdirSync(join(root, 'data/runs')).filter((n) => n.startsWith('upread-v1-'))) cpSync(join(root, 'data/runs', id), join(data, 'runs', id), { recursive: true });
   cpSync(join(root, 'lessons/lessons.json'), join(dir, 'lessons.json'));
   const base = appConfig();
   const cfg = { ...base, dailyCapUsd: 5, mode: 'live', data, state, exposed, rp: { id: null, origin: null }, lineOverrides: { offline: true },

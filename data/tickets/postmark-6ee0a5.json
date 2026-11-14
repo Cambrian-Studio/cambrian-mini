@@ -1,0 +1,228 @@
+{
+  "ticket": {
+    "kind": "build-ticket",
+    "v": 1,
+    "id": "postmark-6ee0a5",
+    "product": "postmark",
+    "title": "Postmark: London postcards that unlock only at the landmark",
+    "task": "Write the project files first and improve them afterwards: index.html, style.css, fence.mjs, postcard.mjs, app.js and test.mjs, all dependency-free and opened straight from index.html. fence.mjs holds the ten named London landmarks with their lat/lng plus the \"Here\" card, a haversine distance function in metres, and an unlock function that is true at 150 m or less and false beyond it. postcard.mjs exports a function that takes a landmark name, a number, a date and coordinates and returns the printed postcard text block: landmark, date, time, coordinates to five decimals, and \"No. N of 10\". app.js shows the ten cards and the \"Here\" card faded with the distance in metres when geolocation is available, unlocks a card at 150 m or less and the \"Here\" card always, then opens a live getUserMedia camera with the rear facing — never a file or gallery picker — and the shutter stays disabled outside the fence. On capture, compose a PNG of the photo as the postcard front with one warm paper design, the landmark name set in type, and a round postmark stamp carrying landmark, date, time, coordinates, \"No. N of 10\" and the line \"Collect your own at\" with the page's own link; share it with navigator.share when file sharing is supported and download the image otherwise. Let the member write one line on the back, store the card in IndexedDB and list saved cards as a plain list of small thumbnails with name and date — no grid styling, no upload, no accounts. Load nothing from the network: system font stack for the frame, the house kit tokens only, no external fonts, scripts, images or CDNs. Do not install or audit any dependency, and ship no debug, bypass, skip-fence or unlock-all path in app.js — the fence lives only in fence.mjs and app.js calls it. test.mjs runs under plain node with no browser and asserts that 150 m unlocks and 151 m does not for three of the landmarks, and that the postcard text block for \"No. 3 of 10\" contains the landmark, date, time and coordinates.\n\nWrite files early; do not audit dependency source.",
+    "goal": "A phone web app where ten London landmarks and a universal \"Here\" card unlock inside 150 m, the live camera takes the shot, and the photo becomes a shareable postcard postmarked with place, date, time, coordinates and number.",
+    "out_of_scope": [
+      "A styled grid of saved cards — a plain list is enough for this ticket",
+      "Ten illustrated card artworks — one warm paper card design with type-set names",
+      "Accounts, uploads, minting, printing or sponsored stops",
+      "Maps, other cities, Home Screen install",
+      "Any browser-based or manual end-to-end test harness"
+    ],
+    "green": [
+      {
+        "id": "g1",
+        "kind": "run",
+        "name": "fence and postcard text tests pass",
+        "run": "node test.mjs",
+        "exit": 0,
+        "network": "none",
+        "timeout_s": 300
+      },
+      {
+        "id": "g2",
+        "kind": "file",
+        "name": "page loads the app as a module",
+        "path": "index.html",
+        "exists": true,
+        "contains": [
+          "type=\"module\"",
+          "postcard"
+        ]
+      },
+      {
+        "id": "g3",
+        "kind": "file",
+        "name": "nothing loaded from the web",
+        "path": "index.html",
+        "exists": true,
+        "not_matches": [
+          "https?://"
+        ]
+      },
+      {
+        "id": "g4",
+        "kind": "file",
+        "name": "no test or bypass switch in the shipped app",
+        "path": "app.js",
+        "exists": true,
+        "not_matches": [
+          "[Dd]ebug|[Bb]ypass|[Ss]kip[Ff]ence|[Uu]nlock[Aa]ll"
+        ]
+      }
+    ],
+    "budget": {
+      "usd": 1.5,
+      "calls": 24,
+      "minutes": 12
+    },
+    "base": "main",
+    "branch": "build/postmark-6ee0a5",
+    "drafted": {
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "completion_id": "chatcmpl-87dd2e1f-112e-4e54-9a7e-0df91df5b51e",
+      "request_sha256": "2efb03d799b1e3d583fc3454f7cc33ea3b1dc591c1c60ce59f7d7b850df0d282",
+      "response_sha256": "ca3ab5e57f2b24f366a3ca87ce5f16604bcf37d6f57c14d2d8f78cbb580dddc1"
+    },
+    "conversation": {
+      "sha256": "96f13030716433454f4a9174379c70c5b13e018d7da0a9b2c8e7b384d87bc7ce",
+      "turns": 2
+    }
+  },
+  "created": "2026-11-14T00:31:31.334Z",
+  "idea": "Postmark: London postcards you can only make while standing at the landmark. One ticket: the core loop only.\n\nThe loop: ten London landmarks, each shown as a faded postcard with how far away you are. Inside 150 m the card unlocks and the live camera opens; no photos from the gallery, and the shutter works only inside the fence. The photo becomes the front of a postcard with a postmark stamp: landmark, date, time, coordinates, and \"No. 3 of 10\". Write one line on the back, then share it as an image through the phone's Share sheet (WhatsApp, Instagram), with \"Collect your own at\" and the page's link printed on the card. On desktop, download the image instead.\n\nThe first card is \"Here\": postmarked wherever you stand, so anyone outside London can try the whole loop.\n\nCollected cards are kept on the phone (IndexedDB) and shown in a simple grid. Nothing is uploaded, no accounts.\n\nLook: the app frame uses the house kit; the postcards themselves are warm and colourful, paper and ink, with a round postmark. System font stack for the frame, nothing loaded from the web except what the browser provides.\n\nLandmarks (lat, lng): Tower Bridge 51.5055,-0.0754 · Elizabeth Tower 51.5007,-0.1246 · St Paul's Cathedral 51.5138,-0.0984 · Trafalgar Square 51.5080,-0.1281 · Buckingham Palace 51.5014,-0.1419 · London Eye 51.5033,-0.1196 · Tower of London 51.5081,-0.0759 · Piccadilly Circus 51.5101,-0.1340 · The Shard 51.5045,-0.0865 · Tate Modern 51.5076,-0.0994.\n\nGreen checks that need no browser: the fence logic in its own module, tested in node (inside 150 m unlocks, 151 m does not, for three landmarks); the postcard text block (landmark, date, time, coordinates, number) produced by a function, tested in node; no test or debug mode that bypasses the fence in the shipped page.\n\nOut of scope: maps, accounts, minting, printing, sponsored stops, install to Home Screen, other cities.\n\nDraft the brief.",
+  "intent": "new",
+  "conversation": {
+    "sha256": "96f13030716433454f4a9174379c70c5b13e018d7da0a9b2c8e7b384d87bc7ce",
+    "turns": 2,
+    "messages": [
+      {
+        "role": "member",
+        "text": "Postmark: London postcards you can only make while standing at the landmark. One ticket: the core loop only.\n\nThe loop: ten London landmarks, each shown as a faded postcard with how far away you are. Inside 150 m the card unlocks and the live camera opens; no photos from the gallery, and the shutter works only inside the fence. The photo becomes the front of a postcard with a postmark stamp: landmark, date, time, coordinates, and \"No. 3 of 10\". Write one line on the back, then share it as an image through the phone's Share sheet (WhatsApp, Instagram), with \"Collect your own at\" and the page's link printed on the card. On desktop, download the image instead.\n\nThe first card is \"Here\": postmarked wherever you stand, so anyone outside London can try the whole loop.\n\nCollected cards are kept on the phone (IndexedDB) and shown in a simple grid. Nothing is uploaded, no accounts.\n\nLook: the app frame uses the house kit; the postcards themselves are warm and colourful, paper and ink, with a round postmark. System font stack for the frame, nothing loaded from the web except what the browser provides.\n\nLandmarks (lat, lng): Tower Bridge 51.5055,-0.0754 · Elizabeth Tower 51.5007,-0.1246 · St Paul's Cathedral 51.5138,-0.0984 · Trafalgar Square 51.5080,-0.1281 · Buckingham Palace 51.5014,-0.1419 · London Eye 51.5033,-0.1196 · Tower of London 51.5081,-0.0759 · Piccadilly Circus 51.5101,-0.1340 · The Shard 51.5045,-0.0865 · Tate Modern 51.5076,-0.0994.\n\nGreen checks that need no browser: the fence logic in its own module, tested in node (inside 150 m unlocks, 151 m does not, for three landmarks); the postcard text block (landmark, date, time, coordinates, number) produced by a function, tested in node; no test or debug mode that bypasses the fence in the shipped page.\n\nOut of scope: maps, accounts, minting, printing, sponsored stops, install to Home Screen, other cities.\n\nDraft the brief."
+      },
+      {
+        "role": "cambrian",
+        "text": "Clear enough to build — with one push.\n\nTen illustrated postcards is ten pieces of art in one agent run. Make the card a single warm paper design with the landmark name set in type; the photo is the only image. That keeps the loop testable in minutes.\n\nThe \"Here\" card is worth keeping — it is what lets anyone outside London try the loop. The grid is a second feature; ship it as a plain list of saved cards and let the nice grid come later.\n\nNothing else changes. Say \"ready\" or press \"Draft the brief\" and the brief gets written against that."
+      }
+    ],
+    "draft": 1
+  },
+  "lint": {
+    "applied": [
+      {
+        "lesson": "write-files-early",
+        "what": "task ends with \"Write files early; do not audit dependency source.\""
+      },
+      {
+        "lesson": "no-dependency-auditing",
+        "what": "covered by the same closing line, \"Write files early; do not audit dependency source.\""
+      }
+    ],
+    "refused": [],
+    "notes": [
+      "'postmark' would be a new product; it is recorded when this brief is approved and built"
+    ]
+  },
+  "brief": {
+    "usd": 0.007599,
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "attempts": 2,
+    "attestation": {
+      "kind": "provider_tee",
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "chat_id": "chatcmpl-87dd2e1f-112e-4e54-9a7e-0df91df5b51e",
+      "signing_algo": "ecdsa",
+      "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+      "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:2efb03d799b1e3d583fc3454f7cc33ea3b1dc591c1c60ce59f7d7b850df0d282:ca3ab5e57f2b24f366a3ca87ce5f16604bcf37d6f57c14d2d8f78cbb580dddc1",
+      "signature": "0xe213096594a33558d294266a4747b4dc8ce9989d901e8ce23d81208ec1418741129cd2b55af0f491f8847cae3ff0be8e91399335b814ebcb9f0f3905e65889041b",
+      "request_sha256": "2efb03d799b1e3d583fc3454f7cc33ea3b1dc591c1c60ce59f7d7b850df0d282",
+      "response_sha256": "ca3ab5e57f2b24f366a3ca87ce5f16604bcf37d6f57c14d2d8f78cbb580dddc1",
+      "report": null,
+      "fetched_at": "2026-11-14T00:04:52.210Z"
+    },
+    "attestation_check": {
+      "ok": false,
+      "checks": [
+        {
+          "name": "signature",
+          "ok": true,
+          "detail": "ok"
+        },
+        {
+          "name": "text_binds_hashes",
+          "ok": true,
+          "detail": "ok"
+        },
+        {
+          "name": "report_names_signer",
+          "ok": false,
+          "detail": "no TEE report for this signer"
+        },
+        {
+          "name": "quote_parses",
+          "ok": false,
+          "detail": "no TEE report"
+        },
+        {
+          "name": "quote_binds_signer",
+          "ok": false,
+          "detail": "no quote"
+        },
+        {
+          "name": "quote_signature_chain",
+          "ok": false,
+          "detail": "no quote"
+        },
+        {
+          "name": "config_measured",
+          "ok": false,
+          "detail": "no quote"
+        },
+        {
+          "name": "event_log_replays",
+          "ok": false,
+          "detail": "no quote"
+        },
+        {
+          "name": "tcb_status",
+          "skipped": true,
+          "detail": "needs Intel's online collateral (TCB level, quoting-enclave identity, revocation lists)"
+        },
+        {
+          "name": "gpu_evidence",
+          "skipped": true,
+          "detail": "needs NVIDIA's online verifier (NRAS); only a hash of the GPU evidence is kept in the record"
+        },
+        {
+          "name": "image_provenance",
+          "skipped": true,
+          "detail": "needs an online lookup: is the measured configuration a build NEAR AI published"
+        },
+        {
+          "name": "report_freshness",
+          "skipped": true,
+          "detail": "the nonce was chosen by whoever fetched the report; a record cannot prove when that was"
+        }
+      ]
+    },
+    "attestation_note": "not verified: report_names_signer: no TEE report for this signer"
+  },
+  "proposed_by": {
+    "member": "clemens",
+    "approval": {
+      "member": "clemens",
+      "credential_id": "NOzB9-UJhHx1oUZgIPkhyPEPquc",
+      "idea_sha256": "96f13030716433454f4a9174379c70c5b13e018d7da0a9b2c8e7b384d87bc7ce",
+      "authenticator_data": "1psXGYcA-R2s5Rkt_ePFB4w3nsRwLMw3rXvVrscYydwdAAAAAA",
+      "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiTnlKeHYtRTJmMzdXaTZGZlVJN0hNcmNCY0dxaHR3eGZrSjJ0d1dMRDQ0dyIsIm9yaWdpbiI6Imh0dHBzOi8vY2FtYnJpYW4tbWluaS50YWlsMTc2NjcxLnRzLm5ldCIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
+      "signature": "MEUCIQDcCRDe7mSvcmj4whrucSxazYPsw5F8iCXD7uVlqbSNcwIgW0KbRhHbCHgl8anFZluxGA2cY8R9zNJISW-V1M7BX80",
+      "at": "2026-11-14T00:31:31.333Z"
+    }
+  },
+  "approvals": [
+    {
+      "member": "clemens",
+      "credential_id": "NOzB9-UJhHx1oUZgIPkhyPEPquc",
+      "ticket_sha256": "b1bf5f1cc629f889301e7c65a61b482d4bc47a873cf6e2cc4f5e17662f74b6bd",
+      "authenticator_data": "1psXGYcA-R2s5Rkt_ePFB4w3nsRwLMw3rXvVrscYydwdAAAAAA",
+      "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiV0R4U0xnT0FnLXY1Y29WWmFDbzBXYl9JREluUmxYYzNBWVl4NmNOMGFSMCIsIm9yaWdpbiI6Imh0dHBzOi8vY2FtYnJpYW4tbWluaS50YWlsMTc2NjcxLnRzLm5ldCIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
+      "signature": "MEYCIQD6nsFrXEeQC67XO6JnBASexgj6W0gjp0LMY-JSNFAyvgIhAJNOxbhLzj93R2TvJa_m5mjpdUARrM6DsTLsyonywWDC",
+      "at": "2026-11-14T00:32:13.373Z"
+    },
+    {
+      "member": "michael",
+      "credential_id": "lxxF8Dqkoxku_2MYM4ljyA",
+      "ticket_sha256": "b1bf5f1cc629f889301e7c65a61b482d4bc47a873cf6e2cc4f5e17662f74b6bd",
+      "authenticator_data": "1psXGYcA-R2s5Rkt_ePFB4w3nsRwLMw3rXvVrscYydwdAAAAAA",
+      "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiV0R4U0xnT0FnLXY1Y29WWmFDbzBXYl9JREluUmxYYzNBWVl4NmNOMGFSMCIsIm9yaWdpbiI6Imh0dHBzOi8vY2FtYnJpYW4tbWluaS50YWlsMTc2NjcxLnRzLm5ldCIsImNyb3NzT3JpZ2luIjpmYWxzZSwib3RoZXJfa2V5c19jYW5fYmVfYWRkZWRfaGVyZSI6ImRvIG5vdCBjb21wYXJlIGNsaWVudERhdGFKU09OIGFnYWluc3QgYSB0ZW1wbGF0ZS4gU2VlIGh0dHBzOi8vZ29vLmdsL3lhYlBleCJ9",
+      "signature": "MEQCIHKgtlaVN-MErXprmL8-NQKSJp6ulR0Wskrh0b8PexuBAiAz_azyofxyvKlc0hAs4OeqXoPaz3soZE1yk5qVoXK0mg",
+      "at": "2026-11-14T01:09:21.745Z"
+    }
+  ],
+  "run_started": "2026-11-14T01:09:21.750Z"
+}

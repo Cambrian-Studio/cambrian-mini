@@ -12,7 +12,9 @@ import { story, playerStates, liveStates, STEP_MS } from '../../web/screens/line
 
 const at = (p) => fileURLToPath(new URL(`../../${p}`, import.meta.url));
 const json = (p) => JSON.parse(readFileSync(at(p), 'utf8'));
-const runs = readdirSync(at('data/runs')).map((d) => json(`data/runs/${d}/run.json`));
+// these tests read the three imported builds; builds made here since are read by the tests further down
+const allRuns = readdirSync(at('data/runs')).map((d) => json(`data/runs/${d}/run.json`));
+const runs = allRuns.filter((r) => r.origin === 'private-line');
 const product = json('data/products.json').products[0];
 const lessons = json('lessons/lessons.json').lessons;
 
@@ -95,4 +97,20 @@ test('Watch a build plays from the start: one step at a time, and a build runnin
   assert.deepEqual(liveStates(running), ['on', 'on', 'on', 'now', 'off', 'off', 'off'], 'a live build is building: step four is happening');
   const red = runs.find((r) => r.state === 'red');
   assert.equal(liveStates(red)[4], 'red', 'a failed build shows its checks as failed');
+});
+
+test('Watch a build tells a real build from its record and its brief: who sent it, who signed, what it cost, where it is recorded', () => {
+  const mine = allRuns.filter((r) => r.ticket.product === 'upread-mini');
+  assert.equal(mine.length >= 1, true, 'a build of Upread Mini is on record');
+  const brief = json(`data/tickets/${mine[0].ticket.id}.json`);
+  const told = story(json('data/products.json').products.find((p) => p.id === 'upread-mini'), mine,
+    { council: json('data/council.json'), lessons, onChain: mine.map((r) => ({ value: { on_chain: json(`data/runs/${r.ticket.id}/onchain.json`) } })), brief });
+  const [idea, wrote, signed, build, checks, live, record] = told.map((s) => s.line);
+  assert.match(idea, /^Clemens described the idea: Upread Mini\./);
+  assert.equal(wrote, 'Cambrian wrote the brief, with 4 checks and a $1.00 budget.');
+  assert.equal(signed, 'Clemens and Michael signed.');
+  assert.equal(build, 'Agents built it in a sealed workspace on NEAR AI. 9 model calls, $0.43.');
+  assert.equal(checks, 'Every check passed.');
+  assert.match(live, /^A preview link went up/);
+  assert.equal(record, 'Recorded on NEAR.');
 });

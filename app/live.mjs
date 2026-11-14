@@ -9,7 +9,7 @@
 // A guest can read everything and propose; nothing is built without the council's signatures, and the line
 // checks those signatures again itself (line/run.mjs) — this file is the door, not the lock.
 import { randomBytes } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { sendJson } from './http.mjs';
 import { council, listTickets, readTicketEntry, writeTicketEntry, writeJson, listRuns, readRun, attestationSummary } from './store.mjs';
@@ -255,7 +255,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
   const sessions = new Map(Object.entries(readJson(sessionsFile, {})));
   const saveSessions = () => { for (const [k, v] of sessions) if (Date.now() - v.at >= 2 * 3600 * 1000) sessions.delete(k);
     writeFileSync(sessionsFile, JSON.stringify(Object.fromEntries(sessions)), { mode: 0o600 }); };
-  const pendingOpen = new Map();   // member → the hash their passkey is about to sign
+  const pendingOpen = new Map();   // the hash a passkey is about to sign → when it was handed out
   const SESSION_MS = 2 * 3600 * 1000;
   const talkDir = join(cfg.state, 'talk');
   const CONV_ID = /^talk-[0-9]{14}-[0-9a-f]{6}$/;
@@ -305,20 +305,27 @@ export async function makeLive(cfg, { near = nearai } = {}) {
   const handlers = {
     // ---- Talk is a conversation first: think, then draft from it, then send that exact ticket to the council ----------
     '/api/talk/open/options': async (body) => {
-      const c = council(cfg); const m = c.members.find((x) => x.id === body.member);
-      if (!m?.credentials.length) return [403, { error: 'not an enrolled council member', why: 'Only a council member with an enrolled passkey can talk to Cambrian here.' }];
-      const sha = hashOf({ talk: m.id, nonce: randomBytes(16).toString('hex') }); pendingOpen.set(m.id, sha);
+      // Nobody is asked who they are: the passkey says it. Every enrolled passkey is offered, the device answers with the one it
+      // holds, and the member is the one that passkey was enrolled for. (Naming a member narrows the offer to theirs.)
+      const c = council(cfg); const named = body.member ? c.members.filter((x) => x.id === body.member) : c.members;
+      const creds = named.flatMap((m) => m.credentials);
+      if (!creds.length) return [403, { error: 'not an enrolled council member', why: 'Only a council member with an enrolled passkey can talk to Cambrian here.' }];
+      const sha = hashOf({ talk: 'open', nonce: randomBytes(16).toString('hex') }); pendingOpen.set(sha, Date.now());
+      for (const [k, at] of pendingOpen) if (Date.now() - at > 5 * 60 * 1000) pendingOpen.delete(k);
       return [200, { talk_sha256: sha, challenge: talkChallenge(sha), rpId: c.rp.id,
-        allowCredentials: m.credentials.map((k) => ({ type: 'public-key', id: k.id })), userVerification: 'preferred', timeout: 120000 }];
+        allowCredentials: creds.map((k) => ({ type: 'public-key', id: k.id })), userVerification: 'preferred', timeout: 120000 }];
     },
     '/api/talk/open': async (body) => {
-      const member = String(body.member ?? ''); const sha = pendingOpen.get(member);
-      if (!sha) return [403, { error: 'signature refused', why: 'Ask for a new challenge first.' }];
+      const sha = String(body.talk_sha256 ?? '');
+      if (!pendingOpen.has(sha)) return [403, { error: 'signature refused', why: 'Ask for a new challenge first.' }];
+      // who this is: the member whose enrolled passkey signed
+      const member = council(cfg).members.find((m) => m.credentials.some((k) => k.id === body.credential_id))?.id ?? '';
+      if (!member) return [403, { error: 'signature refused', why: 'That passkey is not enrolled for a council member.' }];
       const approval = { member, credential_id: body.credential_id, authenticator_data: body.authenticator_data,
         client_data_json: body.client_data_json, signature: body.signature };
       const v = verifyMemberSignature({ purpose: 'talk', subjectHash: sha, approval, council: council(cfg) });
       if (!v.ok) return [403, { error: 'signature refused', why: v.why }];
-      pendingOpen.delete(member);
+      pendingOpen.delete(sha);
       const session = randomBytes(24).toString('base64url'); sessions.set(tokenKey(session), { member, at: Date.now() }); saveSessions();
       return [200, { session, member, minutes: SESSION_MS / 60000 }];
     },
@@ -419,10 +426,28 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       return [200, { conversation_id: c.id, version: v, reply, brief: r.brief, ticket_sha256: ticketHash(r.brief), lint: r.lint, changes,
         usd: (intent.usd ?? 0) + (r.usd ?? 0), total_usd: c.usd, model: r.model ?? model(), attestation: attestationSummary(meta) }];
     },
+    '/api/talk/list': async (body) => {
+      const who = speaker(body); if (!who.ok) return REFUSED_SPEAKER;
+      const mine = (existsSync(talkDir) ? readdirSync(talkDir) : []).filter((f) => CONV_ID.test(f.replace(/\.json$/, '')))
+        .map((f) => readJson(join(talkDir, f), null)).filter((c) => c && c.member === who.member && !c.sent && c.messages.length)
+        .sort((a, b) => String(b.messages.at(-1).at ?? b.started).localeCompare(String(a.messages.at(-1).at ?? a.started)));
+      return [200, { member: who.member, conversations: mine.slice(0, 20).map((c) => ({ id: c.id, started: c.started, last: c.messages.at(-1).at ?? c.started,
+        first: String(c.messages.find((m) => m.role === 'member')?.text ?? '').slice(0, 140), messages: c.messages.length, drafts: c.drafts.length })) }];
+    },
+    '/api/talk/get': async (body) => {
+      const who = speaker(body); if (!who.ok) return REFUSED_SPEAKER;
+      const c = loadConv(body.conversation_id);
+      if (!c || c.member !== who.member) return [404, { error: 'no such conversation' }];
+      const d = c.drafts.at(-1) ?? null;
+      return [200, { conversation_id: c.id, sent: c.sent ?? null, blocked: c.blocked ? { why: c.blocked.why, lint: c.blocked.lint } : null,
+        messages: c.messages.map((m) => ({ role: m.role, text: m.text })),
+        draft: d ? { version: d.v, brief: d.brief, lint: d.lint, ticket_sha256: ticketHash(d.brief), model: d.model, attestation: attestationSummary(d.meta) } : null }];
+    },
     '/api/talk/send/options': async (body) => {
       const c = loadConv(body.conversation_id); const d = c?.drafts.at(-1);
       if (!d) return [404, { error: 'no draft', why: 'There is no draft to send.' }];
-      const cl = council(cfg); const m = cl.members.find((x) => x.id === body.member);
+      // the brief is sent by the member the conversation belongs to: their passkey is the one asked for
+      const cl = council(cfg); const m = cl.members.find((x) => x.id === (c.member ?? body.member));
       if (!m?.credentials.length) return [403, { error: 'not an enrolled council member' }];
       const sha = d.brief.conversation.sha256;
       return [200, { idea_sha256: sha, challenge: ideaChallenge(sha), rpId: cl.rp.id,
@@ -437,9 +462,9 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       const sha = d.brief.conversation.sha256; let proposer = null;
       if (cfg.exposed || c.member || body.signature) {
         // the member's passkey signs the hash of the conversation: that signature sends the brief, and it is not an approval
-        const approval = { member: String(body.member ?? ''), credential_id: body.credential_id, idea_sha256: sha,
+        const approval = { member: String(c.member ?? body.member ?? ''), credential_id: body.credential_id, idea_sha256: sha,
           authenticator_data: body.authenticator_data, client_data_json: body.client_data_json, signature: body.signature, at: new Date().toISOString() };
-        if (c.member && approval.member !== c.member) return [403, { error: 'signature refused', why: 'This conversation belongs to another member.' }];
+        if (c.member && body.member && body.member !== c.member) return [403, { error: 'signature refused', why: 'This conversation belongs to another member.' }];
         const v = verifyMemberSignature({ purpose: 'idea', subjectHash: sha, approval, council: council(cfg) });
         if (!v.ok) return [403, { error: 'signature refused', why: v.why }];
         if (usedIdeaSignatures.has(approval.signature)) return [403, { error: 'signature refused', why: 'this signature was already used' }];

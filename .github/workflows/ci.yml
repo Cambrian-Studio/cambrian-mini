@@ -29,6 +29,6 @@ jobs:
       - name: Unit tests and attack tests
         if: hashFiles('test/**/*.test.mjs') != ''
         run: npm test
-      - name: The judge (offline; no keys)
+      - name: The judge (no keys; check 16 reads mainnet)
         if: hashFiles('scripts/judge.mjs') != ''
         run: npm run judge

@@ -32,6 +32,15 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { base58Decode, chainId, compareCodeHash, receiptEventLine, rpcUrlFor, txStatus } from '../near/rpc.mjs';
 
+// Ordinary nodes forget a transaction after a few days. data/chain.json names a public archival node for this network; it is
+// used when no --rpc-url is given, so an old record still checks.
+function committedRpc(network) {
+  try {
+    const c = JSON.parse(readFileSync(new URL('../data/chain.json', import.meta.url), 'utf8'));
+    return c.network === network && typeof c.rpc_url === 'string' ? c.rpc_url : null;
+  } catch { return null; }
+}
+
 const WASM_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', 'contracts', 'receipts.wasm');
 const RECORD_METHOD = 'record_receipt';
 const SHA256_HEX = /^[0-9a-f]{64}$/;
@@ -74,7 +83,7 @@ function validate({ network, contract, signer, txHash, hash }) {
 export async function verifyOnChain({ network, contract, signer, txHash, hash, rpcUrl, wasmBytes, fetchImpl, timeoutMs }) {
   const bad = validate({ network, contract, signer, txHash, hash });
   if (bad) return { ok: false, invalid: true, checks: [], why: bad };
-  const url = rpcUrl || rpcUrlFor(network);
+  const url = rpcUrl || committedRpc(network) || rpcUrlFor(network);
   const net = { rpcUrl: url, fetchImpl, timeoutMs };
 
   const results = new Map();

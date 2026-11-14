@@ -93,19 +93,20 @@ await check('drafted briefs: the kept model response, its TEE signature and the 
   const title = 'drafted briefs: the kept model response, its TEE signature and the approvals agree on one hash';
   const entries = ticketIds(cfg).map((id) => json(join(cfg.files.tickets, `${id}.json`))).filter((e) => e?.ticket?.drafted);
   if (!entries.length) return skip(title, 'no ticket with a recorded model draft is in data/tickets yet');
-  const c = loadCouncil(cfg.files.council); const bad = []; let signed = 0, approvals = 0;
+  const c = loadCouncil(cfg.files.council); const bad = []; let signed = 0, approvals = 0, noTee = 0;
   for (const e of entries) {
     const r = checkDrafted({ dir: cfg.files.tickets, entry: e, council: c });
     for (const f of r.faults) bad.push(`${e.ticket.id}: ${f}`);
-    if (r.signed) signed++; approvals += r.approvals;
+    if (r.signed) signed++; if (r.signature_without_tee_report) noTee++; approvals += r.approvals;
   }
   if (bad.length) return fail(title, bad.slice(0, 4).join('; '));
-  const rest = entries.length - signed;
+  const rest = entries.length - signed - noTee;
   const detail = `${entries.length} ticket(s): each kept response hashes to ticket.drafted.response_sha256; `
     + `${approvals} approval(s) signed those ticket hashes`;
-  const without = rest ? `; ${rest} recorded without a signature` : '';
+  const without = (rest ? `; ${rest} recorded without a signature` : '')
+    + (noTee ? `; ${noTee} signed over the exact request and response by a key for which NEAR AI's report shows no TEE (not verified as model-signed)` : '');
   signed ? ok(title, `${detail}; ${signed} model signature(s) verified offline and bind the hashes and the model${without}`)
-    : skip(title, `${detail}; but none carries a recorded model signature, so the TEE half could not be looked at`);
+    : skip(title, `${detail}${without}; no model signature could be verified as made in a TEE, so the TEE half is not shown here`);
 });
 
 await check('the kept build output still passes the ticket\'s file checks', () => {

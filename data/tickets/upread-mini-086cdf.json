@@ -1,0 +1,234 @@
+{
+  "ticket": {
+    "kind": "build-ticket",
+    "v": 1,
+    "id": "upread-mini-086cdf",
+    "product": "upread-mini",
+    "title": "Upread Mini: read text one word at a time",
+    "task": "Build a single static page, index.html, plus a small test script, test.mjs, and write both files first before refining them. The page carries an embedded sample (the opening of Darwin's On the Origin of Species, public domain) and a paste box, and reads out any text one word at a time in large type on a system font stack with nothing fetched from the network. Each word's anchor letter (about a third into the word) is coloured and its centre sits in a fixed slot about 35% from the left: letters before the anchor end exactly at the slot, letters after start right after it, and the whole word is never re-centred. Font size and line height are fixed; a word that would overflow shrinks only its own font until it fits, with the anchor's centre unchanged. A slider runs from 150 to 900 words per minute, default 300; tapping pauses and plays, and when paused the page shows the sentence around the current word; pauses are slightly longer at commas and full stops; a thin progress bar and the time left are shown. On load the page passes the sample's first 200 words through the same layout function the reader uses, reads each anchor centre with getBoundingClientRect, and prints the worst horizontal and vertical drift as a number at #check. test.mjs reads index.html as text and asserts it exits 0 when the page has the sample, the 150/900 slider bounds with a 300 default, the pause, progress and time-left elements, the #check element and getBoundingClientRect — it must not launch a browser or use the network. Do not read or audit the source or versions of any installed package; the page needs no dependencies. Out of scope for this ticket: PDFs, links, the shelf, install, sync, ads and AI summaries.\n\nWrite files early; do not audit dependency source.",
+    "goal": "Read any text on your phone one word at a time, with each word's anchor letter held in one fixed, coloured slot.",
+    "out_of_scope": [
+      "PDF reading and link import",
+      "Shelf of past reads and suggested reads",
+      "Install, accounts and sync",
+      "Ads, games and AI summaries"
+    ],
+    "green": [
+      {
+        "id": "sample-and-selfcheck",
+        "kind": "file",
+        "name": "sample text, self-measure element and real anchor measurement present",
+        "path": "index.html",
+        "exists": true,
+        "contains": [
+          "Origin of Species",
+          "getBoundingClientRect",
+          "id=\"check\""
+        ]
+      },
+      {
+        "id": "offline-page",
+        "kind": "file",
+        "name": "page fetches nothing from the network",
+        "path": "index.html",
+        "exists": true,
+        "not_matches": [
+          "https?://"
+        ]
+      },
+      {
+        "id": "structure-test",
+        "kind": "run",
+        "name": "controls, slider bounds and self-check wired in the page",
+        "run": "node test.mjs",
+        "exit": 0,
+        "network": "none",
+        "timeout_s": 300
+      },
+      {
+        "id": "checked-drift",
+        "kind": "file",
+        "name": "worst-drift number reported on screen",
+        "path": "index.html",
+        "exists": true,
+        "contains": [
+          "drift"
+        ]
+      }
+    ],
+    "budget": {
+      "usd": 1,
+      "calls": 20,
+      "minutes": 10
+    },
+    "base": "main",
+    "branch": "build/upread-mini-086cdf",
+    "drafted": {
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "completion_id": "chatcmpl-83fcf634-0d95-4768-a057-adb43a25ce6a",
+      "request_sha256": "bfbb67211d35c47c55a1c5e44b608362ddc1b1e3715e378aea84028e7e7bc869",
+      "response_sha256": "dd382d5e15b538d8de67c5a1c4461c9262add5b337b3f42c3ad8474018445748"
+    },
+    "conversation": {
+      "sha256": "53d3619f66f6f2f999a5bd61abd35bc75aba2fdc52e491cb7b4430f3ef886c50",
+      "turns": 4
+    }
+  },
+  "created": "2026-11-14T00:00:54.267Z",
+  "idea": "Upread Mini, first ticket: the reader only. PDFs, links, the shelf of past reads and suggested reads are later tickets, each its own build, because Upread v1 tried all of it at once and timed out.\n\nRead any text on your phone one word at a time, at a speed you set. Two ways in: a built-in sample (the opening chapter of Darwin's On the Origin of Species, public domain) and a paste box for any text.\n\nThe reader: one word at a time in large type. Each word's anchor letter, about a third into the word as speed readers do, sits in one fixed slot about 35% from the left and is coloured. It must not move or jitter from word to word, sideways or up and down. Lay each word out around the slot: the letters before the anchor end exactly at the slot, the anchor is centred in it, the letters after start right after it. Never re-centre the whole word. Fixed font size and line height; wait for the font to load before reading. If a word still doesn't fit, shrink only that word's font until it does, with the anchor's centre unchanged. Green check: in a headless browser, over the first 200 words of the sample, the centre of the anchor letter stays within 1 px horizontally and vertically.\n\nSpeed slider from 150 to 900 words per minute, default 300. Tap to pause and play; when paused, show the sentence around the word. Pause slightly longer at commas and full stops. A thin progress bar and the time left.\n\nNothing is uploaded; no accounts. Out of scope for this ticket: PDFs, links, the shelf, install, sync, ads, games, AI summaries.\n\nDraft the brief.",
+  "intent": "new",
+  "conversation": {
+    "sha256": "53d3619f66f6f2f999a5bd61abd35bc75aba2fdc52e491cb7b4430f3ef886c50",
+    "turns": 4,
+    "messages": [
+      {
+        "role": "member",
+        "text": "Upread Mini, first ticket: the reader only. PDFs, links, the shelf of past reads and suggested reads are later tickets, each its own build, because Upread v1 tried all of it at once and timed out.\n\nRead any text on your phone one word at a time, at a speed you set. Two ways in: a built-in sample (the opening chapter of Darwin's On the Origin of Species, public domain) and a paste box for any text.\n\nThe reader: one word at a time in large type. Each word's anchor letter, about a third into the word as speed readers do, sits in one fixed slot about 35% from the left and is coloured. It must not move or jitter from word to word, sideways or up and down. Lay each word out around the slot: the letters before the anchor end exactly at the slot, the anchor is centred in it, the letters after start right after it. Never re-centre the whole word. Fixed font size and line height; wait for the font to load before reading. If a word still doesn't fit, shrink only that word's font until it does, with the anchor's centre unchanged. Green check: in a headless browser, over the first 200 words of the sample, the centre of the anchor letter stays within 1 px horizontally and vertically.\n\nSpeed slider from 150 to 900 words per minute, default 300. Tap to pause and play; when paused, show the sentence around the word. Pause slightly longer at commas and full stops. A thin progress bar and the time left.\n\nNothing is uploaded; no accounts. Out of scope for this ticket: PDFs, links, the shelf, install, sync, ads, games, AI summaries.\n\nDraft the brief."
+      },
+      {
+        "role": "cambrian",
+        "text": "Clear enough to build. Two trims first.\n\nDrop the web font wait. Use a system font stack. Nothing to load, no late swap to jitter the slot.\n\nThe headless-browser check needs a browser the builder cannot install alone in a few offline minutes. Instead, have the page measure itself: on load it lays out the sample's first 200 words, records each anchor centre, and prints the max off-slot distance on screen. The check reads that number.\n\nEverything else stays as written. Say ready or press Draft the brief."
+      },
+      {
+        "role": "member",
+        "text": "Ready, with one condition: the self-measure must lay out the words with the same reader code the user sees, read each anchor's position from the rendered element (getBoundingClientRect), and show the result at #check. No separate copy of the layout. Draft the brief."
+      },
+      {
+        "role": "cambrian",
+        "text": "**Brief: upread-mini — the reader only**\n\nProduct: upread-mini.\n\nTitle: Upread Mini: read text one word at a time.\n\nTask: Build one static page. Embedded sample (the opening of Darwin's On the Origin of Species) and a paste box. The reader shows one word at a time in large type, on a system font stack, nothing fetched. The anchor letter's centre sits in a fixed slot about 35% from the left, coloured. Letters before the anchor end at the slot, the anchor is centred in it, letters after start right after it. The word is never re-centred. Fixed size and line height; a word that overflows shrinks its own font, anchor centre unchanged.\n\nSlider 150 to 900 words per minute, default 300. Tap to pause and play; paused shows the surrounding sentence. Longer pause at commas and full stops. Thin progress bar and time left.\n\nOn load the page runs the first 200 words of the sample through the same layout code the reader uses, reads each anchor's centre with getBoundingClientRect, and prints the worst horizontal and vertical drift at #check.\n\nWrite the project files first, then improve them. Do not read or audit installed libraries. No dependencies, so no network checks needed beyond the page working offline.\n\nOut of scope: PDFs, links, shelf, install, sync, ads, AI summaries."
+      }
+    ],
+    "draft": 1
+  },
+  "lint": {
+    "applied": [
+      {
+        "lesson": "write-files-early",
+        "what": "task ends with \"Write files early; do not audit dependency source.\""
+      },
+      {
+        "lesson": "no-dependency-auditing",
+        "what": "covered by the same closing line, \"Write files early; do not audit dependency source.\""
+      }
+    ],
+    "refused": [],
+    "notes": []
+  },
+  "brief": {
+    "usd": 0.006191,
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "attempts": 1,
+    "attestation": {
+      "kind": "provider_tee",
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "chat_id": "chatcmpl-83fcf634-0d95-4768-a057-adb43a25ce6a",
+      "signing_algo": "ecdsa",
+      "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+      "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:bfbb67211d35c47c55a1c5e44b608362ddc1b1e3715e378aea84028e7e7bc869:dd382d5e15b538d8de67c5a1c4461c9262add5b337b3f42c3ad8474018445748",
+      "signature": "0x8bbc5c8fb448f06ac577a04636a0d46822fc23fbf376e34be52d1d79496705e9358a719e46cb0b5d3259342b895a49bca4492bfe44e8ae58e5cc70477724a7b61c",
+      "request_sha256": "bfbb67211d35c47c55a1c5e44b608362ddc1b1e3715e378aea84028e7e7bc869",
+      "response_sha256": "dd382d5e15b538d8de67c5a1c4461c9262add5b337b3f42c3ad8474018445748",
+      "report": null,
+      "fetched_at": "2026-11-14T00:00:14.212Z"
+    },
+    "attestation_check": {
+      "ok": false,
+      "checks": [
+        {
+          "name": "signature",
+          "ok": true,
+          "detail": "ok"
+        },
+        {
+          "name": "text_binds_hashes",
+          "ok": true,
+          "detail": "ok"
+        },
+        {
+          "name": "report_names_signer",
+          "ok": false,
+          "detail": "no TEE report for this signer"
+        },
+        {
+          "name": "quote_parses",
+          "ok": false,
+          "detail": "no TEE report"
+        },
+        {
+          "name": "quote_binds_signer",
+          "ok": false,
+          "detail": "no quote"
+        },
+        {
+          "name": "quote_signature_chain",
+          "ok": false,
+          "detail": "no quote"
+        },
+        {
+          "name": "config_measured",
+          "ok": false,
+          "detail": "no quote"
+        },
+        {
+          "name": "event_log_replays",
+          "ok": false,
+          "detail": "no quote"
+        },
+        {
+          "name": "tcb_status",
+          "skipped": true,
+          "detail": "needs Intel's online collateral (TCB level, quoting-enclave identity, revocation lists)"
+        },
+        {
+          "name": "gpu_evidence",
+          "skipped": true,
+          "detail": "needs NVIDIA's online verifier (NRAS); only a hash of the GPU evidence is kept in the record"
+        },
+        {
+          "name": "image_provenance",
+          "skipped": true,
+          "detail": "needs an online lookup: is the measured configuration a build NEAR AI published"
+        },
+        {
+          "name": "report_freshness",
+          "skipped": true,
+          "detail": "the nonce was chosen by whoever fetched the report; a record cannot prove when that was"
+        }
+      ]
+    },
+    "attestation_note": "not verified: report_names_signer: no TEE report for this signer"
+  },
+  "proposed_by": {
+    "member": "clemens",
+    "approval": {
+      "member": "clemens",
+      "credential_id": "NOzB9-UJhHx1oUZgIPkhyPEPquc",
+      "idea_sha256": "53d3619f66f6f2f999a5bd61abd35bc75aba2fdc52e491cb7b4430f3ef886c50",
+      "authenticator_data": "1psXGYcA-R2s5Rkt_ePFB4w3nsRwLMw3rXvVrscYydwdAAAAAA",
+      "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiNGZMNjhVRlp5eXpydFdRSUxiX3k4bUpYOFVtVy1vSm90VGQtRnNhdFBscyIsIm9yaWdpbiI6Imh0dHBzOi8vY2FtYnJpYW4tbWluaS50YWlsMTc2NjcxLnRzLm5ldCIsImNyb3NzT3JpZ2luIjpmYWxzZSwib3RoZXJfa2V5c19jYW5fYmVfYWRkZWRfaGVyZSI6ImRvIG5vdCBjb21wYXJlIGNsaWVudERhdGFKU09OIGFnYWluc3QgYSB0ZW1wbGF0ZS4gU2VlIGh0dHBzOi8vZ29vLmdsL3lhYlBleCJ9",
+      "signature": "MEUCICxr-KGlXAlHwMJr_-lZOElZRS6HtiULcaCFc2blU217AiEAyZjtg2NddWYO2ZsviZre4W4x_9IBfTYUdEku8B4qgbY",
+      "at": "2026-11-14T00:00:54.263Z"
+    }
+  },
+  "approvals": [
+    {
+      "member": "clemens",
+      "credential_id": "NOzB9-UJhHx1oUZgIPkhyPEPquc",
+      "ticket_sha256": "eabb5b65bbe03a7dab3ce57570cf78e58ba3d673523e626de8547e31b2f2fe36",
+      "authenticator_data": "1psXGYcA-R2s5Rkt_ePFB4w3nsRwLMw3rXvVrscYydwdAAAAAA",
+      "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiNzlHUnl3WWRFQ1JNdndRcUJ3SWlRMGE2THFzREpSYjV5dHpwVEltREthOCIsIm9yaWdpbiI6Imh0dHBzOi8vY2FtYnJpYW4tbWluaS50YWlsMTc2NjcxLnRzLm5ldCIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
+      "signature": "MEUCIQClB4e3z4hMJPtNpDUQ54a5PNNjAy_J-6_aS4jIvi9E2AIgZmP4zbP8rqVWlCo_huhUvO4SBhPl4IdzII4CVWQg8xM",
+      "at": "2026-11-14T00:01:18.239Z"
+    },
+    {
+      "member": "michael",
+      "credential_id": "lxxF8Dqkoxku_2MYM4ljyA",
+      "ticket_sha256": "eabb5b65bbe03a7dab3ce57570cf78e58ba3d673523e626de8547e31b2f2fe36",
+      "authenticator_data": "1psXGYcA-R2s5Rkt_ePFB4w3nsRwLMw3rXvVrscYydwdAAAAAA",
+      "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiNzlHUnl3WWRFQ1JNdndRcUJ3SWlRMGE2THFzREpSYjV5dHpwVEltREthOCIsIm9yaWdpbiI6Imh0dHBzOi8vY2FtYnJpYW4tbWluaS50YWlsMTc2NjcxLnRzLm5ldCIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
+      "signature": "MEUCIQD-3h1gO7fTdcDiUbZfGF_06qSkQSj5yx2bxom_DBMsAQIgW49wOU71mmXA3Kl9upX2zMsVuqcWPuep9iVWlONnJtk",
+      "at": "2026-11-14T01:08:50.739Z"
+    }
+  ],
+  "run_started": "2026-11-14T01:08:50.742Z"
+}

@@ -1,0 +1,75 @@
+{
+ "kind": "build-ticket",
+ "v": 1,
+ "id": "postmark-6ee0a5",
+ "product": "postmark",
+ "title": "Postmark: London postcards that unlock only at the landmark",
+ "task": "Write the project files first and improve them afterwards: index.html, style.css, fence.mjs, postcard.mjs, app.js and test.mjs, all dependency-free and opened straight from index.html. fence.mjs holds the ten named London landmarks with their lat/lng plus the \"Here\" card, a haversine distance function in metres, and an unlock function that is true at 150 m or less and false beyond it. postcard.mjs exports a function that takes a landmark name, a number, a date and coordinates and returns the printed postcard text block: landmark, date, time, coordinates to five decimals, and \"No. N of 10\". app.js shows the ten cards and the \"Here\" card faded with the distance in metres when geolocation is available, unlocks a card at 150 m or less and the \"Here\" card always, then opens a live getUserMedia camera with the rear facing — never a file or gallery picker — and the shutter stays disabled outside the fence. On capture, compose a PNG of the photo as the postcard front with one warm paper design, the landmark name set in type, and a round postmark stamp carrying landmark, date, time, coordinates, \"No. N of 10\" and the line \"Collect your own at\" with the page's own link; share it with navigator.share when file sharing is supported and download the image otherwise. Let the member write one line on the back, store the card in IndexedDB and list saved cards as a plain list of small thumbnails with name and date — no grid styling, no upload, no accounts. Load nothing from the network: system font stack for the frame, the house kit tokens only, no external fonts, scripts, images or CDNs. Do not install or audit any dependency, and ship no debug, bypass, skip-fence or unlock-all path in app.js — the fence lives only in fence.mjs and app.js calls it. test.mjs runs under plain node with no browser and asserts that 150 m unlocks and 151 m does not for three of the landmarks, and that the postcard text block for \"No. 3 of 10\" contains the landmark, date, time and coordinates.\n\nWrite files early; do not audit dependency source.",
+ "goal": "A phone web app where ten London landmarks and a universal \"Here\" card unlock inside 150 m, the live camera takes the shot, and the photo becomes a shareable postcard postmarked with place, date, time, coordinates and number.",
+ "out_of_scope": [
+  "A styled grid of saved cards — a plain list is enough for this ticket",
+  "Ten illustrated card artworks — one warm paper card design with type-set names",
+  "Accounts, uploads, minting, printing or sponsored stops",
+  "Maps, other cities, Home Screen install",
+  "Any browser-based or manual end-to-end test harness"
+ ],
+ "green": [
+  {
+   "id": "g1",
+   "kind": "run",
+   "name": "fence and postcard text tests pass",
+   "run": "node test.mjs",
+   "exit": 0,
+   "network": "none",
+   "timeout_s": 300
+  },
+  {
+   "id": "g2",
+   "kind": "file",
+   "name": "page loads the app as a module",
+   "path": "index.html",
+   "exists": true,
+   "contains": [
+    "type=\"module\"",
+    "postcard"
+   ]
+  },
+  {
+   "id": "g3",
+   "kind": "file",
+   "name": "nothing loaded from the web",
+   "path": "index.html",
+   "exists": true,
+   "not_matches": [
+    "https?://"
+   ]
+  },
+  {
+   "id": "g4",
+   "kind": "file",
+   "name": "no test or bypass switch in the shipped app",
+   "path": "app.js",
+   "exists": true,
+   "not_matches": [
+    "[Dd]ebug|[Bb]ypass|[Ss]kip[Ff]ence|[Uu]nlock[Aa]ll"
+   ]
+  }
+ ],
+ "budget": {
+  "usd": 1.5,
+  "calls": 24,
+  "minutes": 12
+ },
+ "base": "main",
+ "branch": "build/postmark-6ee0a5",
+ "drafted": {
+  "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+  "completion_id": "chatcmpl-87dd2e1f-112e-4e54-9a7e-0df91df5b51e",
+  "request_sha256": "2efb03d799b1e3d583fc3454f7cc33ea3b1dc591c1c60ce59f7d7b850df0d282",
+  "response_sha256": "ca3ab5e57f2b24f366a3ca87ce5f16604bcf37d6f57c14d2d8f78cbb580dddc1"
+ },
+ "conversation": {
+  "sha256": "96f13030716433454f4a9174379c70c5b13e018d7da0a9b2c8e7b384d87bc7ce",
+  "turns": 2
+ }
+}

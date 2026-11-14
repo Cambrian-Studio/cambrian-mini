@@ -46,9 +46,10 @@ export async function render(root) {
     try {
       members = ((await api.get('council.json')).members || []).filter((x) => x.enrolled === true);
     } catch { /* handled below: with no member to choose, the box stays off */ }
-    if (!members.length) off = 'The council record could not be read, so nobody can be chosen as the speaker.';
+    if (!members.length) off = 'The council record could not be read, so no passkey can open Talk here.';
   }
-  const who = passkey ? h('select', { id: 'proposer' }, members.map((x) => h('option', { value: x.id }, x.name || x.id))) : null;
+  const nameOf = (id) => members.find((x) => x.id === id)?.name || id;
+  const whoami = h('span.cap', { id: 'whoami', role: 'status' });
   let alive = true;
   let busy = false;
   let next = 0;
@@ -72,9 +73,11 @@ export async function render(root) {
   async function session() {
     if (!passkey) return undefined;
     const have = stored();
-    if (have?.member === who.value && have.until > Date.now()) return have.token;
-    const options = await api.post('talk/open/options', { member: who.value });
-    const res = await api.post('talk/open', { member: who.value, ...await getAssertion(options) });
+    if (have && have.until > Date.now()) return have.token;
+    // no name is asked for: every enrolled passkey is offered, and the one this device holds says who is writing
+    const options = await api.post('talk/open/options', {});
+    const res = await api.post('talk/open', { talk_sha256: options.talk_sha256, ...await getAssertion(options) });
+    whoami.textContent = `writing as ${nameOf(res.member)}`;
     try {
       const until = Date.now() + (res.minutes - 5) * 60000;
       sessionStorage.setItem(KEY, JSON.stringify({ token: res.session, member: res.member, until }));
@@ -139,8 +142,9 @@ export async function render(root) {
     try {
       let body = { conversation_id: conversation };
       if (passkey) {
-        const options = await api.post('talk/send/options', { conversation_id: conversation, member: who.value });
-        body = { ...body, member: who.value, ...await getAssertion(options) };
+        // the passkey of the member this conversation belongs to is asked for
+        const options = await api.post('talk/send/options', { conversation_id: conversation });
+        body = { ...body, ...await getAssertion(options) };
       }
       const res = await api.post('talk/send', body);
       api.forget('tickets.json', 'talk.json');
@@ -149,12 +153,65 @@ export async function render(root) {
           + res.relinted.map((x) => `${x.lesson} (${x.what})`).join('; ') + '. The council sees the brief as it is now.') : null,
         h('a.btn.ghost', { href: '#/approvals/' + encodeURIComponent(res.ticket_id) }, 'Open it in Approvals'));
       toast('The brief waits for the council.', 'green');
-      conversation = null;
+      keep(null);
       drafted = false;
       draw();
+      listMine();
     } catch (err) {
       btn.disabled = false;
       toast('Not sent: ' + err.message, 'red');
+    }
+  }
+
+  function showDraft(res) {
+    drafted = true;
+    const send = h('button.btn', { type: 'button', onclick: (e) => toCouncil(e.currentTarget) }, 'Send to council');
+    say('cambrian', res.reply ? h('p', {}, res.reply) : null,
+      h('p.cap', {}, 'Draft ' + res.version),
+      res.version > 1 && (res.changes || []).length ? h('ul.changes', {}, res.changes.map((c) => h('li', {}, c))) : null,
+      briefCard(res.brief, res.lint, send, res.attestation, { hash: res.ticket_sha256 }),
+      (res.lint?.notes || []).length ? h('p.dim.small', {}, res.lint.notes.join(' · ')) : null,
+      h('p.mono.dim.small', {}, [res.model, typeof res.usd === 'number' ? usd(res.usd) : null].filter(Boolean).join(' · ')));
+  }
+
+  // The conversation in progress is remembered in this tab, so a reload or a restart of the app picks it up again.
+  const OPEN = 'cambrian.talk.open';
+  function keep(id) {
+    conversation = id || null;
+    try { if (id) sessionStorage.setItem(OPEN, id); else sessionStorage.removeItem(OPEN); } catch { /* remembered for this page only */ }
+  }
+  // A member's own open conversations, newest first. Listed only once the passkey has opened Talk in this tab.
+  const mine = h('div.mine', { hidden: true });
+  async function reopen(id) {
+    if (busy) return;
+    try {
+      const c = await api.post('talk/get', { session: await session(), conversation_id: id });
+      log.replaceChildren();
+      drafted = false;
+      for (const m of c.messages) say(m.role === 'member' ? 'member' : 'cambrian', h('p', {}, m.text));
+      keep(c.conversation_id);
+      if (c.draft && !c.blocked) showDraft(c.draft);
+      draw();
+      input.focus();
+    } catch (err) {
+      if (err.body?.error === 'passkey required') forget();
+      keep(null);
+    }
+  }
+  async function listMine() {
+    const have = stored();
+    if (!(have && have.until > Date.now()) && passkey) { mine.hidden = true; return; }
+    try {
+      const res = await api.post('talk/list', { session: have?.token });
+      if (res.member) whoami.textContent = `writing as ${nameOf(res.member)}`;
+      const rows = res.conversations || [];
+      mine.hidden = !rows.length;
+      mine.replaceChildren(cap('your open conversations'), h('ul.rows', {}, rows.map((c) => h('li', {},
+        h('button.textbtn', { type: 'button', onclick: () => reopen(c.id) }, c.first || c.id),
+        h('span.small.dim', {}, [when(c.last), c.drafts ? `draft ${c.drafts}` : 'no draft yet'].join(' · '))))));
+    } catch (err) {
+      if (err.body?.error === 'passkey required') forget();
+      mine.hidden = true;
     }
   }
 
@@ -166,22 +223,15 @@ export async function render(root) {
       const res = await api.post('talk/draft', { session: await session(), conversation_id: conversation || undefined, text,
         ...(images.length ? { attachments: images } : {}) });
       d.remove();
-      conversation = res.conversation_id || conversation;
+      keep(res.conversation_id || conversation);
       if (res.blocked) {
         say('cambrian', h('p', {}, 'That draft broke a rule from an earlier build, so it cannot go to the council yet.'),
           card('div.pad.brief', { tl: 'No brief written' }, {}, h('p.small', {}, res.why), lintChips(res.lint)));
       } else if (!res.brief) {
         say('cambrian', h('p', {}, res.reply));
       } else {
-        drafted = true;
         if (pick) pick.value = '';
-        const send = h('button.btn', { type: 'button', onclick: (e) => toCouncil(e.currentTarget) }, 'Send to council');
-        say('cambrian', h('p', {}, res.reply),
-          h('p.cap', {}, 'Draft ' + res.version),
-          res.version > 1 ? h('ul.changes', {}, (res.changes || []).map((c) => h('li', {}, c))) : null,
-          briefCard(res.brief, res.lint, send, res.attestation, { hash: res.ticket_sha256 }),
-          (res.lint?.notes || []).length ? h('p.dim.small', {}, res.lint.notes.join(' · ')) : null,
-          h('p.mono.dim.small', {}, [res.model, usd(res.usd)].filter(Boolean).join(' · ')));
+        showDraft(res);
       }
     } catch (err) {
       d.remove();
@@ -206,7 +256,7 @@ export async function render(root) {
     if (!(res.headers.get('content-type') || '').startsWith('text/event-stream')) {
       const json = await res.json().catch(() => ({}));
       d.remove();
-      if (json.draft) { conversation = json.conversation_id || conversation; await draft(text); return; }
+      if (json.draft) { keep(json.conversation_id || conversation); await draft(text); return; }
       if (json.error === 'passkey required') forget();
       say('cambrian', h('p', {}, 'That did not go through: ' + (json.why || json.error || res.status)));
       if (!input.value) input.value = text;
@@ -216,7 +266,7 @@ export async function render(root) {
     let box = null;
     let buf = '';
     const take = (event) => {
-      if (event.conversation_id) conversation = event.conversation_id;
+      if (event.conversation_id) keep(event.conversation_id);
       if (event.t) {
         if (!box) { d.remove(); box = say('cambrian', line); }
         line.textContent += event.t;
@@ -254,6 +304,7 @@ export async function render(root) {
     }
     busy = false;
     draw();
+    listMine();
   }
 
   const input = h('textarea', {
@@ -300,6 +351,7 @@ export async function render(root) {
     slot.replaceChildren(form);
     slot.hidden = false;
     bar?.classList.add('has-input');
+    if (!input.disabled) input.focus();   // open Talk and type: the box has the cursor
   };
   const undock = () => {
     if (!slot || !slot.contains(form)) return;
@@ -324,11 +376,13 @@ export async function render(root) {
     log,
     h('div.talk-foot', {},
       off ? null : h('div.row.start', {}, draftBtn,
-        who ? [h('label.cap', { for: 'proposer' }, 'who is writing'), who, h('label.cap', { for: 'images' }, 'images'), pick] : null),
+        passkey ? [whoami, h('label.cap', { for: 'images' }, 'images'), pick] : null),
+      mine,
       off ? h('p.note', {}, off)
         : h('p.dim.small', {}, 'A conversation costs a few cents of model calls, inside today\'s cap of ' + usd(m.daily_cap_usd)
           + (typeof m.spent_today_usd === 'number' ? ' (' + usd(m.spent_today_usd) + ' spent today).' : '.')
-          + (passkey ? ' Your passkey opens the conversation, and signs it again when you send the brief to the council. '
+          + (passkey ? ' Your passkey opens the conversation and says who is writing; it signs again when you send the brief '
+            + 'to the council. '
             + 'That signature is not an approval. Images are kept with the brief and are not sent to a model.' : '')),
       recorded.length ? h('div.row.start', {},
         h('button.btn.ghost', { type: 'button', onclick: () => play(recorded) }, 'Play a recorded conversation'),
@@ -338,5 +392,9 @@ export async function render(root) {
   else if (!recorded.length) log.append(h('p.plain', {}, 'No recorded conversation yet. The first live build records one.'));
   else if (off) log.append(h('p.plain', {}, 'Press “Play a recorded conversation” to watch an idea become a brief.'));
   draw();
+  // a conversation that was open in this tab is picked up again; so is the list of the member's own
+  let was = null;
+  try { was = sessionStorage.getItem(OPEN); } catch { /* nothing remembered */ }
+  if (!off && was && (stored() || !passkey)) reopen(was).then(listMine); else if (!off) listMine();
   return () => { alive = false; undock(); };
 }

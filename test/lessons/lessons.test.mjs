@@ -19,11 +19,12 @@ const ids = (rows) => rows.map((r) => r.lesson).sort();
 test('the eight lessons parse, each complete', () => {
   assert.equal(error, null);
   assert.deepEqual(problems, []);
-  assert.equal(lessons.length, 8);
+  assert.ok(lessons.length >= 8, 'the eight carried over, and any a member accepted since');
   for (const l of lessons) {
     assert.ok(l.rule.length >= 20 && l.failure.length >= 20, l.id);
     assert.ok(l.check === null || KNOWN_CHECKS.includes(l.check), `${l.id}: ${l.check}`);
-    assert.deepEqual(l.fired, []);
+    // where a lesson changed or refused a real brief is written on it; each entry names that brief or run
+    for (const f of l.fired) assert.ok((f.brief || f.run) && f.at && f.what, `${l.id}: ${JSON.stringify(f)}`);
   }
   const raw = JSON.parse(LESSONS_TEXT);
   assert.equal(Object.keys(raw._meta).length, 2);

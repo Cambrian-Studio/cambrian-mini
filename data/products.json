@@ -23,11 +23,22 @@
       "id": "upread-mini",
       "name": "Upread Mini",
       "tagline": "Upread, built fresh here: reads an article to you one word at a time.",
-      "status": "to be built here; no build yet",
+      "status": "built here on 14 Nov 2026: one build, passed on the first attempt",
       "live_url": null,
       "history_of": "upread",
       "history_note": "Upread was first built on Cambrian's private setup on 9 Nov 2026. Those three builds are shown here as history. Upread Mini starts from nothing: it does not continue their code.",
-      "built_on": "Cambrian Mini"
+      "built_on": "Cambrian Mini",
+      "first_run": "upread-mini-086cdf"
+    },
+    {
+      "id": "postmark",
+      "name": "Postmark",
+      "tagline": "London postcards that unlock only within 150 m of the landmark.",
+      "status": "built here on 14 Nov 2026: one build, passed on the first attempt",
+      "live_url": null,
+      "built_on": "Cambrian Mini",
+      "first_run": "postmark-6ee0a5",
+      "note": "The fence is in the page: a landmark opens only when the device reports a position within 150 m of it. A device can report a false position."
     }
   ]
 }

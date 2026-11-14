@@ -191,21 +191,23 @@ const listed = (xs) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join('
 
 // One product, start to finish, as seven plain past-tense lines. Every name, count and cost is read from the
 // run records; a step the record does not hold says so instead of borrowing a line from somewhere else.
-export function story(product, runs, { council = null, lessons = [], onChain = [] } = {}) {
+// `brief` is the brief the first build answered, as kept with its signatures: it says who sent it and whether Cambrian drafted it.
+export function story(product, runs, { council = null, lessons = [], onChain = [], brief = null } = {}) {
   const seq = [...runs].sort((x, y) => String(x.started).localeCompare(String(y.started)));
   const first = seq[0];
   if (!first) return [];
   const name = (id) => council?.members?.find((m) => m.id === id)?.name || id;
   const imported = seq.some(isImported);
-  const checksOf = (r) => (r.ticket?.green || []).length || (r.attempts?.[0]?.checks || []).length;
+  // the checks the brief named: the build adds one of its own (nothing outside the workspace was touched), which is not counted
+  const checksOf = (r) => (brief?.ticket?.green || r.ticket?.green || []).length || (r.attempts?.[0]?.checks || []).length;
   const green = (r) => /^green/.test(String(r.state));
   const lines = [];
 
-  const by = first.proposed_by?.member || product?.proposed_by || null;
+  const by = brief?.proposed_by?.member || first.proposed_by?.member || product?.proposed_by || null;
   lines.push(`${by ? name(by) : 'A member'} described the idea: ${product?.name || first.ticket?.product || 'a product'}.`
     + (product?.tagline ? ` ${product.tagline}` : ''));
 
-  lines.push(`${first.ticket?.drafted ? 'Cambrian wrote the brief' : 'The brief was written'}, with `
+  lines.push(`${brief?.ticket?.drafted || first.ticket?.drafted ? 'Cambrian wrote the brief' : 'The brief was written'}, with `
     + `${plural(checksOf(first), 'check')} and a ${usd(first.ticket?.budget?.usd)} budget.`);
 
   const valid = first.release?.valid || [];
@@ -301,10 +303,15 @@ export async function render(root, arg) {
   const [productsR, councilR, lessonsR] = await Promise.allSettled(
     ['products.json', 'council.json', 'lessons.json'].map((n) => api.get(n)));
   const products = productsR.status === 'fulfilled' ? productsR.value.products || [] : [];
-  const product = products.find((p) => full.some((r) => r.ticket?.product === p.id)) || null;
+  // the build that is told: a product built here when there is one, else the first product on record with a build
+  const builtHere = (p) => full.some((r) => r.ticket?.product === p.id && (r.origin ?? 'mini') === 'mini');
+  const product = products.find(builtHere) || products.find((p) => full.some((r) => r.ticket?.product === p.id)) || null;
   const mine = product ? full.filter((r) => r.ticket?.product === product.id) : full.slice(0, 1);
   const receipts = await Promise.allSettled(mine.map((r) => api.get(`receipts/${encodeURIComponent(r.ticket?.id)}.json`)));
+  const first = [...mine].sort((x, y) => String(x.started).localeCompare(String(y.started)))[0];
+  const briefs = await api.get('tickets.json').catch(() => ({}));
   const steps = story(product, mine, {
+    brief: (briefs.tickets || []).find((e) => e.ticket?.id === first?.ticket?.id) || null,
     council: councilR.status === 'fulfilled' ? councilR.value : null,
     lessons: lessonsR.status === 'fulfilled' ? lessonsR.value.lessons || [] : [],
     onChain: receipts.filter((r) => r.status === 'fulfilled' && r.value?.on_chain),

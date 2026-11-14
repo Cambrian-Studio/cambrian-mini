@@ -521,3 +521,7 @@ a.capcard { text-decoration: none; }
 
 /* Talk: what changed between two drafts */
 .changes { margin: 0; padding-left: 18px; color: var(--caption); font-size: 13.5px; line-height: 1.45; }
+
+/* Talk: a member's own open conversations */
+.mine { max-width: 760px; display: flex; flex-direction: column; gap: 6px; }
+.mine .rows li { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }

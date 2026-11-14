@@ -1,0 +1,9 @@
+{
+  "network": "mainnet",
+  "contract": "b9d43a067f9063ac38b7adcbbdf900eb7841b82adef3de31ae0e21d4b64f6de2",
+  "signer": "3c069c3562504d0f23a23bd967d2ef95fa6f1334a8b2274359f6fd34599102cb",
+  "tx_hash": "CmFEiKKFuREVvmosTFMqiarbrekGyCSFHz2NnduWqBmv",
+  "receipt_sha256": "96c2c873495b036f0e594e4ddded77c720fd6b754bede9f0d9363c669213d41b",
+  "block_hash": "4VNQpVRpJNjmBCQqxAbd4RHSopb97P7crStXBoLJEsNS",
+  "recorded_at": "2026-11-14T01:13:22.785Z"
+}
