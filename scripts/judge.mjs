@@ -14,6 +14,7 @@ import { appConfig } from '../app/config.mjs';
 import { listRuns, receiptOf, ticketIds } from '../app/store.mjs';
 import { loadCouncil } from '../approvals/council.mjs';
 import { verifyRelease } from '../approvals/release.mjs';
+import { FOUNDING_COUNCIL, checkCouncilBuild, councilKeysHash } from '../approvals/founding.mjs';
 import { makeTestCouncil } from '../approvals/test-authenticator.mjs';
 import { buildReceipt, receiptHash } from '../receipts/receipt.mjs';
 import { parseLessons, lintBrief } from '../lessons/lessons.mjs';
@@ -272,6 +273,26 @@ await check('on chain: the stake position named in data/stake.json is there, wit
   if (found.status !== 'Active') return fail(title, `the position of ${stake.amount_near} NEAR is ${found.status}, not Active`);
   ok('on chain: the stake position named in data/stake.json is there, with that amount',
     `${stake.account} holds ${Number(stake.amount_near).toLocaleString('en-US')} NEAR in ${stake.staked_with}, status ${found.status}, validator ${found.validator_id}`);
+});
+
+await check('each council build carries at least 2 valid passkey signatures over its brief hash, by the keys enrolled on 13 Nov', () => {
+  const title = 'council builds: at least 2 valid passkey signatures each, by the keys enrolled on 13 Nov';
+  const built = baby.filter((r) => r.state !== 'refused');
+  if (!built.length) return skip(title, 'no build of this line is recorded');
+  const council = loadCouncil(cfg.files.council); const bad = []; const who = [];
+  for (const r of built) {
+    const v = checkCouncilBuild({ run: r, ticket: json(join(cfg.files.runs, r.ticket.id, 'ticket.json')), council });
+    if (!v.ok) bad.push(`${r.ticket.id}: ${v.why}`); else who.push(`${r.ticket.id} by ${v.signers.join(' and ')}`);
+  }
+  if (bad.length) return fail(title, bad.join('; '));
+  // where the history is at hand, read the keys from that commit too; an export without history has only the pin
+  const old = spawnSync('git', ['-C', ROOT, 'show', `${FOUNDING_COUNCIL.commit}:data/council.json`], { encoding: 'utf8' });
+  let history = 'no git history here, so the keys are checked against the pinned hash only';
+  if (old.status === 0) {
+    if (councilKeysHash(JSON.parse(old.stdout)) !== FOUNDING_COUNCIL.members_digest) return fail(title, `the keys at commit ${FOUNDING_COUNCIL.commit.slice(0, 7)} are not the pinned ones`);
+    history = `the same keys are in data/council.json at commit ${FOUNDING_COUNCIL.commit.slice(0, 7)}`;
+  }
+  ok(title, `${who.join('; ')}; ${history}`);
 });
 
 rmSync(scratch, { recursive: true, force: true });

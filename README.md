@@ -14,10 +14,10 @@ We staked our own capital first: 3,045 NEAR, about €10,000 when staked on 13 N
 ## Three ways in
 
 1. **The hosted replay, instant.** Open <https://cambrian-line-replay.vercel.app/#/verify>, pick a build, and on its record press **Verify this receipt**. Your own browser recomputes the sha256 of that build's record and reports that it matches.
-2. **`npm run judge`, seconds.** Clone, `npm ci`, `npm run judge`: 17 numbered checks on your machine with no keys, ending `judge: 17 checks — 17 ok, 0 skipped, 0 failed`. Measured from a fresh clone on 14 November: about 5 s on macOS and in a plain Linux container (`node:22-bookworm`). Each skip prints its reason. Checks 16 and 17 read NEAR mainnet from a public archival node; when that node answers "Rate limits exceeded", the judge asks again after 1, 3 and 9 seconds, then asks a second public node, and only then prints the check as skipped with the reason. A node that answers wrongly still fails.
+2. **`npm run judge`, seconds.** Clone, `npm ci`, `npm run judge`: 18 numbered checks on your machine with no keys, ending `judge: 18 checks — 18 ok, 0 skipped, 0 failed`. Measured from a fresh clone on 14 November: about 5 s on macOS and in a plain Linux container (`node:22-bookworm`). Each skip prints its reason. Checks 16 and 17 read NEAR mainnet from a public archival node; when that node answers "Rate limits exceeded", the judge asks again after 1, 3 and 9 seconds, then asks a second public node, and only then prints the check as skipped with the reason. A node that answers wrongly still fails.
 3. **Your own build, about a minute.** `npm run solo` with your own NEAR AI key: you talk an idea through, sign the brief with your own passkey as a council of one, and watch it build. Measured on 13 November from `git clone` to the first preview: 57 s and $0.015. The next section has the steps. Without a key, `npm run demo` sends one brief through the same build path with a stand-in agent and a throwaway test council, and you see `state     green-no-preview` (on Linux only where bubblewrap can build its sandbox; in a default Docker container you see `state     blocked`, see [Try it](#try-it)).
 
-In a plain Linux container without user namespaces, `npm test` ends `286 passed, 0 failed, 12 skipped (each prints its reason above)` and the judge ends `16 ok, 1 skipped, 0 failed`: every check that needs no sandbox passes, including the ones that re-verify the council's signatures and read mainnet. The 12 tests and the judge's check 10 skip there because they would run agent or product code, which this code refuses to do without a sandbox it can build; the note under [Try it](#try-it) has the command for the full run.
+In a plain Linux container without user namespaces, `npm test` ends `289 passed, 0 failed, 12 skipped (each prints its reason above)` and the judge ends `17 ok, 1 skipped, 0 failed`: every check that needs no sandbox passes, including the ones that re-verify the council's signatures and read mainnet. The 12 tests and the judge's check 10 skip there because they would run agent or product code, which this code refuses to do without a sandbox it can build; the note under [Try it](#try-it) has the command for the full run.
 
 Every build call is real, priced and signed by NEAR AI's gateway, and both briefs are signed inside the model's TEE. Conversation turns are real and priced, and not signed. Nothing in the record is simulated.
 
@@ -27,6 +27,7 @@ Every build call is real, priced and signed by NEAR AI's gateway, and both brief
 - **Every build record is public, timestamped and checkable.** The hash of each record is logged on NEAR mainnet by one recorder account through a contract whose code cannot change. `node scripts/verify-receipt.mjs --onchain data/runs/postmark-6ee0a5/onchain.json` reads mainnet with no key and checks ten things about that transaction. What the chain does and does not show is under [Trust model](#trust-model).
 - **NEAR AI's gateway signs every build call.** All 20 model calls of the two builds carry the gateway's signature, and each verifies offline (`npm run judge`, check 8). The conversation turns before a brief are priced and not signed.
 - **The briefs are checked against NEAR AI's TEE reports.** Each of the two briefs is signed by a key inside the model's TEE. Checked, offline, on 14 November (`npm run judge`, check 5): the signature over the brief, and the Intel signature chain of the TEE report that names the signing key. The reports were fetched on 14 November at 11:48 UTC, about twelve hours after the calls, so they show the key is in a TEE now, not that it was at the moment of the call. Not checked: that the measured software is a build NEAR AI published, the platform's patch level, and the GPU evidence ([Known limits](#known-limits)).
+- **Who signed, checked against pinned keys.** `npm run judge` check 18 takes each of the two builds' records and verifies at least two passkey signatures over that brief's hash, against the members' public keys in `data/council.json` as committed on 13 November (commit `6846e6d`, pinned by hash in `approvals/founding.mjs`). A record with one signature, an altered signature, or signatures made over another brief fails. What it proves: the holders of those three keys signed exactly these two briefs. What it does not prove: who holds the keys. The keys file is still ours: the build machine wrote it at enrolment, and nothing on chain names the members.
 - **Not on chain yet: the council.** Who the members are, their keys and the 2 of 3 rule are in `data/council.json`, a file in this repository, and approvals are checked by our code. A council on chain is next, and is not built ([what is next](#what-is-live-today-and-what-is-next)).
 
 ## Run your own line
@@ -101,16 +102,16 @@ npm ci
 **1. `npm test`** — unit tests and attack tests. Expect the last line:
 
 ```
-298 passed, 0 failed
+301 passed, 0 failed
 ```
 
-On macOS the last line is `297 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only.
+On macOS the last line is `300 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only.
 
 **On Linux the sandbox needs unprivileged user namespaces.** Install bubblewrap first (`sudo apt-get install bubblewrap`). Bubblewrap can only build its sandbox where the kernel lets an ordinary user create a namespace. A default Docker container does not, and neither does Ubuntu 24.04 until you run `sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0` (CI does exactly that, in `.github/workflows/ci.yml`). Without it nothing is broken, but the build path refuses to run anything it cannot wall in, and you see this instead of the lines in this section:
 
 ```
-286 passed, 0 failed, 12 skipped (each prints its reason above)        npm test
-judge: 17 checks — 16 ok, 1 skipped, 0 failed                          npm run judge
+289 passed, 0 failed, 12 skipped (each prints its reason above)        npm test
+judge: 18 checks — 17 ok, 1 skipped, 0 failed                          npm run judge
 state     blocked — no sandbox on this machine (bwrap is installed but cannot create a namespace here; …)   npm run demo
 ```
 
@@ -123,7 +124,7 @@ docker run --rm -it --privileged -v "$PWD":/src:ro node:22-bookworm sh -c \
 
 If bubblewrap is not installed at all, the reason reads `bwrap is not installed` instead. Both sets of lines were taken on 14 November in `node:22-bookworm`: the first without `--privileged`, the second with it.
 
-**2. `npm run judge`** — re-derives the claims on your machine with no keys; checks 16 and 17 read NEAR mainnet and skip without a network. Expect 17 numbered lines, each with a detail after a dash; these thirteen and the summary, shortened here to their titles:
+**2. `npm run judge`** — re-derives the claims on your machine with no keys; checks 16 and 17 read NEAR mainnet and skip without a network. Expect 18 numbered lines, each with a detail after a dash; these fourteen and the summary, shortened here to their titles:
 
 ```
  1. [ok] the committed contract wasm is the one SHA256SUMS names — sha256 3e547da4f94b14de…
@@ -139,7 +140,8 @@ If bubblewrap is not installed at all, the reason reads `bwrap is not installed`
 12. [ok] the threshold is a parameter: a council of 7 with threshold 4 releases at 4, refuses at 3, refuses an altered brief
 13. [ok] attack: the push guard refuses main, a forced push and a + refspec; it accepts build/<ticket-id>
 17. [ok] on chain: the stake position named in data/stake.json is there, with that amount
-judge: 17 checks — 17 ok, 0 skipped, 0 failed
+18. [ok] council builds: at least 2 valid passkey signatures each, by the keys enrolled on 13 Nov
+judge: 18 checks — 18 ok, 0 skipped, 0 failed
 ```
 
 `[skip]` means "could not be observed here", with the reason on the line; it is never counted as ok. `[FAIL]` exits non-zero. On a machine with a sandbox and a network no check skips today.
@@ -237,7 +239,7 @@ What anyone can check without trusting us:
 - The receipt contract's code. Its Rust source is in this repository and builds to the same 1,767 bytes on macOS and Linux. The contract account has no access key, so the code cannot change.
 - That the recorder account signed six transactions, each logging one 32-byte hash, and when: five build records and one statement of the credits figures.
 - That each record in `data/runs` hashes to the value logged for it.
-- That the approvals in each record are valid passkey signatures by the public keys in `data/council.json` over that brief's hash.
+- That each build's record carries at least two valid passkey signatures over that brief's hash, by the public keys that were in `data/council.json` at commit `6846e6d` on 13 November (`npm run judge`, check 18).
 - That the collective's account holds an active stake of 3,045 NEAR.
 
 What you have to trust:
