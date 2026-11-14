@@ -45,3 +45,8 @@ test('every claim names a test that is really in that file, or is recorded with 
 test('a row that is next is never called tested or recorded', () => {
   for (const r of rows.filter((x) => x.next)) assert.doesNotMatch(r.status, /tested|recorded/, `claim ${r.n}`);
 });
+test('no unfilled placeholder is left in the public documents', () => {
+  for (const f of ['README.md', 'CLAIMS.md', 'DEMO.md', 'HACKATHON.md']) {
+    assert.doesNotMatch(readFileSync(join(ROOT, f), 'utf8'), /[A-Z]+_PLAIN\w*|PLACEHOLDER|\bTODO\b|\bTBD\b|ENROLLED_NEXT_LINE/, f);
+  }
+});
