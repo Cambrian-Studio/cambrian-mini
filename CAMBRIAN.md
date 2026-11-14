@@ -2,6 +2,10 @@
 
 A short account for a reader in a hurry. Every claim links to where it can be checked. The longer versions are in [`README.md`](README.md) and [`CLAIMS.md`](CLAIMS.md).
 
+## The problem
+
+Today everyone builds with AI alone, and the machine builds only what one person tells it. A group that wants to build together has no way to decide what the machine builds, cap what it may spend, or show afterwards who approved what and what it cost. Cambrian Mini is that missing layer: members sign a brief, agents build within it, and the record is on NEAR.
+
 ## What Cambrian is
 
 Cambrian Mini is a system in which a small group of people, a council, approves a written description of a product, a brief, by signing it with passkeys. When enough of them have signed, an AI coding agent builds the product in a sandbox with a fixed budget. Every build leaves a record of each model call, what it cost and which checks passed, and the hash of that record is logged on NEAR mainnet, where anyone can check it.
@@ -57,6 +61,13 @@ Two products were built here on 14 November. Each brief came out of a conversati
 - What you have to trust: the one build machine and its operator, the council file, the page a member signs on, the recorder key holder, NEAR AI's reported token counts and prices, and the hosting provider. The chain shows that a hash existed at a time. It does not show that the record is true. The full list is under [Trust model](README.md#trust-model).
 - An independent security review on 14 November found limits we did not fix. They are listed, not hidden, under [Known limits](README.md#known-limits).
 
+## How it sustains itself
+
+- Cambrian owns what it ships. Products are meant to earn; neither of the two built here charges yet.
+- Members join for what gets built and a say in what is built next. They bring ideas, taste or capital.
+- Capital is staked, not spent: the stake earns compute credits and stays in place ([The capital](#the-capital)).
+- A build costs cents to dollars and is capped before it starts: $1.09 for both products here.
+
 ## What is next
 
 None of this is true yet ([What is live today, and what is next](README.md#what-is-live-today-and-what-is-next)).
@@ -68,6 +79,6 @@ None of this is true yet ([What is live today, and what is next](README.md#what-
 
 ## The team
 
-- Clemens: Founder.
-- JJ: Design.
-- Michael: Engineering.
+- Clemens Scherf, founder. Previously NEAR Foundation (ecosystem relations) and Base (country lead, UK and western Europe). LBS, Bocconi. Has organised, judged and competed in hackathons.
+- JJ Agcaoili, design. Royal College of Art / Imperial Global Innovation Design; co-founder of the design studio Many Projects.
+- Michael, engineering, full time.
