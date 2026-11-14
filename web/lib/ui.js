@@ -253,12 +253,16 @@ export function capitalFigures(doc) {
   }
   const e = doc?.estimate || {};
   // An estimate is shown as NEAR AI's, with its date, and only beside a recorded stake. It is not credits received.
-  if (out.length && num(e.usd_per_month) && e.as_of) {
+  // Once NEAR AI's dashboard figure is recorded, it stands in for the earlier estimate.
+  const earned = real && num(c.earned_from_stake_usd) && Boolean(c.as_of);
+  if (out.length && num(e.usd_per_month) && e.as_of && !(earned && num(c.rate_usd_per_month))) {
     out.push({ label: 'NEAR AI’s estimate', value: `~${usd(e.usd_per_month).replace(/\.00$/, '')}/month in credits`, note: day(e.as_of) });
   }
   // credits are shown only with the day NEAR AI reported them; the card opens the evidence kept with the record
-  if (real && num(c.earned_from_stake_usd) && c.as_of) {
-    out.push({ label: 'Credits received', value: usd(c.earned_from_stake_usd), note: `as reported by NEAR AI on ${shortDay(c.as_of)}`,
+  if (earned) {
+    // the corner holds one short line; the day and the words "as reported by NEAR AI" are in the sentence under the cards
+    const note = num(c.rate_usd_per_month) ? `NEAR AI reports ${usd(c.rate_usd_per_month)} a month` : `as reported by NEAR AI on ${shortDay(c.as_of)}`;
+    out.push({ label: 'Credits earned', value: usd(c.earned_from_stake_usd), note,
       href: safeUrl(c.evidence) });
   }
   if (num(spend.mini_line_usd) || num(spend.private_line_usd)) {
@@ -275,11 +279,13 @@ export function stakeLine(doc) {
   const eur = typeof s.eur_when_staked === 'number' ? `, about €${count(s.eur_when_staked)} when staked on ${shortDay(s.recorded_at)}` : '';
   return `We staked our own capital first: ${count(s.amount_near)} NEAR${eur}, with NEAR AI.`;
 }
-/** "Credits received $1.70, as reported by NEAR AI on 14 Nov", with where to see it. Null until a figure with its date is recorded. */
+/** "Credits earned $1.86 · NEAR AI reports $60.90 a month", as reported by NEAR AI on a day, with where to see it.
+ *  Null until a figure with its date is recorded. Says nothing about what paid for a build. */
 export function creditsLine(doc) {
   const c = doc?.credits || {};
   if (!doc || doc.placeholder === true || typeof c.earned_from_stake_usd !== 'number' || !c.as_of) return null;
-  return { text: `Credits received ${usd(c.earned_from_stake_usd)}, as reported by NEAR AI on ${shortDay(c.as_of)}`,
+  const rate = typeof c.rate_usd_per_month === 'number' ? ` · NEAR AI reports ${usd(c.rate_usd_per_month)} a month` : '';
+  return { text: `Credits earned ${usd(c.earned_from_stake_usd)}${rate}`, reported: 'as reported by NEAR AI', day: shortDay(c.as_of),
     evidence: safeUrl(c.evidence), tx: safeUrl(c.statement_tx_url) };
 }
 export function capitalCards(doc) {

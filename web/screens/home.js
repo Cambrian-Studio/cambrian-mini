@@ -13,14 +13,14 @@ const COMPOUNDS = [
   ['How it sells.', 'Which channels worked, which campaigns paid back, what users kept. Each launch teaches the next one.', 'Next'],
 ];
 
-// Credits received, said once with both places to check it: what NEAR AI showed, and the statement of it logged on NEAR.
+// Credits earned, said once as text. "as reported by NEAR AI" opens what NEAR AI showed, on its own; the statement of it is on NEAR.
 function creditsNote(stake) {
   const c = creditsLine(stake);
   if (!c) return null;
   const out = { target: '_blank', rel: 'noopener noreferrer' };
-  return h('p.sub', {}, `${c.text}. `,
-    c.evidence ? h('a.link', { href: c.evidence, ...out }, 'What NEAR AI showed') : null, c.evidence && c.tx ? ' · ' : null,
-    c.tx ? h('a.link', { href: c.tx, ...out }, 'The statement on NEAR') : null);
+  return h('p.sub', {}, `${c.text}, `,
+    c.evidence ? h('a.link', { href: c.evidence, ...out }, c.reported) : c.reported, ` on ${c.day}.`,
+    c.tx ? ' ' : null, c.tx ? h('a.link', { href: c.tx, ...out }, 'The statement on NEAR') : null);
 }
 
 const section = (name, title, body, ...kids) => h('section.beat', { 'data-section': name },

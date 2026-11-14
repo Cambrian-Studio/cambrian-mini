@@ -32,6 +32,6 @@ test('the credit split: a figure that is not in the record reads "not recorded y
   assert.deepEqual(some, [['earned from the stake', '$1.50'], ['bought', '$0.00'], ['spent', '$5.36']]);
   assert.deepEqual(creditSplit({ credits: { earned_from_stake_usd: '3', bought_usd: NaN } }).map((r) => r[1]).slice(0, 2),
     ['not recorded yet', 'not recorded yet'], 'only a recorded number is shown');
-  assert.equal(committed.credits.earned_from_stake_usd, null);
+  assert.equal(committed.credits.earned_from_stake_usd, 1.85943039, 'as NEAR AI\'s dashboard showed it on 14 Nov');
   assert.equal(committed.credits.bought_usd, null);
 });

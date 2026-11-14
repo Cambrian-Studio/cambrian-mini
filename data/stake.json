@@ -28,15 +28,18 @@
     "read_at": "2026-11-12"
   },
   "credits": {
-    "earned_from_stake_usd": null,
+    "earned_from_stake_usd": 1.85943039,
     "bought_usd": null,
-    "source": "not readable: NEAR AI's organisation balance needs a signed-in account, not an API key. On NEAR, the staking contract (stake.dao, get_farm_positions_for_account) shows the position as Active with 3,045 NEAR staked",
+    "source": "NEAR AI dashboard, screenshot 14 Nov",
     "read_at": "2026-11-14",
-    "as_of": null,
-    "evidence": null,
-    "statement_sha256": null,
-    "statement_tx": null,
-    "statement_tx_url": null
+    "as_of": "2026-11-14",
+    "evidence": "assets/evidence/nearai-farmed-20261114.png",
+    "statement_sha256": "b259cc61d2c9b5afb2d55f1f52c5232c45512d3d29ffbd5d6c7c8ccb682bdebc",
+    "statement_tx": "GW6BSjHUEVVKzQMtNUBX9RnBCQVYfJhx3HJo5qr3j7ii",
+    "statement_tx_url": "https://nearblocks.io/txns/GW6BSjHUEVVKzQMtNUBX9RnBCQVYfJhx3HJo5qr3j7ii",
+    "rate_usd_per_month": 60.9,
+    "last_synced_as_shown": "14 Nov, 10:19",
+    "statement": "data/credits-statement-20261114.json"
   },
   "inference_spend": {
     "source": "sum of the receipts in this repository",

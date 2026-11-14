@@ -4,7 +4,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { capitalFigures, councilLine, stakeLine, creditsLine, checkExact } from '../../web/lib/ui.js';
 import { compounding, STEPS, lessonsApplied } from '../../web/lib/mini.js';
@@ -38,13 +38,16 @@ test('capital cards: a figure the record does not hold leaves its card out', () 
   assert.deepEqual(capitalFigures(null), []);
   const recorded = capitalFigures({ placeholder: false, stake: { amount_near: 100, tx: 'abc', tx_url: 'https://example.org/tx/abc' },
     credits: { earned_from_stake_usd: 1.5, as_of: '2026-11-14' }, inference_spend: { mini_line_usd: 0.25, private_line_usd: 0 } });
-  assert.deepEqual(recorded.map((f) => f.label), ['Staked', 'Credits received', 'Spent on products']);
+  assert.deepEqual(recorded.map((f) => f.label), ['Staked', 'Credits earned', 'Spent on products']);
   assert.equal(recorded[0].value, '100 NEAR');
   assert.equal(recorded[0].href, 'https://example.org/tx/abc');
   const committed = capitalFigures({ ...json('data/stake.json'), inference_spend: { mini_line_usd: 0, private_line_usd: 5.363208 } });
   assert.deepEqual(committed.map((f) => [f.label, f.value, f.note]), [['Staked', '3,045 NEAR', 'about €10,000 when staked · see the transaction'],
-    ['NEAR AI’s estimate', '~$60/month in credits', '13 Nov 2026'], ['Spent on products', '$5.36', undefined]],
-    'the NEAR amount and its transaction first; a dollar estimate only with its date; no credits received until recorded');
+    ['Credits earned', '$1.86', 'NEAR AI reports $60.90 a month'], ['Spent on products', '$5.36', undefined]],
+    'the NEAR amount and its transaction first; credits as NEAR AI reported them, with the day; the earlier estimate gives way to the reported rate');
+  const before = json('data/stake.json'); before.credits = { earned_from_stake_usd: null };
+  assert.deepEqual(capitalFigures(before).map((f) => [f.label, f.value, f.note])[1], ['NEAR AI’s estimate', '~$60/month in credits', '13 Nov 2026'],
+    'with no credits recorded, the estimate is shown as an estimate, with its date');
   assert.match(committed[0].href, /^https:\/\/nearblocks\.io\/txns\/[1-9A-HJ-NP-Za-km-z]{43,44}$/);
   assert.deepEqual(capitalFigures({ placeholder: false, stake: { amount_near: 100, tx: null }, credits: { earned_from_stake_usd: '3' } }), [],
     'a stake without its transaction, or a credit figure that is not a number, is not shown');
@@ -145,16 +148,23 @@ test('the stake line and the credits line say only what the record holds', () =>
   assert.equal(stakeLine(stake), 'We staked our own capital first: 3,045 NEAR, about €10,000 when staked on 13 Nov, with NEAR AI.');
   assert.equal(stakeLine({ placeholder: true }), null);
   assert.equal(stakeLine({ placeholder: false, stake: { amount_near: 100, tx: 'x', recorded_at: '2026-11-13T14:13:24Z' } }), 'We staked our own capital first: 100 NEAR, with NEAR AI.');
-  const withCredits = { ...stake, credits: { earned_from_stake_usd: 1.7, as_of: '2026-11-14', evidence: 'assets/evidence/nearai-credits-20261114.png',
-    statement_tx_url: 'https://nearblocks.io/txns/abc' } };
-  assert.deepEqual(creditsLine(withCredits), { text: 'Credits received $1.70, as reported by NEAR AI on 14 Nov', evidence: 'assets/evidence/nearai-credits-20261114.png',
-    tx: 'https://nearblocks.io/txns/abc' });
+  const shot = 'assets/evidence/nearai-farmed-20261114.png';
+  const line = creditsLine(stake);
+  assert.deepEqual([line.text, line.reported, line.day, line.evidence], ['Credits earned $1.86 · NEAR AI reports $60.90 a month', 'as reported by NEAR AI', '14 Nov', shot]);
+  assert.match(line.tx, /^https:\/\/nearblocks\.io\/txns\/[1-9A-HJ-NP-Za-km-z]{43,44}$/, 'the statement of it is logged on NEAR');
+  assert.equal(stake.credits.source, 'NEAR AI dashboard, screenshot 14 Nov');
+  assert.equal(stake.credits.bought_usd, null, 'what was bought is not in the record');
+  assert.ok(existsSync(at(`web/${shot}`)), 'the cropped screenshot is in the repository');
   assert.equal(creditsLine({ ...stake, credits: { earned_from_stake_usd: 1.7 } }), null, 'no figure without the day it was reported');
-  const card = capitalFigures(withCredits).find((f) => f.label === 'Credits received');
-  assert.deepEqual([card.value, card.note, card.href], ['$1.70', 'as reported by NEAR AI on 14 Nov', 'assets/evidence/nearai-credits-20261114.png']);
+  assert.equal(creditsLine({ ...stake, credits: { earned_from_stake_usd: 1.7, as_of: '2026-11-14' } }).text, 'Credits earned $1.70', 'no rate, no rate shown');
+  const card = capitalFigures(stake).find((f) => f.label === 'Credits earned');
+  assert.deepEqual([card.value, card.note, card.href], ['$1.86', 'NEAR AI reports $60.90 a month', shot]);
+  for (const f of ['web/screens/home.js', 'web/lib/ui.js', 'web/index.html']) {
+    assert.doesNotMatch(readFileSync(at(f), 'utf8'), /<img[^>]*evidence|h\('img[^)]*evidence/, 'the screenshot is linked, never shown on a page');
+  }
   const figures = capitalFigures({ ...stake, inference_spend: { mini_line_usd: 1.09, private_line_usd: 5.36 } });
   assert.equal(figures[0].note, 'about €10,000 when staked · see the transaction');
-  if (stake.credits.earned_from_stake_usd === null) assert.equal(creditsLine(stake), null, 'nothing is shown while no credits are recorded');
+  assert.equal(creditsLine({ ...stake, credits: { ...stake.credits, earned_from_stake_usd: null } }), null, 'nothing is shown while no credits are recorded');
 });
 
 test('the signing screen shows what a signature covers: the task in full and each check exactly as it runs', () => {
