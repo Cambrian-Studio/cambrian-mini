@@ -4,7 +4,7 @@ Every claim this repository makes, where the code is, and the test that proves i
 `test/docs/claims.test.mjs` fails if a `file:line` below does not exist or a named test is not in its file.
 
 Status words:
-- **tested** — tests in this repository prove it in both directions (the good case is accepted, the bad one refused). The test named in a row is the sharpest one; an independent audit broke the claimed behaviour row by row and re-ran these tests (its three misses were rows 37, 46 and 48, since rewritten).
+- **tested** — tests in this repository prove it in both directions (the good case is accepted, the bad one refused). The test named in a row is the sharpest one.
 - **tested, CI** — as above, and the Linux half only runs in CI (bubblewrap).
 - **rehearsed** — seen working on the build machine against the real service, but no recorded run in `data/` shows it yet.
 - **pending** — not true yet. Listed so nobody has to find out the hard way.
@@ -48,7 +48,7 @@ Status words:
 | # | Claim | Where | Test | Status |
 |---|---|---|---|---|
 | 25 | Every model call is priced from NEAR AI Cloud's own `/v1/models` prices and the usage the call reports. | `near/nearai.mjs:118` | `test/near/nearai.test.mjs` › "priceCall prices by exact id, by an unambiguous provider prefix, and refuses the rest" | tested |
-| 26 | Each build call is sent in the form NEAR AI can sign (non-streaming, no aliasing). Who signs depends on the model: an open model NEAR AI hosts is signed inside its TEE; a model routed to an outside provider, such as the Anthropic model the council's builds use, is signed by NEAR AI's gateway, not by the model (row 64). | `line/kit/bridge.mjs:199` | `test/line/bridge.test.mjs` › "a streamed request goes upstream NON-streamed, and the agent still receives a well-formed event stream" | tested |
+| 26 | Each build call is sent in the form NEAR AI can sign (non-streaming, no aliasing). Who signs depends on the model: an open model NEAR AI hosts is signed inside its TEE; a model routed to an outside provider, such as an Anthropic model, is signed by NEAR AI's gateway, not by the model (row 64). | `line/kit/bridge.mjs:199` | `test/line/bridge.test.mjs` › "a streamed request goes upstream NON-streamed, and the agent still receives a well-formed event stream" | tested |
 | 27 | A NEAR AI response signature is verified offline: the signature, the request and response hashes it binds, and the Intel TDX quote chain to a pinned root. | `near/nearai.mjs:557` | `test/near/nearai-attestation.test.mjs` › "a real completion by a TEE-hosted model verifies offline (ed25519)" | tested (on recorded real responses) |
 | 28 | One changed character in the signed text, the signature or either hash fails verification. | `near/nearai.mjs:557` | `test/near/nearai-attestation.test.mjs` › "one changed character in the text, the signature or either hash fails" | tested |
 | 29 | Signatures are captured per call into the run record and the receipt. | `line/run.mjs:234` | — | rehearsed (4 of 4 calls); pending a recorded run |

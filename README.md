@@ -10,7 +10,7 @@ The record holds one product so far: Upread, an app that reads an article to you
 
 1. **The hosted replay, instant.** Open <https://cambrian-line-replay.vercel.app/#/verify>, pick a build and press **Verify this receipt**. Your own browser recomputes the sha256 of that build's record and reports that it matches.
 2. **`npm run judge`, seconds.** Clone, `npm ci`, `npm run judge`: 16 numbered checks on your machine with no keys, ending `judge: 16 checks — 12 ok, 4 skipped, 0 failed`. Measured from a fresh clone on 14 November: 5 s on macOS, 1 s in a plain Linux container (`node:22-bookworm`). Each skip prints its reason. Check 16 reads NEAR mainnet from a public archival node.
-3. **Your own build, about a minute.** `npm run solo` with your own NEAR AI key: you talk an idea through, sign the brief with your own passkey as a council of one, and watch it build. Measured on 13 November from `git clone` to the first preview: 57 s and $0.015. The next section has the steps. Without a key, `npm run demo` sends one brief through the same build path with a stand-in agent and a throwaway test council, and you see `state     green-no-preview`.
+3. **Your own build, about a minute.** `npm run solo` with your own NEAR AI key: you talk an idea through, sign the brief with your own passkey as a council of one, and watch it build. Measured on 13 November from `git clone` to the first preview: 57 s and $0.015. The next section has the steps. Without a key, `npm run demo` sends one brief through the same build path with a stand-in agent and a throwaway test council, and you see `state     green-no-preview` (on Linux only where bubblewrap can build its sandbox; in a default Docker container you see `state     blocked`, see [Try it](#try-it)).
 
 In a plain Linux container without user namespaces, `npm test` ends `LINUX_PLAIN_TESTS` and the judge ends `11 ok, 5 skipped`: every check that needs no sandbox passes, including the one that reads mainnet. The tests and the one judge check that skip are those that would run agent or product code, which this code refuses to do without a sandbox it can build; the note under [Try it](#try-it) has the command that gives the full run.
 
@@ -32,7 +32,7 @@ The first start installs the coding agent (OpenCode) once, then prints four link
 3. **Sign.** Open the brief in Approvals and press "Sign with passkey". One signature releases it, because this council has one member.
 4. **Watch it build.** The steps light up on Watch a build. When the build passes, Products links the page it built, served from your own machine at `/preview/<build id>/`, and Verify recomputes the hash of its record in your browser.
 
-What it costs: one build may cost at most $2 and a day at most $5; both are enforced before each model call. The run we timed on 13 November, from `git clone` to the first preview, took 57 seconds and cost $0.015: $0.006 for the conversation and the brief, $0.009 for the build. It built a Celsius and Fahrenheit converter on `Qwen/Qwen3.6-35B-A3B-FP8`, an open model NEAR AI hosts in a TEE, which is the solo default (set `LINE_MODEL` for another model; a larger model costs more). That run used a software passkey in a scripted browser, not a phone or a security key.
+What it costs: one build may cost at most $2, a day at most $5 and the app in total at most $15; both are enforced before each model call. The run we timed on 13 November, from `git clone` to the first preview, took 57 seconds and cost $0.015: $0.006 for the conversation and the brief, $0.009 for the build. It built a Celsius and Fahrenheit converter on `Qwen/Qwen3.6-35B-A3B-FP8`, an open model NEAR AI hosts in a TEE, which is the solo default (set `LINE_MODEL` for another model; a larger model costs more). That run used a software passkey in a scripted browser, not a phone or a security key.
 
 What it does not do: nothing is recorded on NEAR, because a solo line has no recorder account. To log your records, deploy the contract and create a recorder key as `contracts/README.md` describes, then run `scripts/record-receipt.mjs` with your own account. Nothing is published either: no preview leaves your machine unless you set `VERCEL_TOKEN_FILE`. Everything a solo line makes is kept under `.solo/`, which git ignores, so the committed record stays as it is.
 
@@ -42,6 +42,7 @@ Live today:
 
 - The path from a signed brief to a checked build: passkey signatures verified before anything runs, a sealed workspace, every model call priced through NEAR AI and stopped at the signed budget, the brief's checks, and a record with a hash. It is covered by the tests and the judge, and was exercised in rehearsal builds with a test council.
 - The replay: three recorded builds of one product, Upread, made on Cambrian's private setup on 9 November. One failed, two passed, $5.36 in total. They are imported with their numbers unchanged and labelled as imported.
+- The council: all three members enrolled a passkey on 13 November (`data/council.json`).
 - The stake: the collective's account, `cambriancollective.near`, staked 3,045 NEAR into NEAR AI on 13 November ([transaction](https://nearblocks.io/txns/9US5CcTaSYiX2DS7pGLWoS4sYpBZ4s9BvSEq1CgoJ6eo)). NEAR AI's estimate on that date: about $60 a month in credits. No credits received are recorded yet.
 - On NEAR: the contract that logs a build record's hash is deployed on mainnet and locked, and the three Upread records are logged through it (13 November). They are the imported builds, logged to prove the recorder and the check; no council-signed build is on chain yet.
 
@@ -49,7 +50,7 @@ Next, and not true yet:
 
 - The stake is held by the collective's account, not by its treasury. The Sputnik DAO treasury, `cambrian.sputnik-dao.near`, is set up, and NEAR AI confirmed that a DAO cannot be bound as a funding wallet yet; that needs changes in Trezu, Sputnik DAO and NEAR AI.
 
-- All three council members enrolled a passkey on 13 November (`data/council.json`). No build signed by the council is recorded here yet.
+- No build signed by the council is recorded here yet.
 - The one thing the line learns next: products that talk to Cambrian Mini, for shared data and for model calls paid from the stake. That unlocks Spot, a persona generator, and signed postmarks on NEAR.
 - Contribute the line's redacted build traces through NEAR AI Gateway, so the factory's own failures and fixes earn inference credits.
 - No council member's conversation has become a build yet. The conversation, the draft and its versions, and the hand-over to the council are tested with a stand-in model, and were run once for real in solo mode (see [Run your own line](#run-your-own-line)).
@@ -91,9 +92,9 @@ docker run --rm -it --privileged -v "$PWD":/src:ro node:22-bookworm sh -c \
   'cp -r /src /work && cd /work && apt-get update -qq && apt-get install -y -qq bubblewrap && npm ci && npm test && npm run judge && npm run demo'
 ```
 
-Both sets of lines were taken on 13 November in `node:22-bookworm`: the first without `--privileged`, the second with it.
+If bubblewrap is not installed at all, the reason reads `bwrap is not installed` instead. Both sets of lines were taken on 14 November in `node:22-bookworm`: the first without `--privileged`, the second with it.
 
-**2. `npm run judge`** — re-derives the claims on your machine, offline. Expect 16 numbered lines, each with a detail after a dash; these eight and the summary, shortened here to their titles:
+**2. `npm run judge`** — re-derives the claims on your machine with no keys; check 16 reads NEAR mainnet and skips without a network. Expect 16 numbered lines, each with a detail after a dash; these eight and the summary, shortened here to their titles:
 
 ```
  1. [ok] the committed contract wasm is the one SHA256SUMS names — sha256 3e547da4f94b14de…
@@ -122,7 +123,7 @@ Add `--approvals 1` (`node line/run-cli.mjs --offline --ticket test/line/fixture
 
 **4. `npm start`** then open `http://localhost:8787/` — the app. With no key file it says `REPLAY mode` and shows the recorded runs. Open **Verify**, pick a build, press **Verify this receipt**: the browser recomputes the sha256 over the receipt's canonical JSON and shows `Hash matches.`. (This proves the browser and the server serialise and hash the receipt identically; it becomes tamper evidence once the hash is also recorded somewhere the server cannot change.) Open **The line** and press **Replay** on a run to watch its stations. Every button that would spend or sign explains what it would do instead of doing it.
 
-**5. The contract, executed** (no Rust needed): `node --test test/near/verify-wasm.test.mjs` runs the committed 1.8 kB wasm itself with stub host functions → `ℹ pass 9`, `ℹ fail 0`.
+**5. The contract, executed** (no Rust needed): `node --test test/near/verify-wasm.test.mjs` runs the committed 1.8 kB wasm itself with stub host functions → `pass 9`, `fail 0` (prefixed `ℹ` in a terminal, `#` when piped).
 
 ## Treasury and council
 
@@ -132,7 +133,7 @@ Cambrian separates two decisions. Members' capital sits in a Sputnik DAO treasur
 
 1. **Idea → brief.** A member types an idea (`web/screens/talk.js`). On the hosted app only an enrolled council member can, with a passkey signature over the idea. In LIVE mode one NEAR AI call (a second if the first draft is refused) drafts a brief: title, goal, acceptance checks, out of scope, budget in dollars. The brief is written by an open model NEAR AI hosts inside a TEE (`deepseek-ai/DeepSeek-V4.1-Flash-1017`); the call's signature and exact bytes are kept beside the ticket, and the ticket carries the response hash. Code, not the model, decides what stands: the draft is parsed as a ticket, clamped to the budget rules and linted against every lesson (`tickets/brief.mjs`, `lessons/lessons.mjs`).
 2. **Approval.** Members propose; a quorum of the collective signs. Each signer signs the ticket's hash with a passkey, and that hash covers the hash of the model response the brief came from. Today the collective's signers are a founding council of 3 with a threshold of 2. The threshold is a parameter of `data/council.json` (N members, M signatures, never below 2): the same code releases a 7-member council at 4 signatures, and the judge runs that case. How a collective of 100 or more decides (quorum by role, weighting, an on-chain council via Trezu) is next, not built. At the threshold the ticket is released (`approvals/release.mjs`); the signatures are stored with the ticket.
-3. **Build.** The line (`line/run.mjs`) checks the signatures itself, then runs a coding agent (OpenCode) inside a sandbox. The agent's only door to a model is a bridge (`line/kit/bridge.mjs`) that prices every call and stops at the ticket's budget. Builds run on `anthropic/claude-opus-5-5` through NEAR AI Cloud, at most $2 a build; those calls are signed by NEAR AI's attested gateway, not by the model.
+3. **Build.** The line (`line/run.mjs`) checks the signatures itself, then runs a coding agent (OpenCode) inside a sandbox. The agent's only door to a model is a bridge (`line/kit/bridge.mjs`) that prices every call and stops at the ticket's budget. Builds run on the model named in `LINE_MODEL` through NEAR AI Cloud, at most $2 a build. The default is `deepseek-ai/DeepSeek-V4.1-Flash-1017`; a solo line uses `Qwen/Qwen3.6-35B-A3B-FP8`; the council's build machine is set to `anthropic/claude-opus-5-5`. Calls to an open model NEAR AI hosts are signed inside its TEE; calls NEAR AI routes to an outside provider, such as the Anthropic model, are signed by NEAR AI's attested gateway, not by the model.
 4. **Test.** The ticket's checks run on a fresh clone, inside the sandbox. RED twice: nothing leaves the machine.
 5. **Preview.** GREEN: the commit is pushed to `build/<ticket-id>` and the output is deployed to a Vercel preview.
 6. **Receipt.** The run record becomes a receipt with a sha256 (`receipts/receipt.mjs`). That hash is what the receipt contract is for; recording it is a manual command today; the three imported records are on mainnet (see the limits).
@@ -155,7 +156,7 @@ There is still one input and no mode to choose. The brief model reads each messa
 |---|---|---|
 | NEAR AI Cloud inference | Every model call goes to `https://cloud-api.near.ai/v1`; cost per call is NEAR AI's `/v1/models` price × the usage the call reports (`near/nearai.mjs`). | built, tested; exercised live in rehearsal builds |
 | NEAR AI response signatures and TEE attestation | Two levels, and the receipt says which. **Model-signed:** the brief is written by an open model inside a GPU TEE, and its response is signed inside that TEE. **Gateway-signed:** build calls go to a model NEAR AI routes to an outside provider; NEAR AI's attested gateway signs `sha256(request):sha256(response)` for each call, which shows what was relayed, not where the model ran. Signatures, the hashes they bind and the Intel TDX quote chain are verified offline (`near/nearai.mjs`, findings in `near/ATTESTATION.md`). | built, tested on recorded real responses; exercised in rehearsal builds |
-| Receipt contract | Raw Rust, no SDK, 1.8 kB: one method, `record_receipt(32 bytes)`, that emits one event log. No state, no deposit (`contracts/receipts`). A receipt is "on NEAR" when a transaction signed by the recorder account logged its hash; `scripts/verify-receipt.mjs` checks that with read-only RPC calls. | deployed on mainnet and locked; three imported records logged |
+| Receipt contract | Raw Rust, no SDK, 1.8 kB: one method, `record_receipt(32 bytes)`, that emits one event log. No state, no deposit (`contracts/receipts`). A receipt is "on NEAR" when a transaction signed by the recorder account logged its hash; `scripts/verify-receipt.mjs` checks that with read-only RPC calls (`node scripts/verify-receipt.mjs --onchain data/runs/<build>/onchain.json`; it reads the archival node named in `data/chain.json`). | deployed on mainnet and locked; three imported records logged |
 | Function-call access keys | The recorder signs with a key limited to `record_receipt` on the receipt contract and refuses a full-access key (`near/record.mjs`). | in use on mainnet: the recorder account holds only this key |
 | Staking | The Stake screen shows the stake, its account and transaction, and NEAR AI's published staking-for-inference formula as separate facts (`data/stake.json`). | recorded: 3,045 NEAR from the collective's account, with its transaction; credits received not recorded |
 | The two accounts | The contract account and the one recorder account are written in `data/chain.json`. Both are implicit accounts (64 hex characters), not named ones. The recorder's signature is what gives a logged hash its meaning. | on mainnet |
