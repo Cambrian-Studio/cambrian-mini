@@ -41,7 +41,7 @@ export async function render(root) {
     h('section.beat.hero', { 'data-section': 'hero' },
       h('p.eyebrow', {}, 'CAMBRIAN MINI · NEAR HACKATHON'),
       h('h1', {}, 'Machines build. The collective decides.'),
-      h('p.lede', {}, 'Cambrian is a product studio run by one intelligence and owned by its members. '
+      h('p.lede', {}, 'Cambrian is a product studio run by one intelligence and governed by its members. '
         + 'Members bring ideas, taste and capital. Cambrian turns them into products, and gets better with every one it ships.'),
       h('div.actions', {},
         h('a.btn.tall', { href: '#/line' }, 'Watch an idea become a product'),

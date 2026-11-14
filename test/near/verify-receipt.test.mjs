@@ -1,6 +1,8 @@
 // The keyless verify, offline: a stand-in node answers `status`, `tx` and `view_account`.
 // The answer shape is the one a public mainnet node gives for `tx` (fields trimmed to what is read).
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { receiptEventLine, wasmCodeHash } from '../../near/rpc.mjs';
 import { CHECKS, parseArgs, runCli, verifyOnChain } from '../../scripts/verify-receipt.mjs';
@@ -272,12 +274,15 @@ const ONCHAIN = {
   recorded_at: '2026-01-01T00:00:00.000Z',
 };
 
-async function cli(argv, { stub = node(), file = ONCHAIN } = {}) {
+// what this repository's data/chain.json would say for the fixture contract
+const CHAIN = { network: 'mainnet', contract: INPUT.contract, recorder: INPUT.signer };
+async function cli(argv, { stub = node(), file = ONCHAIN, chain = CHAIN } = {}) {
   const lines = [];
   const code = await runCli(argv, {
     fetchImpl: stub.fetchImpl,
     out: (line) => lines.push(line),
     readFile: () => (typeof file === 'string' ? file : JSON.stringify(file)),
+    chain,
     wasmBytes: WASM,
     timeoutMs: 500,
   });
@@ -326,10 +331,35 @@ test('cli --onchain: reads the five fields from the file; a flag that disagrees 
   assert.match(disagree.text, /^\[FAIL\] --signer someone-else\.near does not agree with signer "recorder\.example\.near" in the file$/);
   assert.equal(stub.calls.length, 0);
 
-  // A file that names another signer than the one who signed the transaction fails on the chain check.
-  const lying = await cli(['--onchain', 'onchain.json'], { file: { ...ONCHAIN, signer: 'stranger.near' } });
-  assert.equal(lying.code, 1);
-  assert.match(lying.text, /\[FAIL\] signed by the expected recorder: signer_id is recorder\.example\.near, not stranger\.near/);
+});
+
+test('cli --onchain: the expected signer comes from data/chain.json, never from the file under check', async () => {
+  // A stranger logs the same hash through the same contract and writes a file naming themselves. Checked against that file's
+  // own signer it would pass; checked against the recorder the repository names, it fails, and no request is made.
+  const stub = node({ change: (s) => (s.transaction.signer_id = 'stranger.near') });
+  const forged = await cli(['--onchain', 'onchain.json'], { stub, file: { ...ONCHAIN, signer: 'stranger.near' } });
+  assert.equal(forged.code, 1, forged.text);
+  assert.match(forged.text, /^\[FAIL\] signer "stranger\.near" in the file is not the recorder data\/chain\.json names for this contract, recorder\.example\.near$/);
+  assert.equal(stub.calls.length, 0);
+  // a file with no signer at all is checked against the repository's recorder, and the chain check catches the stranger
+  const { signer: _omit, ...bare } = ONCHAIN;
+  const noSigner = await cli(['--onchain', 'onchain.json'], { stub: node({ change: (s) => (s.transaction.signer_id = 'stranger.near') }), file: bare });
+  assert.equal(noSigner.code, 1);
+  assert.match(noSigner.text, /\[FAIL\] signed by the expected recorder: signer_id is stranger\.near, not recorder\.example\.near/);
+  assert.equal((await cli(['--onchain', 'onchain.json'], { file: bare })).code, 0, 'and passes when the recorder signed');
+  // a contract the repository does not name: the reader must say whom they expect
+  for (const chain of [null, { ...CHAIN, contract: 'other.example.near' }, { ...CHAIN, network: 'testnet' }, { ...CHAIN, recorder: undefined }]) {
+    const unknown = await cli(['--onchain', 'onchain.json'], { chain });
+    assert.equal(unknown.code, 2);
+    assert.match(unknown.text, /^\[refused\] data\/chain\.json names no recorder for this contract: pass --signer/);
+    assert.equal((await cli(['--onchain', 'onchain.json', '--signer', INPUT.signer], { chain })).code, 0, 'with --signer it is checked');
+  }
+  // the committed records: each names the recorder in data/chain.json, so each resolves with no flag
+  const chain = JSON.parse(readFileSync(new URL('../../data/chain.json', import.meta.url), 'utf8'));
+  for (const id of ['upread-mini-086cdf', 'postmark-6ee0a5']) {
+    const p = parseArgs(['--onchain', fileURLToPath(new URL(`../../data/runs/${id}/onchain.json`, import.meta.url))]);
+    assert.equal(p.ok && p.input.signer, chain.recorder, id);
+  }
 });
 
 test('cli: missing or unknown arguments and an unreadable file are refused with exit 2, no request made', async () => {

@@ -8,7 +8,7 @@ Cambrian Mini is a system in which a small group of people, a council, approves 
 
 ## What this repository is, and is not
 
-- It is what we built for NEAR HACKATHON. Cambrian is a product studio owned by its members. One Node app with no runtime dependencies ([`package.json`](package.json)).
+- It is what we built for NEAR HACKATHON. Cambrian is a product studio governed by its members. One Node app with no runtime dependencies ([`package.json`](package.json)).
 - Every commit is dated 12, 13 or 14 November 2026. What was reused from Cambrian's private system is listed in the README under [Built during the hackathon](README.md#built-during-the-hackathon).
 - It is not Cambrian's private system. Three earlier builds from that system are kept here as imported records, labelled as such, because the lessons came from them ([Where the lessons came from](README.md#where-the-lessons-came-from-earlier-builds-on-cambrians-private-system)).
 - It is not decentralised today. Approval is 2 of 3 passkeys checked by our code on our machine. The DAO vote is not built ([Trust model](README.md#trust-model)).
@@ -37,8 +37,7 @@ Two products were built here on 14 November. Each brief came out of a conversati
 3. **One record on chain.** This reads mainnet with no key and ends `[ok] receipt c38e49f1… was recorded by 3c069c35… in tx 4wYmP1KU…`:
 
    ```sh
-   node scripts/verify-receipt.mjs --onchain data/runs/postmark-6ee0a5/onchain.json \
-     --signer 3c069c3562504d0f23a23bd967d2ef95fa6f1334a8b2274359f6fd34599102cb
+   node scripts/verify-receipt.mjs --onchain data/runs/postmark-6ee0a5/onchain.json
    ```
 
 4. **Your own build.** `NEARAI_KEY_FILE=/path/to/your-nearai.key npm run solo` with your own NEAR AI key: talk an idea through, sign the brief as a council of one, watch it build. Measured on 13 November from `git clone` to the first preview: 57 s and $0.015 ([Run your own line](README.md#run-your-own-line)).
