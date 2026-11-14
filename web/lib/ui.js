@@ -261,7 +261,8 @@ export function capitalFigures(doc) {
   // credits are shown only with the day NEAR AI reported them; the card opens the evidence kept with the record
   if (earned) {
     // the corner holds one short line; the day and the words "as reported by NEAR AI" are in the sentence under the cards
-    const note = num(c.rate_usd_per_month) ? `NEAR AI reports ${usd(c.rate_usd_per_month)} a month` : `as reported by NEAR AI on ${shortDay(c.as_of)}`;
+    const note = num(c.rate_usd_per_month) ? `NEAR AI reports ${usd(c.rate_usd_per_month)} a month`
+      : `as reported by NEAR AI on ${shortDay(c.as_of)}`;
     out.push({ label: 'Credits earned', value: usd(c.earned_from_stake_usd), note,
       href: safeUrl(c.evidence) });
   }
