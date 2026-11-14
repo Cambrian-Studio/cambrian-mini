@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Postmark — London postcards</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <p class="label">Postmark</p>
+    <h1>London postcards that open at the landmark.</h1>
+    <p class="lede">Each card is a place in London. A card opens when you stand within 150 metres of it. The Here card opens anywhere. You take the photo with your camera, and it becomes a postcard with a postmark.</p>
+    <p class="status" id="geo-status" role="status" aria-live="polite">Finding your position.</p>
+  </header>
+
+  <main>
+    <section aria-labelledby="cards-title">
+      <h2 id="cards-title" class="label">The ten cards and Here</h2>
+      <ul class="cards" id="cards"></ul>
+    </section>
+
+    <section class="camera" id="camera" aria-labelledby="camera-title" hidden>
+      <h2 id="camera-title">Camera</h2>
+      <p class="status" id="camera-status" role="status" aria-live="polite"></p>
+      <div class="viewfinder">
+        <video id="video" playsinline muted autoplay aria-label="Live camera view"></video>
+      </div>
+      <div class="row">
+        <button type="button" id="shutter" class="primary" disabled>Take the photo</button>
+        <button type="button" id="close-camera">Close camera</button>
+      </div>
+    </section>
+
+    <section class="result" id="result" aria-labelledby="result-title" hidden>
+      <h2 id="result-title">Your postcard</h2>
+      <img id="postcard-image" alt="">
+      <div class="row">
+        <button type="button" id="send" class="primary">Share postcard</button>
+      </div>
+      <form id="back-form" class="back">
+        <label for="back-line">The back of the card. One line.</label>
+        <input id="back-line" name="line" type="text" maxlength="120" autocomplete="off" placeholder="Write one line">
+        <div class="row">
+          <button type="submit" class="primary">Save card</button>
+          <button type="button" id="discard">Discard</button>
+        </div>
+      </form>
+      <p class="status" id="result-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section aria-labelledby="saved-title">
+      <h2 id="saved-title" class="label">Saved postcard cards</h2>
+      <p class="muted" id="saved-empty">Saved cards stay on this device. You have none yet.</p>
+      <ul class="saved" id="saved"></ul>
+    </section>
+  </main>
+</body>
+</html>

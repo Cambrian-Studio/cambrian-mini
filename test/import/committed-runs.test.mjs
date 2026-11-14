@@ -18,7 +18,7 @@ const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const SHA = /^[0-9a-f]{40}$/;
 
 test('the three Upread runs are there and pass the deny-list', () => {
-  assert.deepEqual(readdirSync(RUNS).filter((n) => n.startsWith('upread-')).sort(), IDS);
+  assert.deepEqual(readdirSync(RUNS).filter((n) => n.startsWith('upread-v1-')).sort(), IDS);
   for (const id of IDS) {
     assert.deepEqual(readdirSync(join(RUNS, id)).sort(), ['onchain.json', 'run.json', 'ticket.json'], id);
     assert.deepEqual(scanDir(join(RUNS, id)), [], id);

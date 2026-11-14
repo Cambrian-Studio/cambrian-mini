@@ -1,0 +1,75 @@
+{
+ "kind": "build-ticket",
+ "v": 1,
+ "id": "upread-mini-086cdf",
+ "product": "upread-mini",
+ "title": "Upread Mini: read text one word at a time",
+ "task": "Build a single static page, index.html, plus a small test script, test.mjs, and write both files first before refining them. The page carries an embedded sample (the opening of Darwin's On the Origin of Species, public domain) and a paste box, and reads out any text one word at a time in large type on a system font stack with nothing fetched from the network. Each word's anchor letter (about a third into the word) is coloured and its centre sits in a fixed slot about 35% from the left: letters before the anchor end exactly at the slot, letters after start right after it, and the whole word is never re-centred. Font size and line height are fixed; a word that would overflow shrinks only its own font until it fits, with the anchor's centre unchanged. A slider runs from 150 to 900 words per minute, default 300; tapping pauses and plays, and when paused the page shows the sentence around the current word; pauses are slightly longer at commas and full stops; a thin progress bar and the time left are shown. On load the page passes the sample's first 200 words through the same layout function the reader uses, reads each anchor centre with getBoundingClientRect, and prints the worst horizontal and vertical drift as a number at #check. test.mjs reads index.html as text and asserts it exits 0 when the page has the sample, the 150/900 slider bounds with a 300 default, the pause, progress and time-left elements, the #check element and getBoundingClientRect — it must not launch a browser or use the network. Do not read or audit the source or versions of any installed package; the page needs no dependencies. Out of scope for this ticket: PDFs, links, the shelf, install, sync, ads and AI summaries.\n\nWrite files early; do not audit dependency source.",
+ "goal": "Read any text on your phone one word at a time, with each word's anchor letter held in one fixed, coloured slot.",
+ "out_of_scope": [
+  "PDF reading and link import",
+  "Shelf of past reads and suggested reads",
+  "Install, accounts and sync",
+  "Ads, games and AI summaries"
+ ],
+ "green": [
+  {
+   "id": "sample-and-selfcheck",
+   "kind": "file",
+   "name": "sample text, self-measure element and real anchor measurement present",
+   "path": "index.html",
+   "exists": true,
+   "contains": [
+    "Origin of Species",
+    "getBoundingClientRect",
+    "id=\"check\""
+   ]
+  },
+  {
+   "id": "offline-page",
+   "kind": "file",
+   "name": "page fetches nothing from the network",
+   "path": "index.html",
+   "exists": true,
+   "not_matches": [
+    "https?://"
+   ]
+  },
+  {
+   "id": "structure-test",
+   "kind": "run",
+   "name": "controls, slider bounds and self-check wired in the page",
+   "run": "node test.mjs",
+   "exit": 0,
+   "network": "none",
+   "timeout_s": 300
+  },
+  {
+   "id": "checked-drift",
+   "kind": "file",
+   "name": "worst-drift number reported on screen",
+   "path": "index.html",
+   "exists": true,
+   "contains": [
+    "drift"
+   ]
+  }
+ ],
+ "budget": {
+  "usd": 1,
+  "calls": 20,
+  "minutes": 10
+ },
+ "base": "main",
+ "branch": "build/upread-mini-086cdf",
+ "drafted": {
+  "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+  "completion_id": "chatcmpl-83fcf634-0d95-4768-a057-adb43a25ce6a",
+  "request_sha256": "bfbb67211d35c47c55a1c5e44b608362ddc1b1e3715e378aea84028e7e7bc869",
+  "response_sha256": "dd382d5e15b538d8de67c5a1c4461c9262add5b337b3f42c3ad8474018445748"
+ },
+ "conversation": {
+  "sha256": "53d3619f66f6f2f999a5bd61abd35bc75aba2fdc52e491cb7b4430f3ef886c50",
+  "turns": 4
+ }
+}

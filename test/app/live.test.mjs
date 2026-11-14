@@ -330,7 +330,9 @@ test('the judge\'s check of a drafted ticket: a real recorded model signature ho
     assert.match(run().faults.join(' | '), /kept response is not the one the ticket names/);
     writeFileSync(f('brief-response'), response);
     writeFileSync(f('brief-report'), JSON.stringify({ ...kept.report, signing_address: '0x00' }));
-    assert.match(run().faults.join(' | '), /model's signature/);
+    // a report that names another key is no report for this signer: the signature still holds over the hashes, and it is NOT
+    // called model-signed
+    assert.deepEqual(run(), { faults: [], signed: false, signature_without_tee_report: true, approvals: 2 });
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 test('enrol: an unknown invite is refused', async () => {

@@ -28,8 +28,8 @@
   "credits": {
     "earned_from_stake_usd": null,
     "bought_usd": null,
-    "source": null,
-    "read_at": null
+    "source": "not readable: NEAR AI's organisation balance needs a signed-in account, not an API key. On NEAR, the staking contract (stake.dao, get_farm_positions_for_account) shows the position as Active with 3,045 NEAR staked",
+    "read_at": "2026-11-14"
   },
   "inference_spend": {
     "source": "sum of the receipts in this repository",

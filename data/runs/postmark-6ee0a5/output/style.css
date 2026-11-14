@@ -1,0 +1,141 @@
+/* Postmark. Loaded after tokens.css and built only on its variables. */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  line-height: 1.45;
+  overflow-x: hidden;
+}
+
+.top,
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--page-margin);
+}
+
+main { padding-top: 0; display: grid; gap: calc(var(--card2-pad) * 2); padding-bottom: calc(var(--page-margin) * 3); }
+
+h1 { font-size: 1.75rem; line-height: 1.2; margin: 0 0 var(--row-gap); font-weight: 600; }
+h2 { font-size: 1.25rem; margin: 0 0 var(--todo-gap); font-weight: 600; }
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--caption);
+  margin: 0 0 var(--row-gap);
+}
+
+.lede { color: var(--caption); max-width: 60ch; margin: 0 0 var(--todo-gap); }
+.muted, .status { color: var(--muted); margin: 0 0 var(--row-gap); }
+.status:empty { display: none; }
+
+/* The live accent marks one thing only: a card that is open right now. */
+.live { color: var(--live); }
+
+ul { list-style: none; margin: 0; padding: 0; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: var(--todo-gap);
+}
+
+.card {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  text-align: left;
+  padding: var(--card2-pad);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--selected-outline);
+  background: linear-gradient(var(--card1-top), var(--card1-bottom));
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.card[data-open="true"] {
+  background: linear-gradient(var(--card2-top), var(--card2-bottom));
+  border-color: var(--hairline);
+}
+
+.card[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+
+.card .num { display: block; font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--caption); }
+.card .name { display: block; font-size: 1.25rem; font-weight: 600; margin: var(--row-gap) 0; }
+.card .dist { display: block; font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.card[data-open="true"] .dist { color: var(--live); }
+
+button {
+  font: inherit;
+  color: var(--ink);
+  background: linear-gradient(var(--card2-top), var(--card2-bottom));
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  padding: var(--row-gap) var(--card2-pad);
+  min-height: 44px;
+  cursor: pointer;
+}
+
+button.primary { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.row { display: flex; flex-wrap: wrap; gap: var(--row-gap); margin: var(--todo-gap) 0; }
+
+.camera,
+.result {
+  padding: var(--card2-pad);
+  border-radius: var(--radius-card);
+  background: linear-gradient(var(--card1-top), var(--card1-bottom));
+  border: 1px solid var(--selected-outline);
+}
+
+.viewfinder {
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--ground);
+  aspect-ratio: 3 / 2;
+}
+
+.viewfinder video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.result img { display: block; width: 100%; height: auto; border-radius: var(--radius-card); }
+
+.back label { display: block; color: var(--caption); margin: var(--todo-gap) 0 var(--row-gap); }
+
+.back input {
+  width: 100%;
+  font: inherit;
+  color: var(--ink);
+  background: var(--ground);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: var(--row-gap) var(--inset);
+  min-height: 44px;
+}
+
+/* Saved cards: a plain list. */
+.saved li { display: flex; align-items: center; gap: var(--inset); padding: var(--gutter) 0; }
+.saved img { width: 72px; height: auto; border-radius: var(--gutter); flex: none; }
+.saved .meta { min-width: 0; overflow-wrap: anywhere; }
+.saved .meta span { display: block; color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}

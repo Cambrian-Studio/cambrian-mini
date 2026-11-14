@@ -12,7 +12,9 @@ import { story, playerStates, liveStates, STEP_MS } from '../../web/screens/line
 
 const at = (p) => fileURLToPath(new URL(`../../${p}`, import.meta.url));
 const json = (p) => JSON.parse(readFileSync(at(p), 'utf8'));
-const runs = readdirSync(at('data/runs')).map((d) => json(`data/runs/${d}/run.json`));
+// these tests read the three imported builds; builds made here since are read by the tests further down
+const allRuns = readdirSync(at('data/runs')).map((d) => json(`data/runs/${d}/run.json`));
+const runs = allRuns.filter((r) => r.origin === 'private-line');
 const product = json('data/products.json').products[0];
 const lessons = json('lessons/lessons.json').lessons;
 

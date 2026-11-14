@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Upread Mini</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--font-sans); }
+  body { overflow-x: hidden; }
+  main { max-width: 760px; margin: 0 auto; padding: var(--page-margin); display: grid; gap: var(--todo-gap); }
+  h1 { font-size: 22px; margin: 8px 0 0; font-weight: 600; }
+  .lede { color: var(--caption); margin: 0; line-height: 1.5; }
+  .label { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .card { border-radius: var(--radius-card); background: linear-gradient(var(--card1-top), var(--card1-bottom)); padding: var(--card2-pad); display: grid; gap: var(--row-gap); }
+  .card2 { background: linear-gradient(var(--card2-top), var(--card2-bottom)); }
+
+  /* The reading stage. Font size and line height are fixed. */
+  #stage { position: relative; height: 160px; overflow: hidden; cursor: pointer; border-radius: var(--radius-card);
+           background: linear-gradient(var(--card1-top), var(--card1-bottom)); outline: none; }
+  #stage:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .slot-mark { position: absolute; left: 35%; width: 1px; height: 28px; background: var(--hairline); opacity: 0.6; }
+  .slot-mark.top { top: 0; }
+  .slot-mark.bottom { bottom: 0; }
+  #word { position: absolute; left: 0; top: 44px; height: 72px; line-height: 72px; font-size: 48px;
+          white-space: nowrap; font-weight: 500; color: var(--ink); }
+  #word .anchor { color: var(--live); }
+  #state { position: absolute; right: var(--inset); top: var(--inset); }
+
+  #context { margin: 0; line-height: 1.6; color: var(--caption); min-height: 1.6em; }
+  #context mark { background: none; color: var(--ink); text-decoration: underline; text-decoration-color: var(--live); text-underline-offset: 4px; }
+  #context[hidden] { display: none; }
+
+  .bar { height: 3px; background: var(--card2-top); border-radius: var(--radius-pill); overflow: hidden; }
+  #progress-fill { height: 100%; width: 0; background: var(--ink); }
+  .row { display: flex; flex-wrap: wrap; gap: var(--row-gap); align-items: center; justify-content: space-between; }
+  .meta { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+
+  button { font: inherit; font-size: 15px; color: var(--ink); background: var(--card2-top); border: 1px solid var(--selected-outline);
+           border-radius: var(--radius-pill); padding: 10px 18px; cursor: pointer; }
+  input[type=range] { width: 100%; accent-color: var(--ink); }
+  textarea { width: 100%; min-height: 120px; resize: vertical; font: inherit; font-size: 15px; color: var(--ink);
+             background: var(--ground); border: 1px solid var(--selected-outline); border-radius: var(--radius-card); padding: var(--inset); }
+  #check { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Upread Mini</h1>
+  <p class="lede">This page shows text one word at a time. The coloured letter of each word stays in one place, so your eyes can stay still. Tap the word to pause or play.</p>
+
+  <div id="stage" role="button" tabindex="0" aria-label="Reader. Press to pause or play." aria-describedby="state">
+    <div class="slot-mark top" aria-hidden="true"></div>
+    <div class="slot-mark bottom" aria-hidden="true"></div>
+    <div id="word" aria-hidden="true"></div>
+    <span id="state" class="label">Paused</span>
+  </div>
+
+  <div class="bar" id="progress" role="progressbar" aria-label="Progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-fill"></div></div>
+  <div class="row">
+    <span class="meta" id="position">Word 0 of 0</span>
+    <span class="meta" id="time-left" aria-live="off">0:00 left</span>
+  </div>
+
+  <p id="context" aria-live="polite"></p>
+
+  <div class="row">
+    <button id="pause" type="button" aria-label="Play">Play</button>
+    <button id="restart" type="button">Start again</button>
+  </div>
+
+  <div class="card">
+    <label class="label" for="speed">Speed, in words per minute: <span id="speed-out">300</span></label>
+    <input id="speed" type="range" min="150" max="900" step="10" value="300">
+  </div>
+
+  <div class="card card2">
+    <label class="label" for="paste">Your own text</label>
+    <textarea id="paste" placeholder="Paste any text here, then choose Read this text."></textarea>
+    <div class="row">
+      <button id="read-paste" type="button">Read this text</button>
+      <button id="read-sample" type="button">Read the sample</button>
+    </div>
+    <p class="meta" style="margin:0">The sample is the opening of On the Origin of Species by Charles Darwin, 1859. It is in the public domain.</p>
+  </div>
+
+  <p id="check" aria-live="polite">Self-check: measuring anchor drift.</p>
+</main>
+
+<script id="sample" type="text/plain">
+On the Origin of Species. By Charles Darwin. Introduction.
+
+When on board H.M.S. Beagle, as naturalist, I was much struck with certain facts in the distribution of the inhabitants of South America, and in the geological relations of the present to the past inhabitants of that continent. These facts seemed to me to throw some light on the origin of species, that mystery of mysteries, as it has been called by one of our greatest philosophers. On my return home, it occurred to me, in 1837, that something might perhaps be made out on this question by patiently accumulating and reflecting on all sorts of facts which could possibly have any bearing on it. After five years' work I allowed myself to speculate on the subject, and drew up some short notes; these I enlarged in 1844 into a sketch of the conclusions, which then seemed to me probable: from that period to the present day I have steadily pursued the same object. I hope that I may be excused for entering on these personal details, as I give them to show that I have not been hasty in coming to a decision.
+
+My work is now nearly finished; but as it will take me two or three more years to complete it, and as my health is far from strong, I have been urged to publish this Abstract. I have more especially been induced to do this, as Mr. Wallace, who is now studying the natural history of the Malay archipelago, has arrived at almost exactly the same general conclusions that I have on the origin of species. Last year he sent to me a memoir on this subject, with a request that I would forward it to Sir Charles Lyell, who sent it to the Linnean Society, and it is published in the third volume of the Journal of that Society. Sir C. Lyell and Dr. Hooker, who both knew of my work, the latter having read my sketch of 1844, honoured me by thinking it advisable to publish, with Mr. Wallace's excellent memoir, some brief extracts from my manuscripts.
+</script>
+
+<script>
+(function () {
+  'use strict';
+  var SLOT = 0.35;          // anchor centre sits 35% from the left of the stage
+  var BASE_FONT = 48;       // fixed font size in px
+  var EDGE = 8;             // breathing room at the stage edges in px
+
+  var stage = document.getElementById('stage');
+  var wordEl = document.getElementById('word');
+  var stateEl = document.getElementById('state');
+  var contextEl = document.getElementById('context');
+  var fillEl = document.getElementById('progress-fill');
+  var progressEl = document.getElementById('progress');
+  var timeLeftEl = document.getElementById('time-left');
+  var positionEl = document.getElementById('position');
+  var pauseBtn = document.getElementById('pause');
+  var speedEl = document.getElementById('speed');
+  var speedOut = document.getElementById('speed-out');
+  var checkEl = document.getElementById('check');
+
+  var SAMPLE = document.getElementById('sample').textContent.trim();
+
+  var words = [];
+  var index = 0;
+  var playing = false;
+  var timer = null;
+
+  function tokenize(text) {
+    return text.split(/\s+/).filter(function (w) { return w.length > 0; });
+  }
+
+  // Anchor letter: about a third into the letters of the word, ignoring leading and trailing punctuation.
+  function anchorIndex(word) {
+    var start = 0, end = word.length - 1;
+    var isLetter = /[\p{L}\p{N}]/u;
+    while (start < end && !isLetter.test(word[start])) start++;
+    while (end > start && !isLetter.test(word[end])) end--;
+    var len = end - start + 1;
+    return start + Math.round((len - 1) / 3);
+  }
+
+  function slotX() { return stage.clientWidth * SLOT; }
+
+  // The one layout function. It places the anchor centre on the slot and, when the
+  // word would overflow, shrinks only this word's font. Line height stays fixed, so the
+  // anchor's vertical centre stays on the middle of the fixed line box.
+  function layoutWord(word) {
+    var a = anchorIndex(word);
+    wordEl.textContent = '';
+    var pre = document.createElement('span');
+    var mid = document.createElement('span');
+    var post = document.createElement('span');
+    pre.textContent = word.slice(0, a);
+    mid.textContent = word.charAt(a);
+    mid.className = 'anchor';
+    post.textContent = word.slice(a + 1);
+    wordEl.appendChild(pre); wordEl.appendChild(mid); wordEl.appendChild(post);
+
+    var sx = slotX();
+    var room = stage.clientWidth;
+    var size = BASE_FONT;
+    wordEl.style.fontSize = size + 'px';
+    wordEl.style.left = '0px';
+    for (var i = 0; i < 4; i++) {
+      var w = wordEl.getBoundingClientRect();
+      var m = mid.getBoundingClientRect();
+      var c = m.left - w.left + m.width / 2;     // anchor centre within the word
+      var leftNeed = c;
+      var rightNeed = w.width - c;
+      var scale = Math.min(1, (sx - EDGE) / leftNeed, (room - sx - EDGE) / rightNeed);
+      if (scale >= 0.999) break;
+      size = Math.max(10, size * scale * 0.99);
+      wordEl.style.fontSize = size + 'px';
+    }
+    var wr = wordEl.getBoundingClientRect();
+    var mr = mid.getBoundingClientRect();
+    var centre = mr.left - wr.left + mr.width / 2;
+    wordEl.style.left = (sx - centre) + 'px';
+    return mid;
+  }
+
+  function delayFor(word) {
+    var base = 60000 / Number(speedEl.value);
+    if (/[.!?]["')\]]*$/.test(word)) return base * 1.8;
+    if (/[,;:]["')\]]*$/.test(word)) return base * 1.4;
+    return base;
+  }
+
+  function fmt(ms) {
+    var s = Math.max(0, Math.round(ms / 1000));
+    var m = Math.floor(s / 60);
+    s = s % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function updateMeta() {
+    var total = words.length;
+    var pct = total ? (index / total) * 100 : 0;
+    fillEl.style.width = pct + '%';
+    progressEl.setAttribute('aria-valuenow', String(Math.round(pct)));
+    var left = 0;
+    for (var i = index; i < total; i++) left += delayFor(words[i]);
+    timeLeftEl.textContent = fmt(left) + ' left';
+    positionEl.textContent = 'Word ' + Math.min(index + 1, total) + ' of ' + total;
+  }
+
+  function sentenceAround(i) {
+    var start = i, end = i;
+    var stop = /[.!?]["')\]]*$/;
+    while (start > 0 && !stop.test(words[start - 1])) start--;
+    while (end < words.length - 1 && !stop.test(words[end])) end++;
+    return { start: start, end: end };
+  }
+
+  function showContext() {
+    if (playing || !words.length) { contextEl.hidden = true; contextEl.textContent = ''; return; }
+    var r = sentenceAround(Math.min(index, words.length - 1));
+    contextEl.textContent = '';
+    for (var i = r.start; i <= r.end; i++) {
+      if (i > r.start) contextEl.appendChild(document.createTextNode(' '));
+      if (i === index) {
+        var mk = document.createElement('mark');
+        mk.textContent = words[i];
+        contextEl.appendChild(mk);
+      } else {
+        contextEl.appendChild(document.createTextNode(words[i]));
+      }
+    }
+    contextEl.hidden = false;
+  }
+
+  function render() {
+    if (!words.length) { wordEl.textContent = ''; updateMeta(); return; }
+    layoutWord(words[Math.min(index, words.length - 1)]);
+    updateMeta();
+  }
+
+  function setPlaying(on) {
+    playing = on && words.length > 0;
+    clearTimeout(timer);
+    pauseBtn.textContent = playing ? 'Pause' : 'Play';
+    pauseBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    stateEl.textContent = playing ? 'Reading' : 'Paused';
+    if (playing) {
+      if (index >= words.length) index = 0;
+      render();
+      schedule();
+    }
+    showContext();
+  }
+
+  function schedule() {
+    timer = setTimeout(function () {
+      if (!playing) return;
+      if (index + 1 >= words.length) {
+        index = words.length;
+        updateMeta();
+        index = words.length - 1;
+        setPlaying(false);
+        return;
+      }
+      index++;
+      render();
+      schedule();
+    }, delayFor(words[index]));
+  }
+
+  function toggle() { setPlaying(!playing); }
+
+  function load(text) {
+    setPlaying(false);
+    words = tokenize(text);
+    index = 0;
+    render();
+    showContext();
+  }
+
+  // Self-check: run the first 200 sample words through layoutWord and measure each anchor.
+  function selfCheck() {
+    var saved = words, savedIndex = index;
+    var sampleWords = tokenize(SAMPLE).slice(0, 200);
+    var stageRect = stage.getBoundingClientRect();
+    var targetX = stageRect.left + stage.clientLeft + slotX();
+    var lineRect = null;
+    var worstX = 0, worstY = 0, targetY = null;
+    for (var i = 0; i < sampleWords.length; i++) {
+      var mid = layoutWord(sampleWords[i]);
+      var r = mid.getBoundingClientRect();
+      var cx = r.left + r.width / 2;
+      var cy = r.top + r.height / 2;
+      if (targetY === null) {
+        lineRect = wordEl.getBoundingClientRect();
+        targetY = lineRect.top + lineRect.height / 2;
+      }
+      worstX = Math.max(worstX, Math.abs(cx - targetX));
+      worstY = Math.max(worstY, Math.abs(cy - targetY));
+    }
+    words = saved; index = savedIndex;
+    render();
+    checkEl.textContent = 'Self-check over ' + sampleWords.length + ' words. Worst drift: ' +
+      worstX.toFixed(2) + ' px horizontal, ' + worstY.toFixed(2) + ' px vertical.';
+    checkEl.dataset.driftX = worstX.toFixed(3);
+    checkEl.dataset.driftY = worstY.toFixed(3);
+  }
+
+  stage.addEventListener('click', toggle);
+  stage.addEventListener('keydown', function (e) {
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); }
+  });
+  pauseBtn.addEventListener('click', toggle);
+  document.getElementById('restart').addEventListener('click', function () {
+    index = 0; render(); showContext();
+  });
+  speedEl.addEventListener('input', function () {
+    speedOut.textContent = speedEl.value;
+    updateMeta();
+  });
+  document.getElementById('read-paste').addEventListener('click', function () {
+    var t = document.getElementById('paste').value.trim();
+    if (t) load(t);
+  });
+  document.getElementById('read-sample').addEventListener('click', function () { load(SAMPLE); });
+  window.addEventListener('resize', function () { render(); });
+
+  load(SAMPLE);
+  function runCheck() { selfCheck(); }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(runCheck); else runCheck();
+})();
+</script>
+</body>
+</html>

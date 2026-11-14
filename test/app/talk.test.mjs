@@ -66,7 +66,8 @@ async function setup({ exposed = true, near = stubNear(), cap = 5, handover = fa
   const committed = JSON.parse(readFileSync(join(root, 'data/products.json'), 'utf8'));
   const upread = { ...committed.products.find((p) => p.id === 'upread') }; delete upread.successor;
   writeFileSync(join(data, 'products.json'), JSON.stringify(handover ? committed : { v: 1, products: [upread] }));
-  cpSync(join(root, 'data/runs'), join(data, 'runs'), { recursive: true });
+  // the three imported builds only: the committed record grows with every real build
+  for (const id of readdirSync(join(root, 'data/runs')).filter((n) => n.startsWith('upread-v1-'))) cpSync(join(root, 'data/runs', id), join(data, 'runs', id), { recursive: true });
   cpSync(join(root, 'lessons/lessons.json'), join(dir, 'lessons.json'));
   const b = appConfig();
   const cfg = { ...b, dailyCapUsd: cap, retryMs: 0, mode: 'live', data, state, exposed, rp: { id: null, origin: null }, lineOverrides: { offline: true },
@@ -195,6 +196,14 @@ test('3. "Send to council" puts that exact ticket in Approvals, and every signat
     const altered = entry.conversation.messages.map((m, i) => (i === 0 ? { ...m, text: `${m.text} And a shop.` } : m));
     const forged = { ...entry.ticket, conversation: { ...entry.ticket.conversation, sha256: conversationHash(altered) } };
     assert.deepEqual(verifyRelease(forged, approvals, s.tc.council).valid, [], 'a ticket naming another conversation is another ticket');
+    // the judge's offline re-check of a brief that came from a conversation: the kept conversation, the sender's signature over
+    // its hash, and an approval given with a taste note all hold; a changed conversation is found
+    const { checkDrafted } = await import('../../tickets/provenance.mjs');
+    const noted = [s.tc.sign('clemens', entry.ticket, undefined, 'Keep it plain.'), s.tc.sign('michael', entry.ticket)];
+    const without = (r) => r.faults.filter((x) => x !== 'the model response was not kept');   // the stand-in model keeps no bytes
+    assert.deepEqual(without(checkDrafted({ dir: join(s.data, 'tickets'), entry: { ...entry, approvals: noted }, council: s.tc.council })), []);
+    assert.deepEqual(without(checkDrafted({ dir: join(s.data, 'tickets'), entry: { ...entry, conversation: { ...entry.conversation, messages: altered } },
+      council: s.tc.council })), ['the kept conversation is not the one the ticket names']);
     assert.equal((await s.sendAs('jj', t.id))[0], 409, 'it goes to the council once');
     assert.equal((await s.turn({ session, conversation_id: t.id, text: 'one more thing' })).answer[0], 409);
     assert.equal(JSON.parse(readFileSync(s.cfg.files.talk, 'utf8')).conversations[0].messages.at(-1).brief.id, entry.ticket.id);

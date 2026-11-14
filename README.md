@@ -9,10 +9,10 @@ The record holds one product so far: Upread, an app that reads an article to you
 ## Three ways in
 
 1. **The hosted replay, instant.** Open <https://cambrian-line-replay.vercel.app/#/verify>, pick a build and press **Verify this receipt**. Your own browser recomputes the sha256 of that build's record and reports that it matches.
-2. **`npm run judge`, seconds.** Clone, `npm ci`, `npm run judge`: 16 numbered checks on your machine with no keys, ending `judge: 16 checks — 12 ok, 4 skipped, 0 failed`. Measured from a fresh clone on 14 November: 5 s on macOS, 1 s in a plain Linux container (`node:22-bookworm`). Each skip prints its reason. Check 16 reads NEAR mainnet from a public archival node.
+2. **`npm run judge`, seconds.** Clone, `npm ci`, `npm run judge`: 16 numbered checks on your machine with no keys, ending `judge: 16 checks — 15 ok, 1 skipped, 0 failed`. Measured from a fresh clone on 14 November: 5 s on macOS, 1 s in a plain Linux container (`node:22-bookworm`). Each skip prints its reason. Check 16 reads NEAR mainnet from a public archival node.
 3. **Your own build, about a minute.** `npm run solo` with your own NEAR AI key: you talk an idea through, sign the brief with your own passkey as a council of one, and watch it build. Measured on 13 November from `git clone` to the first preview: 57 s and $0.015. The next section has the steps. Without a key, `npm run demo` sends one brief through the same build path with a stand-in agent and a throwaway test council, and you see `state     green-no-preview` (on Linux only where bubblewrap can build its sandbox; in a default Docker container you see `state     blocked`, see [Try it](#try-it)).
 
-In a plain Linux container without user namespaces, `npm test` ends `LINUX_PLAIN_TESTS` and the judge ends `11 ok, 5 skipped`: every check that needs no sandbox passes, including the one that reads mainnet. The tests and the one judge check that skip are those that would run agent or product code, which this code refuses to do without a sandbox it can build; the note under [Try it](#try-it) has the command that gives the full run.
+In a plain Linux container without user namespaces, `npm test` ends `LINUX_PLAIN_TESTS` and the judge ends `JUDGE_PLAIN`: every check that needs no sandbox passes, including the one that reads mainnet. The tests and the one judge check that skip are those that would run agent or product code, which this code refuses to do without a sandbox it can build; the note under [Try it](#try-it) has the command that gives the full run.
 
 ## Run your own line
 
@@ -41,21 +41,24 @@ What it does not do: nothing is recorded on NEAR, because a solo line has no rec
 Live today:
 
 - The path from a signed brief to a checked build: passkey signatures verified before anything runs, a sealed workspace, every model call priced through NEAR AI and stopped at the signed budget, the brief's checks, and a record with a hash. It is covered by the tests and the judge, and was exercised in rehearsal builds with a test council.
-- The replay: three recorded builds of one product, Upread, made on Cambrian's private setup on 9 November. One failed, two passed, $5.36 in total. They are imported with their numbers unchanged and labelled as imported.
-- The council: all three members enrolled a passkey on 13 November (`data/council.json`).
+- The replay: the two builds above, and three earlier builds of Upread made on Cambrian's private setup on 9 November (one failed, two passed, $5.36 in total). Those three are imported with their numbers unchanged and labelled as imported.
+- The council: all three members enrolled a passkey on 13 November (`data/council.json`). Clemens and Michael have signed briefs; JJ has not signed one yet.
+- Two builds signed by the council, 14 November. Each brief came out of a Talk conversation with Clemens, was signed by Clemens and Michael with passkeys (2 of 3), and was built by `anthropic/claude-opus-5-5` through NEAR AI Cloud in a sandbox. Both passed every check on the first attempt.
+  - **Upread Mini**, a reader that shows a text one word at a time: 2 min 44 s, 9 model calls, $0.43 of a $1 budget. [Preview](https://cambrian-upread-mini-crnw8wneo-cambrian-collective.vercel.app) · [record](https://cambrian-line-replay.vercel.app/#/receipts/upread-mini-086cdf) · [on NEAR](https://nearblocks.io/txns/CmFEiKKFuREVvmosTFMqiarbrekGyCSFHz2NnduWqBmv)
+  - **Postmark**, London postcards that unlock only within 150 m of the landmark: 4 min 4 s, 11 model calls, $0.66 of a $1.50 budget. [Preview](https://cambrian-postmark-m2x6yxrfp-cambrian-collective.vercel.app) · [record](https://cambrian-line-replay.vercel.app/#/receipts/postmark-6ee0a5) · [on NEAR](https://nearblocks.io/txns/4wYmP1KUzFGkz8dhWQAgnW1Q7Y3dsswhJDRofLf1F5Hz)
+  - All 20 build calls are signed by NEAR AI's attested gateway and verify offline (`npm run judge`, check 8). The two briefs were drafted by `deepseek-ai/DeepSeek-V4.1-Flash-1017` for $0.006 and $0.008. Their responses are signed over the exact request and response, but NEAR AI's report showed no TEE for the key that signed, so they are not verified as model-signed here (judge check 5 says so and skips).
 - The stake: the collective's account, `cambriancollective.near`, staked 3,045 NEAR into NEAR AI on 13 November ([transaction](https://nearblocks.io/txns/9US5CcTaSYiX2DS7pGLWoS4sYpBZ4s9BvSEq1CgoJ6eo)). NEAR AI's estimate on that date: about $60 a month in credits. No credits received are recorded yet.
-- On NEAR: the contract that logs a build record's hash is deployed on mainnet and locked, and the three Upread records are logged through it (13 November). They are the imported builds, logged to prove the recorder and the check; no council-signed build is on chain yet.
+- On NEAR: the contract that logs a build record's hash is deployed on mainnet and locked. Five records are logged through it: the two council-signed builds (14 November) and the three imported Upread builds (13 November, logged to prove the recorder and the check). `npm run judge` check 16 re-reads all five.
 
 Next, and not true yet:
 
 - The stake is held by the collective's account, not by its treasury. The Sputnik DAO treasury, `cambrian.sputnik-dao.near`, is set up, and NEAR AI confirmed that a DAO cannot be bound as a funding wallet yet; that needs changes in Trezu, Sputnik DAO and NEAR AI.
 
-- No build signed by the council is recorded here yet.
+- No build here has failed yet, so the learning loop has not run on this repository's own builds: no lesson has been drafted from one and no member has signed one. The eight lessons in force were carried over from Cambrian's private setup; two of them changed both briefs.
+- No NEAR AI credits from the stake are recorded. The staking contract shows the collective's position as active with 3,045 NEAR; NEAR AI's credit balance cannot be read with an API key. Nothing here says the stake paid for a build: both builds were paid from the NEAR AI account's existing balance.
 - The one thing the line learns next: products that talk to Cambrian Mini, for shared data and for model calls paid from the stake. That unlocks Spot, a persona generator, and signed postmarks on NEAR.
 - Contribute the line's redacted build traces through NEAR AI Gateway, so the factory's own failures and fixes earn inference credits.
-- No council member's conversation has become a build yet. The conversation, the draft and its versions, and the hand-over to the council are tested with a stand-in model, and were run once for real in solo mode (see [Run your own line](#run-your-own-line)).
-- Upread Mini, the fresh build of Upread on this repository's build path, is on record with no build yet. The imported Upread builds are shown as its history; it does not continue their code.
-- Upread has no public link.
+- Upread, as first built on the private setup, has no public link. Upread Mini does.
 - A collective larger than the founding council of 3 and the on-chain council are not built.
 
 The longer list is under [Honest limits](#honest-limits). This repository was written 12–14 November 2026 for NEAR HACKATHON; the build path was ported from Cambrian's private setup (built 3–10 November), which built Upread.
@@ -81,7 +84,7 @@ On macOS the last line is `281 passed, 0 failed, 1 skipped (each prints its reas
 
 ```
 267 passed, 0 failed, 11 skipped (each prints its reason above)        npm test
-judge: 16 checks — 11 ok, 5 skipped, 0 failed                          npm run judge
+judge: 16 checks — JUDGE_PLAIN_FULL                          npm run judge
 state     blocked — no sandbox on this machine (bwrap is installed but cannot create a namespace here; …)   npm run demo
 ```
 
@@ -94,21 +97,24 @@ docker run --rm -it --privileged -v "$PWD":/src:ro node:22-bookworm sh -c \
 
 If bubblewrap is not installed at all, the reason reads `bwrap is not installed` instead. Both sets of lines were taken on 14 November in `node:22-bookworm`: the first without `--privileged`, the second with it.
 
-**2. `npm run judge`** — re-derives the claims on your machine with no keys; check 16 reads NEAR mainnet and skips without a network. Expect 16 numbered lines, each with a detail after a dash; these eight and the summary, shortened here to their titles:
+**2. `npm run judge`** — re-derives the claims on your machine with no keys; check 16 reads NEAR mainnet and skips without a network. Expect 16 numbered lines, each with a detail after a dash; these eleven and the summary, shortened here to their titles:
 
 ```
  1. [ok] the committed contract wasm is the one SHA256SUMS names — sha256 3e547da4f94b14de…
  2. [ok] the council file names its members and a threshold of at least two
  3. [ok] receipts rebuild from the run records
+ 4. [ok] recorded approvals verify (2 of 3 passkeys)
+ 6. [ok] kept build output passes its checks again
  7. [ok] a NEAR AI response signature verifies offline, and a changed byte does not
+ 8. [ok] recorded model calls carry verifying signatures
 10. [ok] the line runs a ticket end to end offline
 11. [ok] attack: unapproved, 1-of-3 and altered tickets are refused
 12. [ok] the threshold is a parameter: a council of 7 with threshold 4 releases at 4, refuses at 3, refuses an altered brief
 13. [ok] attack: the push guard refuses main, a forced push and a + refspec; it accepts build/<ticket-id>
-judge: 16 checks — 12 ok, 4 skipped, 0 failed
+judge: 16 checks — 15 ok, 1 skipped, 0 failed
 ```
 
-`[skip]` means "could not be observed here", with the reason on the line; it is never counted as ok. `[FAIL]` exits non-zero. The four skips today: no live run or brief is recorded yet (approvals, the brief, the kept output and the per-call signatures).
+`[skip]` means "could not be observed here", with the reason on the line; it is never counted as ok. `[FAIL]` exits non-zero. The one skip today is check 5: both recorded briefs carry a model signature that verifies over the exact request and response, but NEAR AI's report shows no TEE for the key that signed, so the TEE half is not shown.
 
 **3. `npm run demo`** — one ticket through the real line with a stand-in agent and a throwaway test council. Expect, near the end:
 
@@ -173,7 +179,7 @@ Every claim, its `file:line`, its test and its status are in [CLAIMS.md](CLAIMS.
 - **One stake, made after the recorded builds.** `data/stake.json` holds one stake: the collective's account staked 3,045 NEAR into NEAR AI on 13 November. The three recorded builds ran on 9 November, so this stake did not pay for them. The $60 a month is NEAR AI's estimate, not credits received. The treasury (`cambrian.sputnik-dao.near`) holds no stake: NEAR AI confirmed a DAO cannot be bound as a funding wallet yet. The stake does not by itself pay for builds; inference is paid in NEAR AI credits, and the Stake screen shows the stake and the spend as separate facts.
 - **What is replay.** The hosted demo and `npm start` without a key show recorded runs. The three Upread runs were built on Cambrian's private line on 9 November and imported here by a converter that is not published, because it has to name the private record's fields to read them. `test/import/committed-runs.test.mjs` checks the result. They were approved there by one council member's passkey; that signature is not in this repository and is not verifiable from it. They used a different model (`anthropic/claude-opus-5-5`, as their records say), captured no signatures, and their dollars are the private line's own rate table times reported usage, not this repository's pricing. Their two GREEN runs say `green-preview` because the private line made previews; those previews sat behind a sign-in, so no address is shown.
 - **The collective is three people today.** "The collective signs" means, today, 2 of a founding council of 3. A larger collective deciding by quorum is a parameter away in code and not yet a fact.
-- **The council is enrolled, and has signed nothing yet.** `data/council.json` holds one passkey for each of the three members, enrolled on 13 November. Until a council-signed build is recorded, the 2-of-3 rule is proven with software passkeys in tests, against the real verifier.
+- **Two of the three council members have signed.** `data/council.json` holds one passkey for each member, enrolled on 13 November. Clemens and Michael signed both briefs on 14 November from their own devices; JJ is enrolled and has not signed yet. `npm run judge` check 4 re-verifies the four signatures.
 - **Why `data/council.json` names a host.** A passkey is bound to the site it was created on. The council's passkeys were created on the build machine's address, `cambrian-mini.tail176671.ts.net`, so that name is the passkey site (the WebAuthn relying party) and is part of what each signature covers. It is an address, not a secret. Changing it would invalidate the three enrolled passkeys.
 - **The walls differ by platform.** macOS: `sandbox-exec`. Linux: bubblewrap with `--unshare-all` (a new, empty network namespace, so no network at all; the bridge is reached through a unix socket), or a `--network none` container. The container fallback has never been executed. With no sandbox, the line only replays.
 - **Attestation has an online half we do not check.** Intel TCB status, GPU evidence and image provenance need online verifiers; the judge reports them as skipped.
@@ -182,8 +188,9 @@ Every claim, its `file:line`, its test and its status are in [CLAIMS.md](CLAIMS.
 - **The judge and the demo are keyless, not network-free.** The stand-in build's install step may reach `registry.npmjs.org` through the line's allow-listed tunnel. They have not been run with the network off.
 - **The repository is private until submission.** Until it is public the clone commands above fail for anyone without access.
 - **The enrolment trusts the browser for the public key.** A passkey's public key is taken from the browser at enrolment, behind a one-time invite; the attestation statement of the authenticator is not checked.
-- **Intent, revisions, images, taste notes and the house kit are tested, not yet used.** No enrolled member has sent a message, so every test of them uses a stand-in model and a test council. The intent step adds one model call to every message. Attached images are kept but there is no screen that shows them, because the app has no sign-in to show them behind; the builder does not see them either. The house kit is placed in the workspace and the builder is told to follow it; no check enforces that a build did. A revision can only be built when the build it revises was made by this repository's build path.
-- **One failure is planned.** The first idea the founding council sends through this repository's build path is chosen to fail: "A page that shows the current NEAR price, fetched live when the page is built." A build has no network beyond the npm registry, so the fetch cannot work. We planned it to show the learning loop on the record: a failed build, the rule Cambrian drafts from it, a member's signature on that rule, and the next briefs checked against it. The rule we expect is that products never fetch data at build time and fetch live data in the browser at runtime. If the build does not fail, or the rule comes out differently, the record will say what happened.
+- **Revisions, images and taste notes are tested, not yet used.** The conversation, the draft and the hand-over to the council were used for both real briefs, and both builds got the house kit. No member has yet revised a product, attached an image or added a taste note; those are proven by tests with a stand-in model and a test council. Attached images are kept but no screen shows them, and the builder does not see them. No check enforces that a build followed the house kit. A revision can only be built when the build it revises was made by this repository's build path.
+- **No build here has failed yet.** Both council-signed builds passed on the first attempt. The path from a failed build to a lesson a member signs, and to the next brief being checked against it, is covered by tests and has not run on a real build of this repository.
+- **Postmark's fence is in the page.** The page opens a landmark only within 150 m of it, and has no switch around that: its seven node tests pass, and driven in a browser from 151 m away or with debug or bypass words in the address it stays closed. The position comes from the member's device, and a device can report a false one.
 
 ## Repository map
 

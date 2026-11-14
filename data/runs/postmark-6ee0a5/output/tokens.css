@@ -1,0 +1,40 @@
+/* Cambrian — generated from tokens.json */
+:root {
+  --ground: #000000;
+  --grid-cross: #696969;
+  --card1-top: #151515;
+  --card1-bottom: #242424;
+  --card2-top: #3e3e3e;
+  --card2-bottom: #303030;
+  --ink: #ffffff;
+  --caption: #d2d2d2;
+  --muted: #a7a7a7;
+  --done: #808080;
+  --hairline: #929292;
+  --selected-outline: #636363;
+  --selected-ring: #b8b8b8;
+  --live: #73ff01;
+  --cadence-0: #3d4e2d;
+  --cadence-1: #536e38;
+  --cadence-2: #558427;
+  --cadence-3: #5e9c20;
+  --focus-ring: var(--selected-ring);
+  --inset: 11px;
+  --card2-pad: 20px;
+  --row-gap: 10px;
+  --todo-gap: 16px;
+  --gutter: 6px;
+  --grid-pitch: 20px;
+  --page-margin: 20px;
+  --card2-header: 54px;
+  --radius-card: 12.5px;
+  --radius-nav: 16px;
+  --radius-selected: 17.5px;
+  --radius-pill: 999px;
+  --shadow-card1: 0 1px 15px rgba(0,0,0,0.75), 0 15px 30px rgba(0,0,0,0.24);
+  --shadow-card2: 0 1px 3px rgba(0,0,0,0.5), 0 1px 10px rgba(0,0,0,0.24);
+  --bp-wide: 1105px;
+  --bp-mid: 686px;
+  --font-sans: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "Chivo Mono", ui-monospace, Menlo, monospace;
+}

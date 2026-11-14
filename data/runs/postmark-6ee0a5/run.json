@@ -1,0 +1,1253 @@
+{
+ "v": 1,
+ "origin": "mini",
+ "mode": "live",
+ "ticket": {
+  "id": "postmark-6ee0a5",
+  "title": "Postmark: London postcards that unlock only at the landmark",
+  "product": "postmark",
+  "branch": "build/postmark-6ee0a5",
+  "budget": {
+   "usd": 1.5,
+   "calls": 24,
+   "minutes": 12
+  },
+  "checks": [
+   "g1",
+   "g2",
+   "g3",
+   "g4"
+  ]
+ },
+ "ticket_sha256": "b1bf5f1cc629f889301e7c65a61b482d4bc47a873cf6e2cc4f5e17662f74b6bd",
+ "approvals": [
+  {
+   "member": "clemens",
+   "credential_id": "NOzB9-UJhHx1oUZgIPkhyPEPquc",
+   "ticket_sha256": "b1bf5f1cc629f889301e7c65a61b482d4bc47a873cf6e2cc4f5e17662f74b6bd",
+   "authenticator_data": "1psXGYcA-R2s5Rkt_ePFB4w3nsRwLMw3rXvVrscYydwdAAAAAA",
+   "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiV0R4U0xnT0FnLXY1Y29WWmFDbzBXYl9JREluUmxYYzNBWVl4NmNOMGFSMCIsIm9yaWdpbiI6Imh0dHBzOi8vY2FtYnJpYW4tbWluaS50YWlsMTc2NjcxLnRzLm5ldCIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
+   "signature": "MEYCIQD6nsFrXEeQC67XO6JnBASexgj6W0gjp0LMY-JSNFAyvgIhAJNOxbhLzj93R2TvJa_m5mjpdUARrM6DsTLsyonywWDC",
+   "at": "2026-11-14T00:32:13.373Z"
+  },
+  {
+   "member": "michael",
+   "credential_id": "lxxF8Dqkoxku_2MYM4ljyA",
+   "ticket_sha256": "b1bf5f1cc629f889301e7c65a61b482d4bc47a873cf6e2cc4f5e17662f74b6bd",
+   "authenticator_data": "1psXGYcA-R2s5Rkt_ePFB4w3nsRwLMw3rXvVrscYydwdAAAAAA",
+   "client_data_json": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiV0R4U0xnT0FnLXY1Y29WWmFDbzBXYl9JREluUmxYYzNBWVl4NmNOMGFSMCIsIm9yaWdpbiI6Imh0dHBzOi8vY2FtYnJpYW4tbWluaS50YWlsMTc2NjcxLnRzLm5ldCIsImNyb3NzT3JpZ2luIjpmYWxzZSwib3RoZXJfa2V5c19jYW5fYmVfYWRkZWRfaGVyZSI6ImRvIG5vdCBjb21wYXJlIGNsaWVudERhdGFKU09OIGFnYWluc3QgYSB0ZW1wbGF0ZS4gU2VlIGh0dHBzOi8vZ29vLmdsL3lhYlBleCJ9",
+   "signature": "MEQCIHKgtlaVN-MErXprmL8-NQKSJp6ulR0Wskrh0b8PexuBAiAz_azyofxyvKlc0hAs4OeqXoPaz3soZE1yk5qVoXK0mg",
+   "at": "2026-11-14T01:09:21.745Z"
+  }
+ ],
+ "release": {
+  "ok": true,
+  "valid": [
+   "clemens",
+   "michael"
+  ],
+  "threshold": 2
+ },
+ "state": "green-preview",
+ "waiting_on": null,
+ "started": "2026-11-14T01:09:21.755Z",
+ "finished": "2026-11-14T01:13:25.331Z",
+ "stations": {
+  "brief": {
+   "at": "2026-11-14T01:09:21.755Z"
+  },
+  "approved": {
+   "at": "2026-11-14T01:09:21.760Z"
+  },
+  "build": {
+   "at": "2026-11-14T01:09:22.580Z",
+   "done": "2026-11-14T01:13:16.141Z"
+  },
+  "test": {
+   "at": "2026-11-14T01:13:16.245Z",
+   "done": "2026-11-14T01:13:16.500Z",
+   "green": true
+  },
+  "preview": {
+   "at": "2026-11-14T01:13:19.709Z",
+   "url": "https://cambrian-postmark-m2x6yxrfp-cambrian-collective.vercel.app"
+  },
+  "receipt": {
+   "at": "2026-11-14T01:13:25.338Z",
+   "sha256": "c38e49f1fb911a96049c5945c3274086c21bfede6b4374804db4fe0d3e5caea7"
+  }
+ },
+ "budget": {
+  "day": "2026-11-14",
+  "ceiling_usd": 9.990054,
+  "spent_usd_at_start": 0,
+  "ticket_usd": 1.5,
+  "decision": "ok",
+  "detail": "today (UTC 2026-11-14) $0.00 spent + $1.00 committed by running tickets + this ticket's $1.50 = $2.50 of the $9.99 daily ceiling"
+ },
+ "attempts": [
+  {
+   "n": 1,
+   "started": "2026-11-14T01:09:22.580Z",
+   "finished": "2026-11-14T01:13:16.500Z",
+   "walls": "sandbox probe: 19 passed, 0 failed, 0 skipped",
+   "sandbox": {
+    "kind": "sandbox-exec"
+   },
+   "agent": {
+    "kind": "OpenCode",
+    "exit": 0,
+    "seconds": 231,
+    "model": "anthropic/claude-opus-5-5"
+   },
+   "bridge": {
+    "forwarded": 11,
+    "refused": 1,
+    "computed_usd": 0.664457,
+    "unpriced_calls": 0
+   },
+   "calls": [
+    {
+     "seq": 2,
+     "at": "2026-11-14T01:09:27.381Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 10144,
+     "cached_tokens": 0,
+     "completion_tokens": 94,
+     "usd": 0.042456,
+     "ms": 2554,
+     "status": 200,
+     "chat_id": "msg_011Ch1vmUXBN4HLw2JCBsK2f",
+     "request_sha256": "c041c3e4c1d33b939ce82b35b3ce75a87d64c07ac72c9eeb19b6c8549acca932",
+     "response_sha256": "d04c1a950ae175de3d537b1027ebdf89e16d6074dbf3a6b2b0ce2a653fb8e1e9",
+     "attestation": {
+      "kind": "gateway",
+      "model": "anthropic/claude-opus-5-5",
+      "chat_id": "msg_011Ch1vmUXBN4HLw2JCBsK2f",
+      "signing_algo": "ecdsa",
+      "signing_address": "0xb98a789cdc4817275f5155593ba73ef2a957e779",
+      "text": "c041c3e4c1d33b939ce82b35b3ce75a87d64c07ac72c9eeb19b6c8549acca932:d04c1a950ae175de3d537b1027ebdf89e16d6074dbf3a6b2b0ce2a653fb8e1e9",
+      "signature": "0x85421ece50412c3904e0cd104ec620d3d31d8b20cbfc07b78a3f206a8986c7092f18b6fe88423deebc766e8e40a8add9df860a52cc7ec510a594554cf3e359dd1b",
+      "request_sha256": "c041c3e4c1d33b939ce82b35b3ce75a87d64c07ac72c9eeb19b6c8549acca932",
+      "response_sha256": "d04c1a950ae175de3d537b1027ebdf89e16d6074dbf3a6b2b0ce2a653fb8e1e9",
+      "report": {
+       "detached": true,
+       "sha256": "1d04b82089dfea1706f7e688c78a9bd0e8cac708189d16f5f4ac3a26f70822c4"
+      },
+      "fetched_at": "2026-11-14T01:13:15.278Z"
+     },
+     "attestation_check": {
+      "ok": true,
+      "checks": [
+       {
+        "name": "signature",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "text_binds_hashes",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "report_names_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_parses",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_binds_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_signature_chain",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "config_measured",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "event_log_replays",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "tcb_status",
+        "skipped": true,
+        "detail": "needs Intel's online collateral (TCB level, quoting-enclave identity, revocation lists)"
+       },
+       {
+        "name": "gpu_evidence",
+        "skipped": true,
+        "detail": "needs NVIDIA's online verifier (NRAS); only a hash of the GPU evidence is kept in the record"
+       },
+       {
+        "name": "image_provenance",
+        "skipped": true,
+        "detail": "needs an online lookup: is the measured configuration a build NEAR AI published"
+       },
+       {
+        "name": "report_freshness",
+        "skipped": true,
+        "detail": "the nonce was chosen by whoever fetched the report; a record cannot prove when that was"
+       }
+      ]
+     }
+    },
+    {
+     "seq": 3,
+     "at": "2026-11-14T01:09:29.618Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 11767,
+     "cached_tokens": 10140,
+     "completion_tokens": 101,
+     "usd": 0.010556,
+     "ms": 2188,
+     "status": 200,
+     "chat_id": "msg_011Ch1vmdiaNLuvatcPyfmZZ",
+     "request_sha256": "c14e9b040b85d844f9e778651699429b7f3efc9535ece9945f3762df6bcda725",
+     "response_sha256": "b70d288f8e59f2a7750c0cad2971785fdf93cd0847c7f1026ce4dd3b368f6fad",
+     "attestation": {
+      "kind": "gateway",
+      "model": "anthropic/claude-opus-5-5",
+      "chat_id": "msg_011Ch1vmdiaNLuvatcPyfmZZ",
+      "signing_algo": "ecdsa",
+      "signing_address": "0xb98a789cdc4817275f5155593ba73ef2a957e779",
+      "text": "c14e9b040b85d844f9e778651699429b7f3efc9535ece9945f3762df6bcda725:b70d288f8e59f2a7750c0cad2971785fdf93cd0847c7f1026ce4dd3b368f6fad",
+      "signature": "0x3c5045c2cc626682c388ea2f7d017e08a08e6bb6675e74e918aced78f42c49ee29c33dad17bbd3962395c3ff3d12b6ec56b9ca0d07773235bd78056d6bf09b521c",
+      "request_sha256": "c14e9b040b85d844f9e778651699429b7f3efc9535ece9945f3762df6bcda725",
+      "response_sha256": "b70d288f8e59f2a7750c0cad2971785fdf93cd0847c7f1026ce4dd3b368f6fad",
+      "report": {
+       "detached": true,
+       "sha256": "1d04b82089dfea1706f7e688c78a9bd0e8cac708189d16f5f4ac3a26f70822c4"
+      },
+      "fetched_at": "2026-11-14T01:13:15.388Z"
+     },
+     "attestation_check": {
+      "ok": true,
+      "checks": [
+       {
+        "name": "signature",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "text_binds_hashes",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "report_names_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_parses",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_binds_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_signature_chain",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "config_measured",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "event_log_replays",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "tcb_status",
+        "skipped": true,
+        "detail": "needs Intel's online collateral (TCB level, quoting-enclave identity, revocation lists)"
+       },
+       {
+        "name": "gpu_evidence",
+        "skipped": true,
+        "detail": "needs NVIDIA's online verifier (NRAS); only a hash of the GPU evidence is kept in the record"
+       },
+       {
+        "name": "image_provenance",
+        "skipped": true,
+        "detail": "needs an online lookup: is the measured configuration a build NEAR AI published"
+       },
+       {
+        "name": "report_freshness",
+        "skipped": true,
+        "detail": "the nonce was chosen by whoever fetched the report; a record cannot prove when that was"
+       }
+      ]
+     }
+    },
+    {
+     "seq": 4,
+     "at": "2026-11-14T01:09:55.056Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 13553,
+     "cached_tokens": 11765,
+     "completion_tokens": 2279,
+     "usd": 0.055085,
+     "ms": 25358,
+     "status": 200,
+     "chat_id": "msg_011Ch1vmoRDk9uWq8CfJGLXr",
+     "request_sha256": "6b813ce8f9e9fa5715350b7febe46dfdfc93eceb1ee363c0f87498887576dcf3",
+     "response_sha256": "8f1739040721ab1f94f182f6acd06b704c8b13f7afcc7def886ee3837a467765",
+     "attestation": {
+      "kind": "gateway",
+      "model": "anthropic/claude-opus-5-5",
+      "chat_id": "msg_011Ch1vmoRDk9uWq8CfJGLXr",
+      "signing_algo": "ecdsa",
+      "signing_address": "0xb98a789cdc4817275f5155593ba73ef2a957e779",
+      "text": "6b813ce8f9e9fa5715350b7febe46dfdfc93eceb1ee363c0f87498887576dcf3:8f1739040721ab1f94f182f6acd06b704c8b13f7afcc7def886ee3837a467765",
+      "signature": "0x4d82289000e2376ff9376986175319cd9b648ef1756605cda8a3ab9efd5521505f6ace6f274232b9080b5d57e60f2ba22312be1aa4d65060bb9adc7770eeed8d1c",
+      "request_sha256": "6b813ce8f9e9fa5715350b7febe46dfdfc93eceb1ee363c0f87498887576dcf3",
+      "response_sha256": "8f1739040721ab1f94f182f6acd06b704c8b13f7afcc7def886ee3837a467765",
+      "report": {
+       "detached": true,
+       "sha256": "1d04b82089dfea1706f7e688c78a9bd0e8cac708189d16f5f4ac3a26f70822c4"
+      },
+      "fetched_at": "2026-11-14T01:13:15.447Z"
+     },
+     "attestation_check": {
+      "ok": true,
+      "checks": [
+       {
+        "name": "signature",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "text_binds_hashes",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "report_names_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_parses",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_binds_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_signature_chain",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "config_measured",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "event_log_replays",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "tcb_status",
+        "skipped": true,
+        "detail": "needs Intel's online collateral (TCB level, quoting-enclave identity, revocation lists)"
+       },
+       {
+        "name": "gpu_evidence",
+        "skipped": true,
+        "detail": "needs NVIDIA's online verifier (NRAS); only a hash of the GPU evidence is kept in the record"
+       },
+       {
+        "name": "image_provenance",
+        "skipped": true,
+        "detail": "needs an online lookup: is the measured configuration a build NEAR AI published"
+       },
+       {
+        "name": "report_freshness",
+        "skipped": true,
+        "detail": "the nonce was chosen by whoever fetched the report; a record cannot prove when that was"
+       }
+      ]
+     }
+    },
+    {
+     "seq": 5,
+     "at": "2026-11-14T01:10:41.794Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 13632,
+     "cached_tokens": 13551,
+     "completion_tokens": 5393,
+     "usd": 0.11089420000000001,
+     "ms": 46638,
+     "status": 200,
+     "chat_id": "msg_011Ch1vogHAZx2Y9DpNdmDgA",
+     "request_sha256": "8cef32ebb2988f6783fc55e49da63fa23e26bb7c7aadc39bd3ee0388e7a76528",
+     "response_sha256": "6acb9255f3b09c7c1c24f6125ef60c24e33eb1a80a4280dac0fa6bb24e0eb363",
+     "attestation": {
+      "kind": "gateway",
+      "model": "anthropic/claude-opus-5-5",
+      "chat_id": "msg_011Ch1vogHAZx2Y9DpNdmDgA",
+      "signing_algo": "ecdsa",
+      "signing_address": "0xb98a789cdc4817275f5155593ba73ef2a957e779",
+      "text": "8cef32ebb2988f6783fc55e49da63fa23e26bb7c7aadc39bd3ee0388e7a76528:6acb9255f3b09c7c1c24f6125ef60c24e33eb1a80a4280dac0fa6bb24e0eb363",
+      "signature": "0xac056ee0878d488d4a5c1e1cd5c6d244a394ae21c0705953377afef69c72f6ac7110bddec5536a73aa44ab50343001a65b9e4ee36790b8b5b3269bef24eed08a1c",
+      "request_sha256": "8cef32ebb2988f6783fc55e49da63fa23e26bb7c7aadc39bd3ee0388e7a76528",
+      "response_sha256": "6acb9255f3b09c7c1c24f6125ef60c24e33eb1a80a4280dac0fa6bb24e0eb363",
+      "report": {
+       "detached": true,
+       "sha256": "1d04b82089dfea1706f7e688c78a9bd0e8cac708189d16f5f4ac3a26f70822c4"
+      },
+      "fetched_at": "2026-11-14T01:13:15.508Z"
+     },
+     "attestation_check": {
+      "ok": true,
+      "checks": [
+       {
+        "name": "signature",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "text_binds_hashes",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "report_names_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_parses",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_binds_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_signature_chain",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "config_measured",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "event_log_replays",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "tcb_status",
+        "skipped": true,
+        "detail": "needs Intel's online collateral (TCB level, quoting-enclave identity, revocation lists)"
+       },
+       {
+        "name": "gpu_evidence",
+        "skipped": true,
+        "detail": "needs NVIDIA's online verifier (NRAS); only a hash of the GPU evidence is kept in the record"
+       },
+       {
+        "name": "image_provenance",
+        "skipped": true,
+        "detail": "needs an online lookup: is the measured configuration a build NEAR AI published"
+       },
+       {
+        "name": "report_freshness",
+        "skipped": true,
+        "detail": "the nonce was chosen by whoever fetched the report; a record cannot prove when that was"
+       }
+      ]
+     }
+    },
+    {
+     "seq": 6,
+     "at": "2026-11-14T01:11:17.102Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 17516,
+     "cached_tokens": 13630,
+     "completion_tokens": 3478,
+     "usd": 0.08783,
+     "ms": 35189,
+     "status": 200,
+     "chat_id": "msg_011Ch1vs8GwCKBibbyTf98j9",
+     "request_sha256": "f6cbc3890deb8d5207c9438c8770b4afeb20b474d0780bf27286ba902506f706",
+     "response_sha256": "86807e45d830aedafad2c1f322d723120619ce2a2095bea282330e7882f641a7",
+     "attestation": {
+      "kind": "gateway",
+      "model": "anthropic/claude-opus-5-5",
+      "chat_id": "msg_011Ch1vs8GwCKBibbyTf98j9",
+      "signing_algo": "ecdsa",
+      "signing_address": "0xb98a789cdc4817275f5155593ba73ef2a957e779",
+      "text": "f6cbc3890deb8d5207c9438c8770b4afeb20b474d0780bf27286ba902506f706:86807e45d830aedafad2c1f322d723120619ce2a2095bea282330e7882f641a7",
+      "signature": "0xbb3e899cbe407a8a53ba38ea48f68a1825b12480da26cc24a1a304327dad30f33c9b90b4c5090ff9f85fec6417ac1083593fa5a9a3cb0d478b30fd44d3e22b941b",
+      "request_sha256": "f6cbc3890deb8d5207c9438c8770b4afeb20b474d0780bf27286ba902506f706",
+      "response_sha256": "86807e45d830aedafad2c1f322d723120619ce2a2095bea282330e7882f641a7",
+      "report": {
+       "detached": true,
+       "sha256": "1d04b82089dfea1706f7e688c78a9bd0e8cac708189d16f5f4ac3a26f70822c4"
+      },
+      "fetched_at": "2026-11-14T01:13:15.568Z"
+     },
+     "attestation_check": {
+      "ok": true,
+      "checks": [
+       {
+        "name": "signature",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "text_binds_hashes",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "report_names_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_parses",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_binds_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_signature_chain",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "config_measured",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "event_log_replays",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "tcb_status",
+        "skipped": true,
+        "detail": "needs Intel's online collateral (TCB level, quoting-enclave identity, revocation lists)"
+       },
+       {
+        "name": "gpu_evidence",
+        "skipped": true,
+        "detail": "needs NVIDIA's online verifier (NRAS); only a hash of the GPU evidence is kept in the record"
+       },
+       {
+        "name": "image_provenance",
+        "skipped": true,
+        "detail": "needs an online lookup: is the measured configuration a build NEAR AI published"
+       },
+       {
+        "name": "report_freshness",
+        "skipped": true,
+        "detail": "the nonce was chosen by whoever fetched the report; a record cannot prove when that was"
+       }
+      ]
+     }
+    },
+    {
+     "seq": 7,
+     "at": "2026-11-14T01:11:37.733Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 18955,
+     "cached_tokens": 17514,
+     "completion_tokens": 2595,
+     "usd": 0.0611668,
+     "ms": 20596,
+     "status": 200,
+     "chat_id": "msg_011Ch1vuitr7kjaQno8TNVQX",
+     "request_sha256": "7ff37342b97399c27460f383209982b27d5b754d23f70cbe8a1f05234f34d2e6",
+     "response_sha256": "0b1f78d687fe45f938442afa2f427b94b110e23b9672b1ea88f24cfc19f42a5d",
+     "attestation": {
+      "kind": "gateway",
+      "model": "anthropic/claude-opus-5-5",
+      "chat_id": "msg_011Ch1vuitr7kjaQno8TNVQX",
+      "signing_algo": "ecdsa",
+      "signing_address": "0xb98a789cdc4817275f5155593ba73ef2a957e779",
+      "text": "7ff37342b97399c27460f383209982b27d5b754d23f70cbe8a1f05234f34d2e6:0b1f78d687fe45f938442afa2f427b94b110e23b9672b1ea88f24cfc19f42a5d",
+      "signature": "0x38c488414ac14eb4bf08240e7fe97fe6f7f9966025134167b9d710a988b481705505036f5638adde5dab8099728a0ef6793431c3e3800d2b9635822f1290e6aa1b",
+      "request_sha256": "7ff37342b97399c27460f383209982b27d5b754d23f70cbe8a1f05234f34d2e6",
+      "response_sha256": "0b1f78d687fe45f938442afa2f427b94b110e23b9672b1ea88f24cfc19f42a5d",
+      "report": {
+       "detached": true,
+       "sha256": "1d04b82089dfea1706f7e688c78a9bd0e8cac708189d16f5f4ac3a26f70822c4"
+      },
+      "fetched_at": "2026-11-14T01:13:15.766Z"
+     },
+     "attestation_check": {
+      "ok": true,
+      "checks": [
+       {
+        "name": "signature",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "text_binds_hashes",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "report_names_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_parses",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_binds_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_signature_chain",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "config_measured",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "event_log_replays",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "tcb_status",
+        "skipped": true,
+        "detail": "needs Intel's online collateral (TCB level, quoting-enclave identity, revocation lists)"
+       },
+       {
+        "name": "gpu_evidence",
+        "skipped": true,
+        "detail": "needs NVIDIA's online verifier (NRAS); only a hash of the GPU evidence is kept in the record"
+       },
+       {
+        "name": "image_provenance",
+        "skipped": true,
+        "detail": "needs an online lookup: is the measured configuration a build NEAR AI published"
+       },
+       {
+        "name": "report_freshness",
+        "skipped": true,
+        "detail": "the nonce was chosen by whoever fetched the report; a record cannot prove when that was"
+       }
+      ]
+     }
+    },
+    {
+     "seq": 8,
+     "at": "2026-11-14T01:12:53.342Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 21247,
+     "cached_tokens": 18953,
+     "completion_tokens": 9691,
+     "usd": 0.20678660000000001,
+     "ms": 75565,
+     "status": 200,
+     "chat_id": "msg_011Ch1vwF93N9rtcjHNj94ia",
+     "request_sha256": "e1ba4cd37460c21ca8b9a252a189e93a51134556fd551d2b0cb7467153f7dd4a",
+     "response_sha256": "5aac183083d565c9aa72fc1fb4b05195b699a156b2781e266abc30fca5559ed6",
+     "attestation": {
+      "kind": "gateway",
+      "model": "anthropic/claude-opus-5-5",
+      "chat_id": "msg_011Ch1vwF93N9rtcjHNj94ia",
+      "signing_algo": "ecdsa",
+      "signing_address": "0xb98a789cdc4817275f5155593ba73ef2a957e779",
+      "text": "e1ba4cd37460c21ca8b9a252a189e93a51134556fd551d2b0cb7467153f7dd4a:5aac183083d565c9aa72fc1fb4b05195b699a156b2781e266abc30fca5559ed6",
+      "signature": "0xecd426edb9e7fd3a10f808fa091d6351e771c5090bd27db9d4e3fc07092dda6a23a492a58fd692c7ed11ece4454a2d0df170b5be17625c782c245e81be36d87b1c",
+      "request_sha256": "e1ba4cd37460c21ca8b9a252a189e93a51134556fd551d2b0cb7467153f7dd4a",
+      "response_sha256": "5aac183083d565c9aa72fc1fb4b05195b699a156b2781e266abc30fca5559ed6",
+      "report": {
+       "detached": true,
+       "sha256": "1d04b82089dfea1706f7e688c78a9bd0e8cac708189d16f5f4ac3a26f70822c4"
+      },
+      "fetched_at": "2026-11-14T01:13:15.697Z"
+     },
+     "attestation_check": {
+      "ok": true,
+      "checks": [
+       {
+        "name": "signature",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "text_binds_hashes",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "report_names_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_parses",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_binds_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_signature_chain",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "config_measured",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "event_log_replays",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "tcb_status",
+        "skipped": true,
+        "detail": "needs Intel's online collateral (TCB level, quoting-enclave identity, revocation lists)"
+       },
+       {
+        "name": "gpu_evidence",
+        "skipped": true,
+        "detail": "needs NVIDIA's online verifier (NRAS); only a hash of the GPU evidence is kept in the record"
+       },
+       {
+        "name": "image_provenance",
+        "skipped": true,
+        "detail": "needs an online lookup: is the measured configuration a build NEAR AI published"
+       },
+       {
+        "name": "report_freshness",
+        "skipped": true,
+        "detail": "the nonce was chosen by whoever fetched the report; a record cannot prove when that was"
+       }
+      ]
+     }
+    },
+    {
+     "seq": 9,
+     "at": "2026-11-14T01:12:59.341Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 29223,
+     "cached_tokens": 21245,
+     "completion_tokens": 452,
+     "usd": 0.045201,
+     "ms": 5955,
+     "status": 200,
+     "chat_id": "msg_011Ch1w2pi3MQN6sKA1LyUfx",
+     "request_sha256": "ce64ccc19a5cf1b1476d9c7e2e9eae1076f0564856e2a1def9be135651956a81",
+     "response_sha256": "4927e93d08eada61ecb3afd169895d673e56f9c1553558a264046e0ce08ccabb",
+     "attestation": {
+      "kind": "gateway",
+      "model": "anthropic/claude-opus-5-5",
+      "chat_id": "msg_011Ch1w2pi3MQN6sKA1LyUfx",
+      "signing_algo": "ecdsa",
+      "signing_address": "0xb98a789cdc4817275f5155593ba73ef2a957e779",
+      "text": "ce64ccc19a5cf1b1476d9c7e2e9eae1076f0564856e2a1def9be135651956a81:4927e93d08eada61ecb3afd169895d673e56f9c1553558a264046e0ce08ccabb",
+      "signature": "0x7c37fc214c0e648b438fe04ca502696426f6c90a083dc90f604d0616b2acba604950296e88014b01eb4c9abce165a85d1295ba6eb15c962be5f33218cd855d491b",
+      "request_sha256": "ce64ccc19a5cf1b1476d9c7e2e9eae1076f0564856e2a1def9be135651956a81",
+      "response_sha256": "4927e93d08eada61ecb3afd169895d673e56f9c1553558a264046e0ce08ccabb",
+      "report": {
+       "detached": true,
+       "sha256": "1d04b82089dfea1706f7e688c78a9bd0e8cac708189d16f5f4ac3a26f70822c4"
+      },
+      "fetched_at": "2026-11-14T01:13:15.826Z"
+     },
+     "attestation_check": {
+      "ok": true,
+      "checks": [
+       {
+        "name": "signature",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "text_binds_hashes",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "report_names_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_parses",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_binds_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_signature_chain",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "config_measured",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "event_log_replays",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "tcb_status",
+        "skipped": true,
+        "detail": "needs Intel's online collateral (TCB level, quoting-enclave identity, revocation lists)"
+       },
+       {
+        "name": "gpu_evidence",
+        "skipped": true,
+        "detail": "needs NVIDIA's online verifier (NRAS); only a hash of the GPU evidence is kept in the record"
+       },
+       {
+        "name": "image_provenance",
+        "skipped": true,
+        "detail": "needs an online lookup: is the measured configuration a build NEAR AI published"
+       },
+       {
+        "name": "report_freshness",
+        "skipped": true,
+        "detail": "the nonce was chosen by whoever fetched the report; a record cannot prove when that was"
+       }
+      ]
+     }
+    },
+    {
+     "seq": 10,
+     "at": "2026-11-14T01:13:03.000Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 29807,
+     "cached_tokens": 29221,
+     "completion_tokens": 228,
+     "usd": 0.012748200000000001,
+     "ms": 3606,
+     "status": 200,
+     "chat_id": "msg_011Ch1w3G7Fn474AtgKueed4",
+     "request_sha256": "d77ffa9fc75c42ef217f75afd3101b2347ca5e663639c3f37ea40b0ce37bdb93",
+     "response_sha256": "a52d9461125a5b40bc86dcf399b35e9b7dd4efa4e0f4573383069ce83464c6e2",
+     "attestation": {
+      "kind": "gateway",
+      "model": "anthropic/claude-opus-5-5",
+      "chat_id": "msg_011Ch1w3G7Fn474AtgKueed4",
+      "signing_algo": "ecdsa",
+      "signing_address": "0xb98a789cdc4817275f5155593ba73ef2a957e779",
+      "text": "d77ffa9fc75c42ef217f75afd3101b2347ca5e663639c3f37ea40b0ce37bdb93:a52d9461125a5b40bc86dcf399b35e9b7dd4efa4e0f4573383069ce83464c6e2",
+      "signature": "0x96bca1c71b5340426ff6ca71810883458b05d675ec3b2c1def7e8dd36d2718d66b6016a1d0c1f4ea10adacb394dd18098bbaef760754fb59204c4f6ee12fe26a1c",
+      "request_sha256": "d77ffa9fc75c42ef217f75afd3101b2347ca5e663639c3f37ea40b0ce37bdb93",
+      "response_sha256": "a52d9461125a5b40bc86dcf399b35e9b7dd4efa4e0f4573383069ce83464c6e2",
+      "report": {
+       "detached": true,
+       "sha256": "1d04b82089dfea1706f7e688c78a9bd0e8cac708189d16f5f4ac3a26f70822c4"
+      },
+      "fetched_at": "2026-11-14T01:13:15.888Z"
+     },
+     "attestation_check": {
+      "ok": true,
+      "checks": [
+       {
+        "name": "signature",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "text_binds_hashes",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "report_names_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_parses",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_binds_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_signature_chain",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "config_measured",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "event_log_replays",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "tcb_status",
+        "skipped": true,
+        "detail": "needs Intel's online collateral (TCB level, quoting-enclave identity, revocation lists)"
+       },
+       {
+        "name": "gpu_evidence",
+        "skipped": true,
+        "detail": "needs NVIDIA's online verifier (NRAS); only a hash of the GPU evidence is kept in the record"
+       },
+       {
+        "name": "image_provenance",
+        "skipped": true,
+        "detail": "needs an online lookup: is the measured configuration a build NEAR AI published"
+       },
+       {
+        "name": "report_freshness",
+        "skipped": true,
+        "detail": "the nonce was chosen by whoever fetched the report; a record cannot prove when that was"
+       }
+      ]
+     }
+    },
+    {
+     "seq": 11,
+     "at": "2026-11-14T01:13:06.566Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 30523,
+     "cached_tokens": 29805,
+     "completion_tokens": 162,
+     "usd": 0.012073,
+     "ms": 3368,
+     "status": 200,
+     "chat_id": "msg_011Ch1w3aJ8r2pLg9EXMhENH",
+     "request_sha256": "192b819121ec97fac7b0ef9dcc67042584288408935df21e628f236b484f1f80",
+     "response_sha256": "a63af8b32e1a6cf8020af0632032517435089007d2cf8610914491326389e46b",
+     "attestation": {
+      "kind": "gateway",
+      "model": "anthropic/claude-opus-5-5",
+      "chat_id": "msg_011Ch1w3aJ8r2pLg9EXMhENH",
+      "signing_algo": "ecdsa",
+      "signing_address": "0xb98a789cdc4817275f5155593ba73ef2a957e779",
+      "text": "192b819121ec97fac7b0ef9dcc67042584288408935df21e628f236b484f1f80:a63af8b32e1a6cf8020af0632032517435089007d2cf8610914491326389e46b",
+      "signature": "0xd5f697ca0b32fbac4d10aa2794f07c3f688b01f63f713ab84bab7052b7c3e2a672b31e1eb5674d25de5d026d765a793999003c6ecef7f643655f13eaaf9cd6751c",
+      "request_sha256": "192b819121ec97fac7b0ef9dcc67042584288408935df21e628f236b484f1f80",
+      "response_sha256": "a63af8b32e1a6cf8020af0632032517435089007d2cf8610914491326389e46b",
+      "report": {
+       "detached": true,
+       "sha256": "1d04b82089dfea1706f7e688c78a9bd0e8cac708189d16f5f4ac3a26f70822c4"
+      },
+      "fetched_at": "2026-11-14T01:13:16.019Z"
+     },
+     "attestation_check": {
+      "ok": true,
+      "checks": [
+       {
+        "name": "signature",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "text_binds_hashes",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "report_names_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_parses",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_binds_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_signature_chain",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "config_measured",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "event_log_replays",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "tcb_status",
+        "skipped": true,
+        "detail": "needs Intel's online collateral (TCB level, quoting-enclave identity, revocation lists)"
+       },
+       {
+        "name": "gpu_evidence",
+        "skipped": true,
+        "detail": "needs NVIDIA's online verifier (NRAS); only a hash of the GPU evidence is kept in the record"
+       },
+       {
+        "name": "image_provenance",
+        "skipped": true,
+        "detail": "needs an online lookup: is the measured configuration a build NEAR AI published"
+       },
+       {
+        "name": "report_freshness",
+        "skipped": true,
+        "detail": "the nonce was chosen by whoever fetched the report; a record cannot prove when that was"
+       }
+      ]
+     }
+    },
+    {
+     "seq": 12,
+     "at": "2026-11-14T01:13:14.770Z",
+     "model": "claude-opus-5-5",
+     "prompt_tokens": 30650,
+     "cached_tokens": 30521,
+     "completion_tokens": 652,
+     "usd": 0.019660200000000003,
+     "ms": 8100,
+     "status": 200,
+     "chat_id": "msg_011Ch1w3o6pYg4tV4AvR4QHk",
+     "request_sha256": "24e2d6f029d5dfcb82e4a1d09ddc4fc7acd498878a3ab6993984f88f7e69966c",
+     "response_sha256": "d65f2ed63beddcf441ffbb40e883488eb0044942299fa94866d59fc594872adb",
+     "attestation": {
+      "kind": "gateway",
+      "model": "anthropic/claude-opus-5-5",
+      "chat_id": "msg_011Ch1w3o6pYg4tV4AvR4QHk",
+      "signing_algo": "ecdsa",
+      "signing_address": "0xb98a789cdc4817275f5155593ba73ef2a957e779",
+      "text": "24e2d6f029d5dfcb82e4a1d09ddc4fc7acd498878a3ab6993984f88f7e69966c:d65f2ed63beddcf441ffbb40e883488eb0044942299fa94866d59fc594872adb",
+      "signature": "0xeace0626a1fc2edec4536d53218059af7adf535c04d89baf5cebfa06959c3f8c3fc59dc2e9805324fe54a54c6b333321ba27d85b6014059232586bf3c96241c11b",
+      "request_sha256": "24e2d6f029d5dfcb82e4a1d09ddc4fc7acd498878a3ab6993984f88f7e69966c",
+      "response_sha256": "d65f2ed63beddcf441ffbb40e883488eb0044942299fa94866d59fc594872adb",
+      "report": {
+       "detached": true,
+       "sha256": "1d04b82089dfea1706f7e688c78a9bd0e8cac708189d16f5f4ac3a26f70822c4"
+      },
+      "fetched_at": "2026-11-14T01:13:16.083Z"
+     },
+     "attestation_check": {
+      "ok": true,
+      "checks": [
+       {
+        "name": "signature",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "text_binds_hashes",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "report_names_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_parses",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_binds_signer",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "quote_signature_chain",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "config_measured",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "event_log_replays",
+        "ok": true,
+        "detail": "ok"
+       },
+       {
+        "name": "tcb_status",
+        "skipped": true,
+        "detail": "needs Intel's online collateral (TCB level, quoting-enclave identity, revocation lists)"
+       },
+       {
+        "name": "gpu_evidence",
+        "skipped": true,
+        "detail": "needs NVIDIA's online verifier (NRAS); only a hash of the GPU evidence is kept in the record"
+       },
+       {
+        "name": "image_provenance",
+        "skipped": true,
+        "detail": "needs an online lookup: is the measured configuration a build NEAR AI published"
+       },
+       {
+        "name": "report_freshness",
+        "skipped": true,
+        "detail": "the nonce was chosen by whoever fetched the report; a record cannot prove when that was"
+       }
+      ]
+     }
+    }
+   ],
+   "commit": "3ab23072dfaf233d4408f3c244e14842858a0f81",
+   "green": true,
+   "failing": [],
+   "checks": [
+    {
+     "id": "g1",
+     "name": "fence and postcard text tests pass",
+     "kind": "run",
+     "pass": true,
+     "detail": "exit 0 with no network",
+     "exit": 0
+    },
+    {
+     "id": "g2",
+     "name": "page loads the app as a module",
+     "kind": "file",
+     "pass": true,
+     "detail": "index.html (2654 characters) meets every condition"
+    },
+    {
+     "id": "g3",
+     "name": "nothing loaded from the web",
+     "kind": "file",
+     "pass": true,
+     "detail": "index.html (2654 characters) meets every condition"
+    },
+    {
+     "id": "g4",
+     "name": "no test or bypass switch in the shipped app",
+     "kind": "file",
+     "pass": true,
+     "detail": "app.js (17762 characters) meets every condition"
+    },
+    {
+     "id": "outside-untouched",
+     "name": "no file outside the worktree touched",
+     "kind": "harness",
+     "pass": true,
+     "detail": "34 files beside the worktree are unchanged since before the agent started (size, mtime, mode)"
+    }
+   ]
+  }
+ ],
+ "main": {
+  "before": "ce7ede5698a86392a5b075a8b3286683da5286dc",
+  "after": "ce7ede5698a86392a5b075a8b3286683da5286dc",
+  "untouched": true
+ },
+ "push": {
+  "pushed": true,
+  "ref": "refs/heads/build/postmark-6ee0a5",
+  "commit": "3ab23072dfaf233d4408f3c244e14842858a0f81",
+  "remote_sha": "3ab23072dfaf233d4408f3c244e14842858a0f81",
+  "publish": {
+   "pushed": true,
+   "ref": "refs/heads/build/postmark-6ee0a5",
+   "remote_sha": "3ab23072dfaf233d4408f3c244e14842858a0f81"
+  }
+ },
+ "preview": {
+  "state": "success",
+  "url": "https://cambrian-postmark-m2x6yxrfp-cambrian-collective.vercel.app",
+  "deployment_id": "dpl_3iHJYWy9uRgs3EYzMzFZ9zQBz9P6",
+  "public": true
+ },
+ "cost": {
+  "usd": 0.664457,
+  "calls": 11,
+  "priced_from": "NEAR AI /v1/models pricing × usage"
+ },
+ "lessons": {
+  "fired": [
+   {
+    "lesson": "write-files-early",
+    "what": "task ends with \"Write files early; do not audit dependency source.\""
+   },
+   {
+    "lesson": "no-dependency-auditing",
+    "what": "covered by the same closing line, \"Write files early; do not audit dependency source.\""
+   }
+  ],
+  "drafted": null
+ },
+ "notifications": [
+  {
+   "ts": "2026-11-14T01:13:25.334Z",
+   "kind": "GREEN",
+   "text": "postmark built cleanly: “Postmark: London postcards that unlock only at the landmark” passed all checks on the first attempt.\n\nOpen the preview: https://cambrian-postmark-m2x6yxrfp-cambrian-collective.vercel.app (public, no sign-in needed)\n\nNext: open the receipt in the app.\n\nDetails: build/postmark-6ee0a5 @ 3ab2307 · main untouched · $0.66 · 11 calls",
+   "html": "postmark built cleanly: “Postmark: London postcards that unlock only at the landmark” passed all checks on the first attempt.\n\n<a href=\"https://cambrian-postmark-m2x6yxrfp-cambrian-collective.vercel.app\">Open the preview</a> (public, no sign-in needed)\n\nNext: open the receipt in the app.\n\nDetails: build/postmark-6ee0a5 @ 3ab2307 · main untouched · $0.66 · 11 calls",
+   "sent": true,
+   "via": "memory"
+  }
+ ],
+ "receipt_sha256": "c38e49f1fb911a96049c5945c3274086c21bfede6b4374804db4fe0d3e5caea7",
+ "house_kit": {
+  "sha256": "004153fb476fe027370b03f580b5a33dd5b00e49d4aa490c597cfa539b39b57c"
+ }
+}
