@@ -378,3 +378,19 @@ test('cli: missing or unknown arguments and an unreadable file are refused with 
   assert.equal((await cli(['--help'], { stub: never })).code, 0);
   assert.equal(parseArgs(FLAGS).input.txHash, TX);
 });
+
+test('a rate-limited node is a skip with the reason, exit 3, never a FAIL; a wrong answer after it still fails', async () => {
+  const { retry } = await import('../../near/rpc.mjs'); const keep = { ...retry }; retry.sleep = async () => {};
+  try {
+    const limit = { status: 200, json: async () => ({ error: { message: 'Rate limits exceeded. For higher rate limits get a subscription' } }) };
+    const out = await cli(FLAGS, { stub: { fetchImpl: async () => limit } });
+    assert.equal(out.code, 3, out.text);
+    assert.match(out.text, /^ 1\. \[skip\] node serves the chosen network: rate limited by /m);
+    assert.doesNotMatch(out.text, /\[FAIL\]|\[ok\]/);
+    // limited twice, then the node answers, and what it answers is a transaction signed by someone else: that fails
+    const stub = node({ change: (s) => (s.transaction.signer_id = 'stranger.near') }); let n = 0;
+    const flaky = await cli(FLAGS, { stub: { fetchImpl: async (...a) => (n++ < 2 ? limit : stub.fetchImpl(...a)) } });
+    assert.equal(flaky.code, 1, flaky.text);
+    assert.match(flaky.text, /\[FAIL\] signed by the expected recorder: signer_id is stranger\.near/);
+  } finally { Object.assign(retry, keep); }
+});

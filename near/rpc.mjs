@@ -3,7 +3,8 @@
 //
 // Every function resolves (never throws for a network fault) to one of:
 //   { ok: true, ... }                    the node answered
-//   { ok: false, offline: true, why }    no answer (network down, timeout, bad gateway): callers print [skip]
+//   { ok: false, offline: true, why }    no answer (network down, timeout, bad gateway, or rate limited on both
+//                                        nodes after the retries): callers print [skip]
 //   { ok: false, why, ... }              the node answered with an error, or the input was refused
 
 import { createHash } from 'node:crypto';
@@ -16,6 +17,17 @@ export const DEFAULT_RPC = Object.freeze({
 });
 
 export const DEFAULT_TIMEOUT_MS = 10_000;
+
+// A public node limits how often one address may ask. A rate limit says nothing about the chain, so it is never a FAIL:
+// the same node is asked again after 1, 3 and 9 seconds, then a second public node run by someone else is asked once,
+// and only then is the answer "no answer" (callers print [skip] with this reason). A node that answers wrongly still fails.
+export const retry = { afterMs: [1000, 3000, 9000], sleep: (ms) => new Promise((done) => setTimeout(done, ms)) };
+const SECOND_NODE = 'https://near.drpc.org';   // keeps old transactions too; no key needed (read 14 Nov 2026)
+export const FALLBACK_RPC = Object.freeze({
+  'https://archival-rpc.mainnet.fastnear.com': SECOND_NODE,
+  'https://free.rpc.fastnear.com': SECOND_NODE,
+});
+const RATE_LIMIT = /rate limits? exceeded|too many requests|rate.?limited/i;
 
 // What view_account reports as code_hash for an account with no contract: 32 zero bytes in base58.
 export const NO_CONTRACT_CODE_HASH = '1'.repeat(32);
@@ -90,9 +102,26 @@ function rpcErrorText(error) {
   return `${cause}${detail}`;
 }
 
-/** One JSON-RPC request. */
-export async function rpcCall({ rpcUrl, method, params, fetchImpl = globalThis.fetch, timeoutMs = DEFAULT_TIMEOUT_MS }) {
+/** One JSON-RPC request, asked again when the node says "rate limit", then asked of a second node. */
+export async function rpcCall({ rpcUrl, method, params, fetchImpl = globalThis.fetch, timeoutMs = DEFAULT_TIMEOUT_MS,
+  fallbackUrl = FALLBACK_RPC[rpcUrl] }) {
   if (!rpcUrl) return { ok: false, why: 'no rpcUrl given' };
+  let answer = await rpcOnce({ rpcUrl, method, params, fetchImpl, timeoutMs });
+  for (const ms of retry.afterMs) {
+    if (!answer.rateLimited) return answer;
+    await retry.sleep(ms);
+    answer = await rpcOnce({ rpcUrl, method, params, fetchImpl, timeoutMs });
+  }
+  if (!answer.rateLimited) return answer;
+  if (fallbackUrl && fallbackUrl !== rpcUrl) {
+    const second = await rpcOnce({ rpcUrl: fallbackUrl, method, params, fetchImpl, timeoutMs });
+    if (!second.rateLimited && !second.offline) return { ...second, via: fallbackUrl };
+    return offline(`rate limited by ${rpcUrl} after ${retry.afterMs.length} more tries, and ${fallbackUrl} gave no answer (${second.why})`);
+  }
+  return offline(`rate limited by ${rpcUrl} after ${retry.afterMs.length} more tries (${answer.why})`);
+}
+
+async function rpcOnce({ rpcUrl, method, params, fetchImpl, timeoutMs }) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   let response;
@@ -113,9 +142,15 @@ export async function rpcCall({ rpcUrl, method, params, fetchImpl = globalThis.f
   try {
     body = await response.json();
   } catch {
+    if (response.status === 429) return { ok: false, rateLimited: true, why: `${rpcUrl} answered HTTP 429` };
     return offline(`${rpcUrl} answered HTTP ${response.status} without JSON`);
   }
-  if (body && body.error) return { ok: false, why: rpcErrorText(body.error), error: body.error };
+  if (body && body.error) {
+    const why = rpcErrorText(body.error);
+    if (response.status === 429 || RATE_LIMIT.test(why)) return { ok: false, rateLimited: true, why };
+    return { ok: false, why, error: body.error };
+  }
+  if (response.status === 429) return { ok: false, rateLimited: true, why: `${rpcUrl} answered HTTP 429` };
   if (!body || body.result === undefined) return offline(`${rpcUrl} answered HTTP ${response.status} without a result`);
   return { ok: true, result: body.result };
 }
