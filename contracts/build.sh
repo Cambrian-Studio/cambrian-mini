@@ -36,6 +36,7 @@ RUSTC="$bin/rustc" "$bin/cargo" build --release --locked
 cp target/wasm32-unknown-unknown/release/receipts.wasm "$here/receipts.wasm"
 cd "$here"
 chmod 644 receipts.wasm
-shasum -a 256 receipts.wasm > SHA256SUMS
+# shasum on macOS, sha256sum on most Linux images
+(command -v shasum >/dev/null 2>&1 && shasum -a 256 receipts.wasm || sha256sum receipts.wasm) > SHA256SUMS
 wc -c receipts.wasm
 cat SHA256SUMS
