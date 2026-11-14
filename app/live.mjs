@@ -58,6 +58,24 @@ export function makeLimiter({ max, windowMs, now = () => Date.now() }) {
   };
 }
 
+/**
+ * Did this build stop because the model service failed, and not because of anything in the build?
+ * Yes when it never got one answer from the model and at least one call came back 429, 5xx or with no answer; when the last
+ * call of the last attempt failed that way (the build was cut off); or when it was stopped before it began because NEAR AI's
+ * price list or report could not be read. Such a build teaches nothing: it drafts no lesson and is tried again later.
+ */
+export function modelOutage(rec) {
+  const bad = (c) => c && (c.status === 429 || c.status === 0 || c.status == null || (c.status >= 500 && c.status <= 599));
+  if (rec?.state === 'blocked') return /NEAR AI's price list could not be read|report could not be (fetched|read)/i.test(String(rec.waiting_on ?? ''));
+  if (rec?.state !== 'red') return false;
+  const calls = (rec.attempts ?? []).flatMap((a) => a.calls ?? []);
+  if (!calls.length) return false;
+  const answered = calls.filter((c) => c.status === 200).length;
+  return (answered === 0 && calls.some(bad)) || bad((rec.attempts.at(-1).calls ?? []).at(-1));
+}
+/** Minutes to wait before each new try after a model outage: three tries, then the build stays as it ended. */
+export const OUTAGE_RETRY_MINUTES = [5, 15, 45];
+
 /** `near` is the model client (near/nearai.mjs); a test passes a stand-in so no call leaves the machine. */
 export async function makeLive(cfg, { near = nearai } = {}) {
   const BUILD_CAP_USD = usdCap(cfg.buildCapUsd, buildCapUsd());
@@ -183,6 +201,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
     const hooks = {
       onUpdate: (rec) => broadcast({ type: 'run', run: rec }),
       onRed: async (rec, failureLog) => {
+        if (modelOutage(rec)) return null;   // the model service failed: nothing was learned about the build, so no lesson
         const asked = [entry.ticket.goal, entry.ticket.task].filter(Boolean).join(' ');
         const draft = await draftLesson({ run: { ...rec, asked }, failureLog, chat, model: model() });
         if (!draft) return null;
@@ -191,8 +210,20 @@ export async function makeLive(cfg, { near = nearai } = {}) {
         writeJson(draftsFile, doc); broadcast({ type: 'lesson-draft', draft }); return draft;
       },
     };
-    startRun(lineCfg, { ticket: entry.ticket, approvals: entry.approvals, council: council(cfg), lessonsFired: entry.lint?.applied ?? [], hooks })
+    const start = cfg.lineStart ?? startRun;   // tests only: a stand-in for the build path
+    start(lineCfg, { ticket: entry.ticket, approvals: entry.approvals, council: council(cfg), lessonsFired: entry.lint?.applied ?? [], hooks })
       .then((rec) => { broadcast({ type: 'run', run: rec });
+        // A build that the model service cut off is tried again after 5, 15 and 45 minutes. Each failed try is noted on the brief.
+        if (modelOutage(rec)) {
+          const fresh = readTicketEntry(cfg, entry.ticket.id) ?? entry; const n = (fresh.outages ?? []).length;
+          const calls = (rec.attempts ?? []).flatMap((a) => a.calls ?? []).map((c) => c.status ?? null);
+          const wait = (cfg.outageRetryMinutes ?? OUTAGE_RETRY_MINUTES)[n];
+          fresh.outages = [...(fresh.outages ?? []), { at: new Date().toISOString(), state: rec.state, why: rec.waiting_on ?? null, call_statuses: calls,
+            retry_at: wait === undefined ? null : new Date(Date.now() + wait * 60000).toISOString() }];
+          writeTicketEntry(cfg, fresh); broadcast({ type: 'ticket', id: entry.ticket.id });
+          if (wait !== undefined) retryLater(fresh, wait * 60000);
+          return;
+        }
         // a product begins with its first GREEN build: record it so the Products screen can show it
         if (/^green/.test(String(rec?.state))) {
           const doc = readJson(cfg.files.products, { v: 1, products: [] });
@@ -207,11 +238,23 @@ export async function makeLive(cfg, { near = nearai } = {}) {
         } for (const n of rec?.notifications ?? []) broadcast({ type: 'notification', notification: { ...n, run: entry.ticket.id } }); })
       .catch((e) => broadcast({ type: 'error', why: `the run for ${entry.ticket.id} did not start: ${String(e.message).slice(0, 200)}` }));
   }
+  const retryLater = (entry, ms) => { const t = setTimeout(() => { release(readTicketEntry(cfg, entry.ticket.id) ?? entry).catch(() => {}); }, Math.max(0, ms)); t.unref?.(); };
+  // after a restart: a build that was waiting for its next try is picked up again
+  for (const e of listTickets(cfg)) {
+    const last = (e.outages ?? []).at(-1);
+    if (last?.retry_at && e.run_started && modelOutage(readRun(cfg, e.ticket.id) ?? {})) retryLater(e, new Date(last.retry_at).getTime() - Date.now());
+  }
   const draftBody = (d) => ({ id: d.id, rule: d.rule, failure: d.failure ?? '', applies_to: d.applies_to, check: d.check ?? null, fix: d.fix ?? null, from_run: d.from_run ?? null });
 
 
   // ---- Talk as a conversation: who is speaking, and the conversation kept in this machine's private state until it is sent --
-  const sessions = new Map();      // session token → { member, at }: opened once with a passkey, good for two hours
+  // session token → { member, at }: opened once with a passkey, good for two hours. Kept by the token's hash in this machine's
+  // private state, so a restart of the app does not sign a member out in the middle of a conversation.
+  const sessionsFile = join(cfg.state, 'talk-sessions.json');
+  const tokenKey = (t) => hashOf({ talk_session: String(t ?? '') });
+  const sessions = new Map(Object.entries(readJson(sessionsFile, {})));
+  const saveSessions = () => { for (const [k, v] of sessions) if (Date.now() - v.at >= 2 * 3600 * 1000) sessions.delete(k);
+    writeFileSync(sessionsFile, JSON.stringify(Object.fromEntries(sessions)), { mode: 0o600 }); };
   const pendingOpen = new Map();   // member → the hash their passkey is about to sign
   const SESSION_MS = 2 * 3600 * 1000;
   const talkDir = join(cfg.state, 'talk');
@@ -223,7 +266,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
   const REFUSED_SPEAKER = [403, { error: 'passkey required', why: 'Only an enrolled council member can talk to Cambrian here. Open the conversation with your passkey.' }];
   /** Who is speaking: the member of a live session; on a machine that is not reachable from outside, a local guest. */
   function speaker(body) {
-    const s = sessions.get(String(body.session ?? ''));
+    const s = sessions.get(tokenKey(body.session));
     if (s && Date.now() - s.at < SESSION_MS) return { ok: true, member: s.member };
     return cfg.exposed ? { ok: false } : { ok: true, member: null };
   }
@@ -276,7 +319,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       const v = verifyMemberSignature({ purpose: 'talk', subjectHash: sha, approval, council: council(cfg) });
       if (!v.ok) return [403, { error: 'signature refused', why: v.why }];
       pendingOpen.delete(member);
-      const session = randomBytes(24).toString('base64url'); sessions.set(session, { member, at: Date.now() });
+      const session = randomBytes(24).toString('base64url'); sessions.set(tokenKey(session), { member, at: Date.now() }); saveSessions();
       return [200, { session, member, minutes: SESSION_MS / 60000 }];
     },
     '/api/talk/turn': async (body, req, res) => {

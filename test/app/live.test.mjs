@@ -396,3 +396,55 @@ test('a daily cap raised for the day reaches the build path: a ticket is release
     assert.equal(two[0], 200, JSON.stringify(two[1])); assert.equal(two[1].released, true);
   } finally { rmSync(s.dir, { recursive: true, force: true }); }
 });
+
+test('a build cut off by the model service drafts no lesson and is tried again; a build that ran and failed a check drafts one and is not', async () => {
+  const { modelOutage, OUTAGE_RETRY_MINUTES } = await import('../../app/live.mjs');
+  assert.deepEqual(OUTAGE_RETRY_MINUTES, [5, 15, 45]);
+  const cut = (id) => ({ ticket: { id }, state: 'red', waiting_on: 'RED after one attempt', finished: 'x', attempts: [{ n: 1, calls: [{ status: 502 }], checks: [], failing: ['page'] }] });
+  const failed = (id) => ({ ticket: { id, budget: { minutes: 10 } }, state: 'red', finished: 'x',
+    attempts: [{ n: 1, agent: { exit: 0, seconds: 40 }, calls: [{ status: 200 }, { status: 200 }], checks: [{ id: 'page', kind: 'file', pass: false, detail: 'no "tide"' }], failing: ['page'] }] });
+  assert.equal(modelOutage(cut('a')), true, 'never one answer, and a 502');
+  assert.equal(modelOutage(failed('a')), false, 'it ran, and a check failed');
+  assert.equal(modelOutage({ state: 'red', attempts: [{ calls: [{ status: 200 }, { status: 503 }] }] }), true, 'cut off part way: the last call failed');
+  assert.equal(modelOutage({ state: 'red', attempts: [{ calls: [{ status: 429 }, { status: 200 }] }] }), false, 'a refusal that was followed by an answer');
+  assert.equal(modelOutage({ state: 'blocked', waiting_on: "NEAR AI's price list could not be read (HTTP 502). Nothing ran." }), true);
+  assert.equal(modelOutage({ state: 'blocked', waiting_on: 'the daily ceiling is reached' }), false);
+  assert.equal(modelOutage({ state: 'green-preview', attempts: [{ calls: [{ status: 502 }] }] }), false);
+
+  const tries = []; let lessonsDrafted = 0;
+  const lineStart = async (cfg, { ticket, hooks }) => {
+    tries.push(ticket.id);
+    const rec = tries.length === 1 ? cut(ticket.id) : { ...failed(ticket.id) };
+    if (await hooks.onRed(rec, 'the end of the failure log')) lessonsDrafted++;
+    return rec;
+  };
+  const s = await setup({ over: { lineStart, outageRetryMinutes: [0, 0, 0] } });
+  try {
+    await s.post('/api/approve', body(s.t, s.tc.sign('jj', s.t)));
+    const two = await s.post('/api/approve', body(s.t, s.tc.sign('clemens', s.t)));
+    assert.equal(two[1].released, true);
+    for (let i = 0; i < 50 && tries.length < 2; i++) await new Promise((d) => setTimeout(d, 20));
+    await new Promise((d) => setTimeout(d, 60));
+    assert.equal(tries.length, 2, 'tried once more after the outage, and not again after a build that really failed');
+    const e = s.entry(s.t.id);
+    assert.equal(e.outages.length, 1); assert.deepEqual(e.outages[0].call_statuses, [502]); assert.ok(e.outages[0].retry_at);
+    assert.equal(lessonsDrafted, 1, 'no lesson from the outage; one from the failed check');
+    assert.equal(JSON.parse(readFileSync(s.live._test.draftsFile, 'utf8')).drafts.length, 1);
+  } finally { rmSync(s.dir, { recursive: true, force: true }); }
+});
+
+test('a member stays signed in to a conversation across a restart of the app', async () => {
+  const s = await setup({ exposed: true });
+  try {
+    const o = await s.post('/api/talk/open/options', { member: 'jj' });
+    const opened = await s.post('/api/talk/open', { member: 'jj', ...s.tc.authenticators.jj.assert(o[1].challenge) });
+    const again = await makeLive(s.cfg, { near: s.near });   // the same state, a new process
+    const res = { writeHead() {}, write() {}, end() {} };
+    const req = { socket: { remoteAddress: '127.0.0.1' }, headers: {} };
+    const ok = await again._test.handlers['/api/talk/turn']({ session: opened[1].session, text: 'ready' }, req, res);
+    assert.equal(ok[0], 400, 'recognised as jj: the answer is about the message, not about the passkey');
+    const stranger = await again._test.handlers['/api/talk/turn']({ session: 'made-up', text: 'ready' }, req, res);
+    assert.equal(stranger[0], 403);
+    assert.doesNotMatch(readFileSync(join(s.state, 'talk-sessions.json'), 'utf8'), new RegExp(opened[1].session), 'only a hash of the token is kept');
+  } finally { rmSync(s.dir, { recursive: true, force: true }); }
+});
