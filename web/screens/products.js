@@ -3,7 +3,7 @@
 import * as api from '../lib/api.js';
 import { revisionLine } from '../lib/mini.js';
 import {
-  h, put, cap, card, dot, kv, raw, usd, count, when, ext, stateChip, isImported, IMPORTED, openSheet, squircle, field,
+  h, put, cap, card, dot, kv, raw, usd, count, when, ext, stateChip, isImported, IMPORTED, EARLIER_HREF, openSheet, squircle, field,
 } from '../lib/ui.js';
 
 const isRed = (r) => r.state === 'red';
@@ -72,8 +72,8 @@ function sheet(p, { lessons, tickets, council }) {
         h('span.small.dim', {}, [when(r.finished), isImported(r) ? IMPORTED : null].filter(Boolean).join(' · ')),
         revisionNote(r, runs, council))))
         : h('p.plain', {}, 'No build of this product is recorded yet.')),
-    (p.history || []).length ? h('div', {}, cap('history: earlier builds, not built here'),
-      p.history_note ? h('p.small.dim', {}, p.history_note) : null,
+    p.history_of ? h('p.small.dim', {}, 'An earlier version was built on Cambrian’s private system. ',
+      h('a.link', { href: EARLIER_HREF }, 'Where the lessons came from')) : null,
       h('ul.rows', {}, p.history.map((r) => h('li', {},
         h('a', { href: '#/receipts/' + encodeURIComponent(r.id) },
           h('span', {}, r.title || r.id),
@@ -87,10 +87,11 @@ function sheet(p, { lessons, tickets, council }) {
 }
 
 export async function render(root, arg) {
-  const { products = [] } = await api.get('products.json');
+  const all = (await api.get('products.json')).products || [];
+  const products = all.filter((p) => !p.imported);   // a product built elsewhere is shown under Lessons, never here
   put(root,
     h('header.head', {}, h('p.eyebrow', {}, 'Products'), h('h1.statement', {}, 'What Cambrian has built.'),
-      h('p.lede', {}, 'Each product links to every run that built it, red ones included.')),
+      h('p.lede', {}, 'Each product links to every build that made it, failed ones included.')),
     products.length ? h('div.products', {}, products.map(productCard))
       : h('p.plain', {}, 'No product is recorded yet.'));
   if (arg) {

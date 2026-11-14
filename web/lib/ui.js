@@ -104,6 +104,9 @@ export function stateChip(state) {
 
 export const IMPORTED = "earlier build on Cambrian's private setup";
 export const isImported = (x) => x?.origin === 'private-line';
+/** The one section where builds made before this repository are shown, and where every other screen points. */
+export const EARLIER = 'Where the lessons came from: earlier builds on Cambrian’s private system';
+export const EARLIER_HREF = '#/lessons/earlier';
 export const originChip = (x) => (isImported(x) ? h('span.origin', {}, IMPORTED) : null);
 
 export const cap = (text) => h('span.cap', {}, text);

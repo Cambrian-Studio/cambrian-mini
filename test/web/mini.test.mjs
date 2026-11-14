@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { capitalFigures, councilLine, stakeLine, creditsLine } from '../../web/lib/ui.js';
-import { compounding, STEPS } from '../../web/lib/mini.js';
+import { compounding, STEPS, lessonsApplied } from '../../web/lib/mini.js';
 import { story, playerStates, liveStates, STEP_MS, stationReport, setMembers } from '../../web/screens/line.js';
 
 const at = (p) => fileURLToPath(new URL(`../../${p}`, import.meta.url));
@@ -50,19 +50,36 @@ test('capital cards: a figure the record does not hold leaves its card out', () 
     'a stake without its transaction, or a credit figure that is not a number, is not shown');
 });
 
-test('the compounding panel counts from the record', () => {
-  const summary = runs.map((r) => ({ state: r.state, finished: r.finished, attempts: r.attempts.length, usd: r.cost.usd }));
-  const panel = Object.fromEntries(compounding({ products: [product], lessons, runs: summary }).map(([k, v, note]) => [k, [v, note]]));
-  assert.deepEqual(Object.keys(panel), ['Products shipped', 'Lessons signed', 'First-try pass rate', 'Cost per working build']);
-  assert.equal(panel['Products shipped'][0], '0', 'no product in the record has a public link');
-  assert.equal(panel['Lessons signed'][0], String(lessons.filter((l) => l.accepted_by).length));
-  assert.equal(panel['First-try pass rate'][0], '33%');
-  assert.match(panel['First-try pass rate'][1], /^1 of 3 /);
-  assert.equal(panel['Cost per working build'][0], '$2.68');
+test('the home page figures count only builds made here, and each says where to check it', () => {
+  const summary = allRuns.map((r) => ({ id: r.ticket.id, origin: r.origin ?? 'mini', state: r.state, finished: r.finished,
+    attempts: r.attempts.length, usd: r.cost.usd }));
+  const rows = compounding({ lessons, runs: summary });
+  assert.deepEqual(rows.map((r) => r[0]), ['Lessons in force', 'Lessons that changed a brief', 'First-try passes', 'Cost per working build']);
+  assert.deepEqual(rows.map((r) => r[3]), ['#/lessons', '#/line', '#/receipts', '#/receipts'], 'each figure links to the screen that shows its source');
+  const here = summary.filter((r) => r.origin !== 'private-line');
+  assert.equal(rows[0][1], String(lessons.length));
+  assert.equal(rows[1][1], '2', 'write-files-early and no-dependency-auditing changed the briefs built here');
+  assert.equal(rows[2][1], `${here.filter((r) => /^green/.test(r.state) && r.attempts === 1).length} of ${here.length}`);
+  assert.equal(here.length >= 2, true);
+  const spent = here.reduce((s, r) => s + r.usd, 0);
+  assert.equal(rows[3][1], `$${(spent / here.filter((r) => /^green/.test(r.state)).length).toFixed(2)}`);
+  // the three earlier builds change none of the figures
+  assert.deepEqual(compounding({ lessons, runs: here }), rows);
   const empty = compounding({});
-  assert.equal(empty[2][2], '0 of 0 recorded builds');
-  assert.equal(empty[2][1], null, 'no rate without a build');
-  assert.equal(empty[3][1], null, 'no cost without a working build');
+  assert.deepEqual(empty.map((r) => r[1]), ['0', null, null, null], 'no build made here: no rate and no cost are shown');
+});
+
+test('Watch a build shows the lessons that changed the brief, the earlier build each came from, and the line that cut the idea down', () => {
+  const brief = json('data/tickets/upread-mini-086cdf.json');
+  const loop = lessonsApplied(brief, lessons);
+  assert.deepEqual(loop.rows.map((r) => r.lesson), ['write-files-early', 'no-dependency-auditing']);
+  for (const r of loop.rows) {
+    assert.match(r.what, /Write files early; do not audit dependency source/);
+    assert.match(r.from_run, /^upread-v1-/);
+  }
+  assert.match(loop.said, /Upread v1 tried all of it at once and timed out/, 'the idea was cut down by pointing at the earlier build that ran out of time');
+  assert.equal(loop.said_by, 'member', 'and the record says who wrote that: here the member, not Cambrian');
+  assert.deepEqual(lessonsApplied(null, lessons), { rows: [], said: null, said_by: null });
 });
 
 test('the replay tells the recorded product in seven lines and claims nothing the runs do not carry', () => {

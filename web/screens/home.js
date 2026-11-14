@@ -59,8 +59,9 @@ export async function render(root) {
     section('compounds', 'Every product makes the next one better.', null,
       h('div.trio', {}, COMPOUNDS.map(([title, line, next]) => card('div.pad.say', { br: next }, {},
         h('b', {}, title), h('span', {}, line)))),
-      card('div.pad.cb-card2.panel', {}, {}, compounding({ products, lessons, runs }).map(([label, value, note]) =>
-        h('div.stat', {}, h('span.cap', {}, label),
+      card('div.pad.cb-card2.panel', {}, {}, compounding({ lessons, runs }).map(([label, value, note, href]) =>
+        h('a.stat', { href, 'aria-label': `${label}: ${value || 'not recorded'}. ${note}. See where it comes from.` },
+          h('span.cap', {}, label),
           h('span.big', { class: value ? '' : 'is-none' }, value || 'Not recorded'), h('span.sub', {}, note))))),
 
     section('capital', 'Idle capital, put to work.',
