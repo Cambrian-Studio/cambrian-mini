@@ -76,7 +76,7 @@ export async function render(root) {
 
     section('collective', 'A collective, not a crowd.',
       'Cambrian Collective is invitation-only. Builders, designers, engineers and backers shape what gets made, '
-      + 'with their work or their capital. Three founding members today. Built for a hundred.',
+      + 'with their taste and their capital. Three founding members today. Built for a hundred.',
       h('div.cb-members.flush.four', {},
         (council?.members || []).map((m) => memberCard(m, { bl: m.role || 'Council', br: [dot(), 'Team'] })),
         card('a.cb-member.invite', { br: 'By invitation' }, { href: ACCESS, ...out, 'aria-label': 'By invitation. Request access.' }))),
