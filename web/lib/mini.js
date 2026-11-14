@@ -9,10 +9,11 @@ export const STEPS = [
   ['The brief.', 'Cambrian writes what it is, how it will be checked and what it may cost. '
     + 'An open model writes it inside verified hardware, so anyone can confirm which model wrote it.'],
   ['The collective decides.', 'Members sign the brief with passkeys. Nothing is built until enough of them do.'],
-  ['The build.', 'AI agents build it in a sealed workspace on NEAR AI, within the budget the members signed.'],
+  ['The build.', 'AI agents build it in a sealed workspace, every model call going through NEAR AI, within the budget the members signed.'],
   ['The checks.', 'Every check in the brief runs. If one fails, the build stops and Cambrian drafts a lesson.'],
   ['Live.', 'A preview link goes up, and the product ships.'],
-  ['On the record.', 'What it cost, which models did the work, who signed. Recorded on NEAR, so anyone can check it.'],
+  ['On the record.', 'What it cost, which models did the work, who signed: all in one record. '
+    + 'Its hash is logged on NEAR, so anyone can check the record has not changed.'],
 ];
 
 const isGreen = (r) => /^green/.test(String(r.state));

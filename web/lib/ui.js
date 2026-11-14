@@ -173,6 +173,18 @@ export function provenance(drafted, att) {
 
 // The brief card: what a ticket asks for, in words a member can check.
 // `meta` names what the corners say: { from: the member who brought the idea, hash: the ticket hash }.
+// A check exactly as the builder and the checker get it: the command it runs or the file and patterns it reads.
+export function checkExact(c) {
+  if (!c || typeof c === 'string') return String(c || '');
+  if (c.kind === 'run') return `run: ${c.run}${c.network === 'registry' ? '  (package registry reachable)' : '  (no network)'}`;
+  if (c.kind === 'no_external_hosts') return `no other host named anywhere under ${c.dir}/`;
+  const parts = [`file: ${c.path}${c.exists === false ? ' must not exist' : ''}`];
+  if (c.contains) parts.push(`contains ${c.contains.map((x) => JSON.stringify(x)).join(' and ')}`);
+  if (c.matches) parts.push(`matches ${c.matches.map((x) => `/${x}/`).join(' and ')}`);
+  if (c.not_matches) parts.push(`matches none of ${c.not_matches.map((x) => `/${x}/`).join(', ')}`);
+  if (c.count) parts.push(`/${c.count.pattern}/ exactly ${c.count.equals} time(s)`);
+  return parts.join('; ');
+}
 export function briefCard(brief, lint, extra, att, meta = {}) {
   const b = brief || {};
   const budget = b.budget || {};
@@ -184,22 +196,25 @@ export function briefCard(brief, lint, extra, att, meta = {}) {
   }, {},
   h('h3', {}, b.title || b.id || 'Untitled brief'),
   b.product ? h('p.fragment', {}, String(b.product).toLowerCase()) : null,
-  b.goal ? h('p.goal', {}, b.goal) : (b.task ? h('p.goal', {}, b.task) : null),
+  b.goal ? h('p.goal', {}, b.goal) : null,
+  // The task is what the builder is told, word for word. A signature covers it, so it is shown in full, not summarised.
+  b.task ? h('div', {}, cap('what the builder is told, in full'), h('p.task', {}, b.task)) : null,
   checks.length ? h('div', {}, cap('done when'),
-    h('ul.checks', {}, checks.map((c) => h('li', {}, checkWords(c))))) : null,
+    h('ul.checks', {}, checks.map((c) => h('li', {}, checkWords(c),
+      typeof c === 'string' ? null : h('span.exact', {}, checkExact(c)))))) : null,
   (b.out_of_scope || []).length ? h('div', {}, cap('out of scope'),
     h('p.dim', {}, b.out_of_scope.join(' · '))) : null,
   h('div.kvs', {},
     kv('Budget', [usd(budget.usd), budget.calls ? `${budget.calls} calls` : null,
       budget.minutes ? `${budget.minutes} min` : null].filter(Boolean).join(' · ')),
-    kv('Compute', 'NEAR AI, built in a sealed workspace'),
+    kv('Compute', 'model calls through NEAR AI; built in a sealed workspace'),
     d ? kv('Brief model', modelSigned(att) ? 'model-signed, ' : 'not verified here, ', raw(d.model)) : null),
   lintChips(lint), provenance(d, att), extra || null);
 }
 
 // What the capital beat says. While the stake is a placeholder it says nothing about staking; once a stake
 // transaction is recorded it says how compute is paid for at the account level, never per build.
-export const CAPITAL_RECORDED = 'Staked NEAR earns compute credits on NEAR AI. Builds draw on them, topped up with credits we bought.';
+export const CAPITAL_RECORDED = 'Staked NEAR earns compute credits on NEAR AI.';
 export function capitalCopy(doc) {
   if (!doc || doc.placeholder === true || !doc.stake?.tx) {
     return { title: 'What the builds cost, from the receipts.',

@@ -67,7 +67,7 @@ export async function render(root) {
     section('capital', 'Idle capital, put to work.',
       'Most capital in this ecosystem sits still, in treasuries, staked tokens and funds waiting to deploy. '
       + 'NEAR AI lets you stake NEAR and receive AI compute credits in return. The NEAR stays staked and stays yours. '
-      + 'Cambrian puts the credits to work, and the collective decides what they build.',
+      + 'The credits are there to pay for builds, and the collective decides what gets built. No build so far was paid from the stake.',
       stakeLine(stake) ? h('p.body', {}, stakeLine(stake), ' ',
         stake.stake?.tx_url ? h('a.link', { href: stake.stake.tx_url, ...out }, 'The stake transaction') : null) : null,
       capitalCards(stake),

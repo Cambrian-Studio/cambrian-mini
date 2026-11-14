@@ -223,7 +223,7 @@ export function story(product, runs, { council = null, lessons = [], onChain = [
       : 'No signature is recorded.');
 
   const sealed = (first.attempts || []).some((x) => x.walls);
-  lines.push(`Agents built it${sealed ? ' in a sealed workspace' : ''}${imported ? '' : ' on NEAR AI'}. `
+  lines.push(`Agents built it${sealed ? ' in a sealed workspace' : ''}${imported ? '' : ', with every model call going through NEAR AI'}. `
     + `${plural(first.cost?.calls ?? 0, 'model call')}, ${usd(first.cost?.usd)}.`);
 
   const red = seq.find((r) => r.state === 'red');

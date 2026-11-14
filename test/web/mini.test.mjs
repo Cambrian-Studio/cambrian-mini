@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { capitalFigures, councilLine, stakeLine, creditsLine } from '../../web/lib/ui.js';
+import { capitalFigures, councilLine, stakeLine, creditsLine, checkExact } from '../../web/lib/ui.js';
 import { compounding, STEPS, lessonsApplied } from '../../web/lib/mini.js';
 import { story, playerStates, liveStates, STEP_MS, stationReport, setMembers } from '../../web/screens/line.js';
 
@@ -126,7 +126,7 @@ test('Watch a build tells a real build from its record and its brief: who sent i
   assert.match(idea, /^Clemens described the idea: Upread Mini\./);
   assert.equal(wrote, 'Cambrian wrote the brief, with 4 checks and a $1.00 budget.');
   assert.equal(signed, 'Clemens and Michael signed.');
-  assert.equal(build, 'Agents built it in a sealed workspace on NEAR AI. 9 model calls, $0.43.');
+  assert.equal(build, 'Agents built it in a sealed workspace, with every model call going through NEAR AI. 9 model calls, $0.43.');
   assert.equal(checks, 'Every check passed.');
   assert.match(live, /^A preview link went up/);
   assert.equal(record, 'Recorded on NEAR.');
@@ -155,4 +155,16 @@ test('the stake line and the credits line say only what the record holds', () =>
   const figures = capitalFigures({ ...stake, inference_spend: { mini_line_usd: 1.09, private_line_usd: 5.36 } });
   assert.equal(figures[0].note, 'about €10,000 when staked · see the transaction');
   if (stake.credits.earned_from_stake_usd === null) assert.equal(creditsLine(stake), null, 'nothing is shown while no credits are recorded');
+});
+
+test('the signing screen shows what a signature covers: the task in full and each check exactly as it runs', () => {
+  const brief = json('data/tickets/postmark-6ee0a5.json').ticket;
+  const ui = readFileSync(at('web/lib/ui.js'), 'utf8');
+  assert.match(ui, /cap\('what the builder is told, in full'\), h\('p\.task', \{\}, b\.task\)/, 'the task is rendered whole, beside the goal');
+  assert.equal(checkExact(brief.green[0]), 'run: node test.mjs  (no network)');
+  assert.match(checkExact(brief.green[3]), /^file: app\.js; matches none of \/\[Dd\]ebug\|\[Bb\]ypass/);
+  assert.equal(checkExact({ kind: 'run', run: 'npm ci && npm test', network: 'registry' }), 'run: npm ci && npm test  (package registry reachable)');
+  const page = readFileSync(at('web/screens/approvals.js'), 'utf8');
+  assert.match(page, /const expected = await approvalChallenge\(await approvalSubject\(await hashOfAsync\(t\), taste_note\)\);/);
+  assert.match(page, /if \(options\.challenge !== expected\) throw new Error/, 'the page refuses a challenge it did not work out itself');
 });

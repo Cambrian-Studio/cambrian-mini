@@ -532,3 +532,7 @@ a.capcard { text-decoration: none; }
 .story [data-state="off"] .applied { visibility: hidden; }
 a.stat { text-decoration: none; color: inherit; }
 a.stat:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; }
+
+/* the brief card: the task in full and each check exactly as it runs */
+.brief .task { white-space: pre-wrap; font-size: 13.5px; line-height: 1.5; color: var(--caption); margin: 4px 0 0; }
+.brief .exact { display: block; font: 400 11.5px/1.4 var(--font-mono); color: var(--muted); overflow-wrap: anywhere; }
