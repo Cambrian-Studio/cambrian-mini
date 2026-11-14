@@ -8,7 +8,7 @@ Cambrian Mini is a system in which a small group of people, a council, approves 
 
 ## What this repository is, and is not
 
-- It is the open part of Cambrian, a product studio owned by its members, written for NEAR HACKATHON. One Node app with no runtime dependencies ([`package.json`](package.json)).
+- It is what we built for NEAR HACKATHON. Cambrian is a product studio owned by its members. One Node app with no runtime dependencies ([`package.json`](package.json)).
 - Every commit is dated 12, 13 or 14 November 2026. What was reused from Cambrian's private system is listed in the README under [Built during the hackathon](README.md#built-during-the-hackathon).
 - It is not Cambrian's private system. Three earlier builds from that system are kept here as imported records, labelled as such, because the lessons came from them ([Where the lessons came from](README.md#where-the-lessons-came-from-earlier-builds-on-cambrians-private-system)).
 - It is not decentralised today. Approval is 2 of 3 passkeys checked by our code on our machine. The DAO vote is not built ([Trust model](README.md#trust-model)).

@@ -46,7 +46,7 @@ export async function render(root) {
       h('div.actions', {},
         h('a.btn.tall', { href: '#/line' }, 'Watch an idea become a product'),
         h('a.btn.ghost.tall', { href: ACCESS, ...out }, 'Request access')),
-      h('p.sub.fine', {}, 'Cambrian Mini is the part of Cambrian we opened for the NEAR hackathon: '
+      h('p.sub.fine', {}, 'Cambrian Mini is what we built for NEAR HACKATHON: '
         + 'the path from an idea to a live product, with every step on the record.')),
 
     section('steps', 'From an idea to a live product, in seven steps.', null,

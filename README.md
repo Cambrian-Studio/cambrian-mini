@@ -2,7 +2,7 @@
 
 Cambrian Mini is a system in which a small group of people, a council, approves a written description of a product, a brief, by signing it with passkeys (the fingerprint or face sign-in built into phones and laptops). When enough of them have signed, an AI coding agent builds the product in a sandbox with a fixed budget. Every build leaves a record of each model call, what it cost and which checks passed, and the hash of that record can be logged on NEAR mainnet, where anyone can check it.
 
-It is for a collective that wants AI-built products with a record anyone can verify: who approved what, and what each build cost. It is the open part of Cambrian, a product studio owned by its members, written for NEAR HACKATHON. The one-page account is [`CAMBRIAN.md`](CAMBRIAN.md).
+It is for a collective that wants AI-built products with a record anyone can verify: who approved what, and what each build cost. Cambrian is a product studio owned by its members. Cambrian Mini is what we built for NEAR HACKATHON. The one-page account is [`CAMBRIAN.md`](CAMBRIAN.md).
 
 Two products are live, each built here on 14 November from a brief that two council members signed:
 
