@@ -17,9 +17,17 @@ We staked our own capital first: 3,045 NEAR, about €10,000 when staked on 13 N
 2. **`npm run judge`, seconds.** Clone, `npm ci`, `npm run judge`: 17 numbered checks on your machine with no keys, ending `judge: 17 checks — 17 ok, 0 skipped, 0 failed`. Measured from a fresh clone on 14 November: about 5 s on macOS, 3 s in a plain Linux container (`node:22-bookworm`). Each skip prints its reason. Checks 16 and 17 read NEAR mainnet from a public archival node.
 3. **Your own build, about a minute.** `npm run solo` with your own NEAR AI key: you talk an idea through, sign the brief with your own passkey as a council of one, and watch it build. Measured on 13 November from `git clone` to the first preview: 57 s and $0.015. The next section has the steps. Without a key, `npm run demo` sends one brief through the same build path with a stand-in agent and a throwaway test council, and you see `state     green-no-preview` (on Linux only where bubblewrap can build its sandbox; in a default Docker container you see `state     blocked`, see [Try it](#try-it)).
 
-In a plain Linux container without user namespaces, `npm test` ends `280 passed, 0 failed, 12 skipped (each prints its reason above)` and the judge ends `16 ok, 1 skipped, 0 failed`: every check that needs no sandbox passes, including the ones that re-verify the council's signatures and read mainnet. The 12 tests and the judge's check 10 skip there because they would run agent or product code, which this code refuses to do without a sandbox it can build; the note under [Try it](#try-it) has the command for the full run.
+In a plain Linux container without user namespaces, `npm test` ends `281 passed, 0 failed, 12 skipped (each prints its reason above)` and the judge ends `16 ok, 1 skipped, 0 failed`: every check that needs no sandbox passes, including the ones that re-verify the council's signatures and read mainnet. The 12 tests and the judge's check 10 skip there because they would run agent or product code, which this code refuses to do without a sandbox it can build; the note under [Try it](#try-it) has the command for the full run.
 
 Every build call is real, priced and signed by NEAR AI's gateway, and both briefs are signed inside the model's TEE. Conversation turns are real and priced, and not signed. Nothing in the record is simulated.
+
+## Why NEAR
+
+- **Staked NEAR becomes compute.** The collective staked 3,045 NEAR with NEAR AI ([the stake transaction](https://nearblocks.io/txns/9US5CcTaSYiX2DS7pGLWoS4sYpBZ4s9BvSEq1CgoJ6eo)), and the stake earns NEAR AI credits: $1.86 by 14 Nov, at $60.90 a month, [as reported by NEAR AI](web/assets/evidence/nearai-farmed-20261114.png) ([the statement's hash on NEAR](https://nearblocks.io/txns/GW6BSjHUEVVKzQMtNUBX9RnBCQVYfJhx3HJo5qr3j7ii)). The NEAR stays staked. No build so far was paid from the stake.
+- **Every build record is public, timestamped and checkable.** The hash of each record is logged on NEAR mainnet by one recorder account through a contract whose code cannot change. `node scripts/verify-receipt.mjs --onchain data/runs/postmark-6ee0a5/onchain.json` reads mainnet with no key and checks ten things about that transaction. What the chain does and does not show is under [Trust model](#trust-model).
+- **NEAR AI's gateway signs every build call.** All 20 model calls of the two builds carry the gateway's signature, and each verifies offline (`npm run judge`, check 8). The conversation turns before a brief are priced and not signed.
+- **The briefs are checked against NEAR AI's TEE reports.** Each of the two briefs is signed by a key inside the model's TEE. Checked, offline, on 14 November (`npm run judge`, check 5): the signature over the brief, and the Intel signature chain of the TEE report that names the signing key. The reports were fetched on 14 November at 11:48 UTC, about twelve hours after the calls, so they show the key is in a TEE now, not that it was at the moment of the call. Not checked: that the measured software is a build NEAR AI published, the platform's patch level, and the GPU evidence ([Known limits](#known-limits)).
+- **Not on chain yet: the council.** Who the members are, their keys and the 2 of 3 rule are in `data/council.json`, a file in this repository, and approvals are checked by our code. A council on chain is next, and is not built ([what is next](#what-is-live-today-and-what-is-next)).
 
 ## Run your own line
 
@@ -93,15 +101,15 @@ npm ci
 **1. `npm test`** — unit tests and attack tests. Expect the last line:
 
 ```
-292 passed, 0 failed
+293 passed, 0 failed
 ```
 
-On macOS the last line is `291 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only.
+On macOS the last line is `292 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only.
 
 **On Linux the sandbox needs unprivileged user namespaces.** Install bubblewrap first (`sudo apt-get install bubblewrap`). Bubblewrap can only build its sandbox where the kernel lets an ordinary user create a namespace. A default Docker container does not, and neither does Ubuntu 24.04 until you run `sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0` (CI does exactly that, in `.github/workflows/ci.yml`). Without it nothing is broken, but the build path refuses to run anything it cannot wall in, and you see this instead of the lines in this section:
 
 ```
-280 passed, 0 failed, 12 skipped (each prints its reason above)        npm test
+281 passed, 0 failed, 12 skipped (each prints its reason above)        npm test
 judge: 17 checks — 16 ok, 1 skipped, 0 failed                          npm run judge
 state     blocked — no sandbox on this machine (bwrap is installed but cannot create a namespace here; …)   npm run demo
 ```

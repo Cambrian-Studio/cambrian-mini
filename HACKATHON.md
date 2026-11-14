@@ -38,7 +38,6 @@ All code, tests and documents in this repository were written by AI coding agent
 The team lead chooses the tracks at submission. The ones this project was built toward:
 
 - `security` — sandboxed agents, spend caps, function-call access keys, and TEE-signed model calls: the capture and the offline verification are built and tested on recorded NEAR AI responses; the 20 calls of the two builds made here carry gateway signatures and both briefs carry a model-TEE signature; TEE image provenance is not checked.
-- `privacy` — inference on NEAR AI Cloud with per-response signatures verified offline (same status as above).
 - `business` — a product line where humans set the constraints (approval, budget) and agents do the building.
 - `open` — the approval, budget and record path is not tied to one kind of product: any collective can run it with its own council (`npm run solo` is the smallest case).
 

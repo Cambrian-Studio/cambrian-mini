@@ -30,6 +30,14 @@ Two products were built here on 14 November. Each brief came out of a conversati
 - No build so far was paid from the stake. The account also holds credits we bought, and which credits paid for which call is not recorded ([`data/stake.json`](data/stake.json)).
 - The two builds cost $1.09 in model calls together, the sum of their records ([`data/runs`](data/runs)).
 
+## Why NEAR
+
+- **Staked NEAR becomes compute.** The collective staked 3,045 NEAR with NEAR AI ([the stake transaction](https://nearblocks.io/txns/9US5CcTaSYiX2DS7pGLWoS4sYpBZ4s9BvSEq1CgoJ6eo)), and the stake earns NEAR AI credits: $1.86 by 14 Nov, at $60.90 a month, [as reported by NEAR AI](web/assets/evidence/nearai-farmed-20261114.png) ([the statement's hash on NEAR](https://nearblocks.io/txns/GW6BSjHUEVVKzQMtNUBX9RnBCQVYfJhx3HJo5qr3j7ii)). The NEAR stays staked. No build so far was paid from the stake.
+- **Every build record is public, timestamped and checkable.** The hash of each record is logged on NEAR mainnet by one recorder account through a contract whose code cannot change. `node scripts/verify-receipt.mjs --onchain data/runs/postmark-6ee0a5/onchain.json` reads mainnet with no key and checks ten things about that transaction. What the chain does and does not show is under [Trust model](README.md#trust-model).
+- **NEAR AI's gateway signs every build call.** All 20 model calls of the two builds carry the gateway's signature, and each verifies offline (`npm run judge`, check 8). The conversation turns before a brief are priced and not signed.
+- **The briefs are checked against NEAR AI's TEE reports.** Each of the two briefs is signed by a key inside the model's TEE. Checked, offline, on 14 November (`npm run judge`, check 5): the signature over the brief, and the Intel signature chain of the TEE report that names the signing key. The reports were fetched on 14 November at 11:48 UTC, about twelve hours after the calls, so they show the key is in a TEE now, not that it was at the moment of the call. Not checked: that the measured software is a build NEAR AI published, the platform's patch level, and the GPU evidence ([Known limits](README.md#known-limits)).
+- **Not on chain yet: the council.** Who the members are, their keys and the 2 of 3 rule are in `data/council.json`, a file in this repository, and approvals are checked by our code. A council on chain is next, and is not built ([what is next](#what-is-next)).
+
 ## How to verify in five minutes
 
 1. **The replay.** Open <https://cambrian-line-replay.vercel.app/#/verify>, pick a build and press **Verify this receipt**. Your browser recomputes the sha256 of the record.
