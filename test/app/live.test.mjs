@@ -437,7 +437,7 @@ test('a member stays signed in to a conversation across a restart of the app', a
   const s = await setup({ exposed: true });
   try {
     const o = await s.post('/api/talk/open/options', { member: 'jj' });
-    const opened = await s.post('/api/talk/open', { member: 'jj', ...s.tc.authenticators.jj.assert(o[1].challenge) });
+    const opened = await s.post('/api/talk/open', { talk_sha256: o[1].talk_sha256, ...s.tc.authenticators.jj.assert(o[1].challenge) });
     const again = await makeLive(s.cfg, { near: s.near });   // the same state, a new process
     const res = { writeHead() {}, write() {}, end() {} };
     const req = { socket: { remoteAddress: '127.0.0.1' }, headers: {} };
