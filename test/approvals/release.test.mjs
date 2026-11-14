@@ -57,10 +57,10 @@ test('a stranger is not a council member', () => {
   const r = verifyRelease(t, [{ ...sign('jj', t), member: 'mallory' }, sign('clemens', t)], council);
   assert.equal(r.ok, false); assert.match(r.why, /not a council member/);
 });
-test('wrong origin, wrong site, no user presence, wrong ceremony type: each refused', () => {
+test('wrong origin, wrong site, no user presence, no user verification, wrong ceremony type: each refused', () => {
   const { council, sign } = makeTestCouncil(); const t = ticket(); const good = sign('clemens', t);
   for (const [forge, re] of [[{ origin: 'https://evil.example' }, /origin/], [{ rpId: 'evil.example' }, /another site/],
-    [{ flags: 0x00 }, /user-present/], [{ type: 'webauthn.create' }, /type/]]) {
+    [{ flags: 0x00 }, /user-present/], [{ flags: 0x01 }, /user-verified flag is not set/], [{ type: 'webauthn.create' }, /type/]]) {
     const r = verifyRelease(t, [good, sign('jj', t, forge)], council);
     assert.equal(r.ok, false, JSON.stringify(forge)); assert.match(r.why, re);
   }

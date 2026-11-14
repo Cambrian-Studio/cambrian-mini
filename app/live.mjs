@@ -313,7 +313,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       const sha = hashOf({ talk: 'open', nonce: randomBytes(16).toString('hex') }); pendingOpen.set(sha, Date.now());
       for (const [k, at] of pendingOpen) if (Date.now() - at > 5 * 60 * 1000) pendingOpen.delete(k);
       return [200, { talk_sha256: sha, challenge: talkChallenge(sha), rpId: c.rp.id,
-        allowCredentials: creds.map((k) => ({ type: 'public-key', id: k.id })), userVerification: 'preferred', timeout: 120000 }];
+        allowCredentials: creds.map((k) => ({ type: 'public-key', id: k.id })), userVerification: 'required', timeout: 120000 }];
     },
     '/api/talk/open': async (body) => {
       const sha = String(body.talk_sha256 ?? '');
@@ -451,7 +451,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       if (!m?.credentials.length) return [403, { error: 'not an enrolled council member' }];
       const sha = d.brief.conversation.sha256;
       return [200, { idea_sha256: sha, challenge: ideaChallenge(sha), rpId: cl.rp.id,
-        allowCredentials: m.credentials.map((k) => ({ type: 'public-key', id: k.id })), userVerification: 'preferred', timeout: 120000 }];
+        allowCredentials: m.credentials.map((k) => ({ type: 'public-key', id: k.id })), userVerification: 'required', timeout: 120000 }];
     },
     '/api/talk/send': async (body) => {
       const c = loadConv(body.conversation_id);
@@ -601,7 +601,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       if (shas.length > MAX_ATTACHMENTS || shas.some((x) => !/^[0-9a-f]{64}$/.test(String(x)))) return [400, { error: 'attachment refused', why: `At most ${MAX_ATTACHMENTS} images, each named by its sha256.` }];
       const sha = ideaHash(body.idea, shas);
       return [200, { idea_sha256: sha, challenge: ideaChallenge(sha), rpId: c.rp.id,
-        allowCredentials: m.credentials.map((k) => ({ type: 'public-key', id: k.id })), userVerification: 'preferred', timeout: 120000 }];
+        allowCredentials: m.credentials.map((k) => ({ type: 'public-key', id: k.id })), userVerification: 'required', timeout: 120000 }];
     },
 
     '/api/approve/options': async (body) => {
@@ -610,7 +610,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       if (!m) return [403, { error: 'not a council member' }];
       if (!m.credentials.length) return [409, { error: 'not enrolled', why: `${m.name} has not enrolled a passkey yet (one-time invite link).` }];
       const sha = ticketHash(entry.ticket); const note = tasteNote(body.taste_note);
-      return [200, { ticket_sha256: sha, taste_note: note, challenge: approvalChallenge(approvalSubject(sha, note)), rpId: c.rp.id, allowCredentials: m.credentials.map((k) => ({ type: 'public-key', id: k.id })), userVerification: 'preferred', timeout: 120000 }];
+      return [200, { ticket_sha256: sha, taste_note: note, challenge: approvalChallenge(approvalSubject(sha, note)), rpId: c.rp.id, allowCredentials: m.credentials.map((k) => ({ type: 'public-key', id: k.id })), userVerification: 'required', timeout: 120000 }];
     },
     '/api/approve': async (body) => {
       const entry = readTicketEntry(cfg, body.ticket_id); if (!entry) return [404, { error: 'no such ticket' }];
@@ -644,7 +644,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       const c = council(cfg); const m = c.members.find((x) => x.id === inv.member);
       return [200, { member: m.id, name: m.name, challenge: inv.challenge, rp: { id: c.rp.id, name: c.rp.name },
         user: { id: Buffer.from(`cambrian-council:${m.id}`).toString('base64url'), name: m.id, displayName: `${m.name} (council)` },
-        pubKeyCredParams: [{ type: 'public-key', alg: -7 }], authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' }, attestation: 'none', timeout: 120000 }];
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }], authenticatorSelection: { residentKey: 'preferred', userVerification: 'required' }, attestation: 'none', timeout: 120000 }];
     },
     '/api/enrol': async (body) => {
       const tmpCouncil = join(cfg.state, 'council.enrol.json');   // enrol() checks against the site this server is on
@@ -662,7 +662,7 @@ export async function makeLive(cfg, { near = nearai } = {}) {
       const c = council(cfg); const m = c.members.find((x) => x.id === body.member);
       if (!m?.credentials.length) return [403, { error: 'not an enrolled council member' }];
       const sha = hashOf(draftBody(d));
-      return [200, { lesson_sha256: sha, challenge: lessonChallenge(sha), rpId: c.rp.id, allowCredentials: m.credentials.map((k) => ({ type: 'public-key', id: k.id })), userVerification: 'preferred' }];
+      return [200, { lesson_sha256: sha, challenge: lessonChallenge(sha), rpId: c.rp.id, allowCredentials: m.credentials.map((k) => ({ type: 'public-key', id: k.id })), userVerification: 'required' }];
     },
     '/api/lessons/accept': async (body) => {
       const doc = readJson(draftsFile, { v: 1, drafts: [] }); const d = doc.drafts.find((x) => x.id === body.lesson_id); if (!d) return [404, { error: 'no such draft' }];
