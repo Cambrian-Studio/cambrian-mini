@@ -229,18 +229,40 @@ export function capitalFigures(doc) {
   const out = [];
   if (real && s.amount_near && s.tx) {
     out.push({ label: 'Staked', value: `${num(s.amount_near) ? count(s.amount_near) : s.amount_near} NEAR`,
-      href: safeUrl(s.tx_url), note: 'See the transaction' });
+      href: safeUrl(s.tx_url),
+      note: typeof s.eur_when_staked === 'number' ? `about €${count(s.eur_when_staked)} when staked · see the transaction`
+        : 'See the transaction' });
   }
   const e = doc?.estimate || {};
   // An estimate is shown as NEAR AI's, with its date, and only beside a recorded stake. It is not credits received.
   if (out.length && num(e.usd_per_month) && e.as_of) {
     out.push({ label: 'NEAR AI’s estimate', value: `~${usd(e.usd_per_month).replace(/\.00$/, '')}/month in credits`, note: day(e.as_of) });
   }
-  if (real && num(c.earned_from_stake_usd)) out.push({ label: 'Credits received', value: usd(c.earned_from_stake_usd) });
+  // credits are shown only with the day NEAR AI reported them; the card opens the evidence kept with the record
+  if (real && num(c.earned_from_stake_usd) && c.as_of) {
+    out.push({ label: 'Credits received', value: usd(c.earned_from_stake_usd), note: `as reported by NEAR AI on ${shortDay(c.as_of)}`,
+      href: safeUrl(c.evidence) });
+  }
   if (num(spend.mini_line_usd) || num(spend.private_line_usd)) {
     out.push({ label: 'Spent on products', value: usd((Number(spend.mini_line_usd) || 0) + (Number(spend.private_line_usd) || 0)) });
   }
   return out;
+}
+const SHORT = { day: 'numeric', month: 'short', timeZone: 'UTC' };
+const shortDay = (iso) => new Date(`${String(iso).slice(0, 10)}T00:00:00Z`).toLocaleDateString('en-GB', SHORT);
+/** "We staked our own capital first: 3,045 NEAR, about €10,000 when staked on 13 Nov, with NEAR AI." Null until a stake is recorded. */
+export function stakeLine(doc) {
+  const s = doc?.stake || {};
+  if (!doc || doc.placeholder === true || !s.amount_near || !s.tx) return null;
+  const eur = typeof s.eur_when_staked === 'number' ? `, about €${count(s.eur_when_staked)} when staked on ${shortDay(s.recorded_at)}` : '';
+  return `We staked our own capital first: ${count(s.amount_near)} NEAR${eur}, with NEAR AI.`;
+}
+/** "Credits received $1.70, as reported by NEAR AI on 14 Nov", with where to see it. Null until a figure with its date is recorded. */
+export function creditsLine(doc) {
+  const c = doc?.credits || {};
+  if (!doc || doc.placeholder === true || typeof c.earned_from_stake_usd !== 'number' || !c.as_of) return null;
+  return { text: `Credits received ${usd(c.earned_from_stake_usd)}, as reported by NEAR AI on ${shortDay(c.as_of)}`,
+    evidence: safeUrl(c.evidence), tx: safeUrl(c.statement_tx_url) };
 }
 export function capitalCards(doc) {
   return h('div.capital', {}, capitalFigures(doc).map((f) => card(f.href ? 'a.pad.capcard' : 'div.pad.capcard',

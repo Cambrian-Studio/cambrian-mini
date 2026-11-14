@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { capitalFigures, councilLine } from '../../web/lib/ui.js';
+import { capitalFigures, councilLine, stakeLine, creditsLine } from '../../web/lib/ui.js';
 import { compounding, STEPS } from '../../web/lib/mini.js';
 import { story, playerStates, liveStates, STEP_MS, stationReport, setMembers } from '../../web/screens/line.js';
 
@@ -37,12 +37,12 @@ test('capital cards: a figure the record does not hold leaves its card out', () 
   assert.deepEqual(capitalFigures({ placeholder: true }), []);
   assert.deepEqual(capitalFigures(null), []);
   const recorded = capitalFigures({ placeholder: false, stake: { amount_near: 100, tx: 'abc', tx_url: 'https://example.org/tx/abc' },
-    credits: { earned_from_stake_usd: 1.5 }, inference_spend: { mini_line_usd: 0.25, private_line_usd: 0 } });
+    credits: { earned_from_stake_usd: 1.5, as_of: '2026-11-14' }, inference_spend: { mini_line_usd: 0.25, private_line_usd: 0 } });
   assert.deepEqual(recorded.map((f) => f.label), ['Staked', 'Credits received', 'Spent on products']);
   assert.equal(recorded[0].value, '100 NEAR');
   assert.equal(recorded[0].href, 'https://example.org/tx/abc');
   const committed = capitalFigures({ ...json('data/stake.json'), inference_spend: { mini_line_usd: 0, private_line_usd: 5.363208 } });
-  assert.deepEqual(committed.map((f) => [f.label, f.value, f.note]), [['Staked', '3,045 NEAR', 'See the transaction'],
+  assert.deepEqual(committed.map((f) => [f.label, f.value, f.note]), [['Staked', '3,045 NEAR', 'about €10,000 when staked · see the transaction'],
     ['NEAR AI’s estimate', '~$60/month in credits', '13 Nov 2026'], ['Spent on products', '$5.36', undefined]],
     'the NEAR amount and its transaction first; a dollar estimate only with its date; no credits received until recorded');
   assert.match(committed[0].href, /^https:\/\/nearblocks\.io\/txns\/[1-9A-HJ-NP-Za-km-z]{43,44}$/);
@@ -121,4 +121,21 @@ test('a build card names its signers as the council file does', () => {
   assert.equal(stationReport(run, 'approved', 'on'), 'Signed by Clemens and Michael. Cambrian verified the signatures.');
   setMembers(null);
   assert.equal(stationReport(run, 'approved', 'on'), 'Signed by clemens and michael. Cambrian verified the signatures.', 'without the council file the ids are shown as they are');
+});
+
+test('the stake line and the credits line say only what the record holds', () => {
+  const stake = json('data/stake.json');
+  assert.equal(stakeLine(stake), 'We staked our own capital first: 3,045 NEAR, about €10,000 when staked on 13 Nov, with NEAR AI.');
+  assert.equal(stakeLine({ placeholder: true }), null);
+  assert.equal(stakeLine({ placeholder: false, stake: { amount_near: 100, tx: 'x', recorded_at: '2026-11-13T14:13:24Z' } }), 'We staked our own capital first: 100 NEAR, with NEAR AI.');
+  const withCredits = { ...stake, credits: { earned_from_stake_usd: 1.7, as_of: '2026-11-14', evidence: 'assets/evidence/nearai-credits-20261114.png',
+    statement_tx_url: 'https://nearblocks.io/txns/abc' } };
+  assert.deepEqual(creditsLine(withCredits), { text: 'Credits received $1.70, as reported by NEAR AI on 14 Nov', evidence: 'assets/evidence/nearai-credits-20261114.png',
+    tx: 'https://nearblocks.io/txns/abc' });
+  assert.equal(creditsLine({ ...stake, credits: { earned_from_stake_usd: 1.7 } }), null, 'no figure without the day it was reported');
+  const card = capitalFigures(withCredits).find((f) => f.label === 'Credits received');
+  assert.deepEqual([card.value, card.note, card.href], ['$1.70', 'as reported by NEAR AI on 14 Nov', 'assets/evidence/nearai-credits-20261114.png']);
+  const figures = capitalFigures({ ...stake, inference_spend: { mini_line_usd: 1.09, private_line_usd: 5.36 } });
+  assert.equal(figures[0].note, 'about €10,000 when staked · see the transaction');
+  if (stake.credits.earned_from_stake_usd === null) assert.equal(creditsLine(stake), null, 'nothing is shown while no credits are recorded');
 });

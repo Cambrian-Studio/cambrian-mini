@@ -10,7 +10,9 @@
     "tx_url": "https://nearblocks.io/txns/9US5CcTaSYiX2DS7pGLWoS4sYpBZ4s9BvSEq1CgoJ6eo",
     "network": "mainnet",
     "recorded_at": "2026-11-13T14:13:24Z",
-    "source": "read from a NEAR mainnet node on 2026-11-13: a stake call from the account with 3,045 NEAR attached"
+    "source": "read from a NEAR mainnet node on 2026-11-13: a stake call from the account with 3,045 NEAR attached",
+    "eur_when_staked": 10000,
+    "eur_source": "Clemens, value at purchase; not derived from a price feed"
   },
   "estimate": {
     "usd_per_month": 60,
@@ -29,7 +31,12 @@
     "earned_from_stake_usd": null,
     "bought_usd": null,
     "source": "not readable: NEAR AI's organisation balance needs a signed-in account, not an API key. On NEAR, the staking contract (stake.dao, get_farm_positions_for_account) shows the position as Active with 3,045 NEAR staked",
-    "read_at": "2026-11-14"
+    "read_at": "2026-11-14",
+    "as_of": null,
+    "evidence": null,
+    "statement_sha256": null,
+    "statement_tx": null,
+    "statement_tx_url": null
   },
   "inference_spend": {
     "source": "sum of the receipts in this repository",

@@ -4,15 +4,22 @@ Cambrian Mini is a system in which a small group of people, a council, approves 
 
 It is for a collective that wants AI-built products with a record anyone can verify: who approved what, and what each build cost. It is the open part of Cambrian, a product studio owned by its members, written for NEAR HACKATHON.
 
-The record holds one product so far: Upread, an app that reads an article to you one word at a time. Its three builds were made on Cambrian's private setup before this repository existed. They are imported here with their numbers unchanged and labelled as imported.
+Two products are live, each built here on 14 November from a brief that two council members signed:
+
+- **Upread Mini** reads a text to you one word at a time. [Open it](https://cambrian-upread-mini-crnw8wneo-cambrian-collective.vercel.app) · [its record](https://cambrian-line-replay.vercel.app/#/receipts/upread-mini-086cdf) · [the record's hash on NEAR](https://nearblocks.io/txns/CmFEiKKFuREVvmosTFMqiarbrekGyCSFHz2NnduWqBmv)
+- **Postmark** makes London postcards that unlock only within 150 m of the landmark. [Open it](https://cambrian-postmark-m2x6yxrfp-cambrian-collective.vercel.app) · [its record](https://cambrian-line-replay.vercel.app/#/receipts/postmark-6ee0a5) · [the record's hash on NEAR](https://nearblocks.io/txns/4wYmP1KUzFGkz8dhWQAgnW1Q7Y3dsswhJDRofLf1F5Hz)
+
+We staked our own capital first: 3,045 NEAR, about €10,000 when staked on 13 Nov, with NEAR AI. [The stake transaction](https://nearblocks.io/txns/9US5CcTaSYiX2DS7pGLWoS4sYpBZ4s9BvSEq1CgoJ6eo); `npm run judge` check 17 reads the position from mainnet.
 
 ## Three ways in
 
 1. **The hosted replay, instant.** Open <https://cambrian-line-replay.vercel.app/#/verify>, pick a build and press **Verify this receipt**. Your own browser recomputes the sha256 of that build's record and reports that it matches.
-2. **`npm run judge`, seconds.** Clone, `npm ci`, `npm run judge`: 16 numbered checks on your machine with no keys, ending `judge: 16 checks — 15 ok, 1 skipped, 0 failed`. Measured from a fresh clone on 14 November: about 5 s on macOS, 3 s in a plain Linux container (`node:22-bookworm`). Each skip prints its reason. Check 16 reads NEAR mainnet from a public archival node.
+2. **`npm run judge`, seconds.** Clone, `npm ci`, `npm run judge`: 17 numbered checks on your machine with no keys, ending `judge: 17 checks — 16 ok, 1 skipped, 0 failed`. Measured from a fresh clone on 14 November: about 5 s on macOS, 3 s in a plain Linux container (`node:22-bookworm`). Each skip prints its reason. Checks 16 and 17 read NEAR mainnet from a public archival node.
 3. **Your own build, about a minute.** `npm run solo` with your own NEAR AI key: you talk an idea through, sign the brief with your own passkey as a council of one, and watch it build. Measured on 13 November from `git clone` to the first preview: 57 s and $0.015. The next section has the steps. Without a key, `npm run demo` sends one brief through the same build path with a stand-in agent and a throwaway test council, and you see `state     green-no-preview` (on Linux only where bubblewrap can build its sandbox; in a default Docker container you see `state     blocked`, see [Try it](#try-it)).
 
-In a plain Linux container without user namespaces, `npm test` ends `275 passed, 0 failed, 11 skipped (each prints its reason above)` and the judge ends `14 ok, 2 skipped, 0 failed`: every check that needs no sandbox passes, including the ones that re-verify the council's signatures and read mainnet. The 11 tests and the judge's check 10 skip there because they would run agent or product code, which this code refuses to do without a sandbox it can build (check 5 skips on every machine, for the reason given under [Try it](#try-it), which also has the command for the full run).
+In a plain Linux container without user namespaces, `npm test` ends `276 passed, 0 failed, 11 skipped (each prints its reason above)` and the judge ends `15 ok, 2 skipped, 0 failed`: every check that needs no sandbox passes, including the ones that re-verify the council's signatures and read mainnet. The 11 tests and the judge's check 10 skip there because they would run agent or product code, which this code refuses to do without a sandbox it can build (check 5 skips on every machine, for the reason given under [Try it](#try-it), which also has the command for the full run).
+
+Every model call is real, priced and signed; nothing in the record is simulated. One exception is labelled wherever it appears: the three earlier builds of Upread were imported from Cambrian's private setup, and their calls are real and priced but carry no signatures.
 
 ## Run your own line
 
@@ -35,6 +42,13 @@ The first start installs the coding agent (OpenCode) once, then prints four link
 What it costs: one build may cost at most $2, a day at most $5 and the app in total at most $15; both are enforced before each model call. The run we timed on 13 November, from `git clone` to the first preview, took 57 seconds and cost $0.015: $0.006 for the conversation and the brief, $0.009 for the build. It built a Celsius and Fahrenheit converter on `Qwen/Qwen3.6-35B-A3B-FP8`, an open model NEAR AI hosts in a TEE, which is the solo default (set `LINE_MODEL` for another model; a larger model costs more). That run used a software passkey in a scripted browser, not a phone or a security key.
 
 What it does not do: nothing is recorded on NEAR, because a solo line has no recorder account. To log your records, deploy the contract and create a recorder key as `contracts/README.md` describes, then run `scripts/record-receipt.mjs` with your own account. Nothing is published either: no preview leaves your machine unless you set `VERCEL_TOKEN_FILE`. Everything a solo line makes is kept under `.solo/`, which git ignores, so the committed record stays as it is.
+
+## Built during the hackathon
+
+- **First commit:** 12 November 2026, 13:55 CET. Every commit in this repository is dated 12 to 14 November.
+- **What existed before:** Cambrian's private system, written from 3 November, and three builds of Upread it made on 9 November. Those three records are imported here and labelled as imported; the converter that read them is not published.
+- **What this repository added during the hackathon:** the open build path ported from the private one; passkey approvals by a council of any size; the conversation that drafts a brief; the receipt contract, deployed and locked on NEAR mainnet; the judge; solo mode; the hosted replay; the stake; and the two products built here on 14 November.
+- **One thing to know about the history:** on the evening of 12 November the first day's work was rebuilt into ten commits, one per pull request, each keeping the date its piece was written. Everything after that is as it was pushed. `HACKATHON.md` has the longer account.
 
 ## What is live today, and what is next
 
@@ -75,16 +89,16 @@ npm ci
 **1. `npm test`** — unit tests and attack tests. Expect the last line:
 
 ```
-286 passed, 0 failed
+287 passed, 0 failed
 ```
 
-On macOS the last line is `285 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only.
+On macOS the last line is `286 passed, 0 failed, 1 skipped (each prints its reason above)`: the skipped test is the bubblewrap wall, which exists on Linux only.
 
 **On Linux the sandbox needs unprivileged user namespaces.** Install bubblewrap first (`sudo apt-get install bubblewrap`). Bubblewrap can only build its sandbox where the kernel lets an ordinary user create a namespace. A default Docker container does not, and neither does Ubuntu 24.04 until you run `sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0` (CI does exactly that, in `.github/workflows/ci.yml`). Without it nothing is broken, but the build path refuses to run anything it cannot wall in, and you see this instead of the lines in this section:
 
 ```
-275 passed, 0 failed, 11 skipped (each prints its reason above)        npm test
-judge: 16 checks — 14 ok, 2 skipped, 0 failed                          npm run judge
+276 passed, 0 failed, 11 skipped (each prints its reason above)        npm test
+judge: 17 checks — 15 ok, 2 skipped, 0 failed                          npm run judge
 state     blocked — no sandbox on this machine (bwrap is installed but cannot create a namespace here; …)   npm run demo
 ```
 
@@ -97,7 +111,7 @@ docker run --rm -it --privileged -v "$PWD":/src:ro node:22-bookworm sh -c \
 
 If bubblewrap is not installed at all, the reason reads `bwrap is not installed` instead. Both sets of lines were taken on 14 November in `node:22-bookworm`: the first without `--privileged`, the second with it.
 
-**2. `npm run judge`** — re-derives the claims on your machine with no keys; check 16 reads NEAR mainnet and skips without a network. Expect 16 numbered lines, each with a detail after a dash; these eleven and the summary, shortened here to their titles:
+**2. `npm run judge`** — re-derives the claims on your machine with no keys; checks 16 and 17 read NEAR mainnet and skip without a network. Expect 17 numbered lines, each with a detail after a dash; these twelve and the summary, shortened here to their titles:
 
 ```
  1. [ok] the committed contract wasm is the one SHA256SUMS names — sha256 3e547da4f94b14de…
@@ -111,7 +125,8 @@ If bubblewrap is not installed at all, the reason reads `bwrap is not installed`
 11. [ok] attack: unapproved, 1-of-3 and altered tickets are refused
 12. [ok] the threshold is a parameter: a council of 7 with threshold 4 releases at 4, refuses at 3, refuses an altered brief
 13. [ok] attack: the push guard refuses main, a forced push and a + refspec; it accepts build/<ticket-id>
-judge: 16 checks — 15 ok, 1 skipped, 0 failed
+17. [ok] on chain: the stake position named in data/stake.json is there, with that amount
+judge: 17 checks — 16 ok, 1 skipped, 0 failed
 ```
 
 `[skip]` means "could not be observed here", with the reason on the line; it is never counted as ok. `[FAIL]` exits non-zero. The one skip today is check 5: both recorded briefs carry a model signature that verifies over the exact request and response, but NEAR AI's report shows no TEE for the key that signed, so the TEE half is not shown.
@@ -186,7 +201,6 @@ Every claim, its `file:line`, its test and its status are in [CLAIMS.md](CLAIMS.
 - **Costs are as reported.** For runs of this line, a call's dollars are NEAR AI's published price times the token usage NEAR AI reports for that call. We do not independently measure usage. A ticket's dollar budget is checked before each call, so the call in flight when it is reached still completes.
 - **The eight starting lessons were carried over, not accepted here.** They come from the private line; three of them have no single run behind them. No lesson has yet been drafted from a RED run of this line and accepted by passkey.
 - **The judge and the demo are keyless, not network-free.** The stand-in build's install step may reach `registry.npmjs.org` through the line's allow-listed tunnel. They have not been run with the network off.
-- **This repository is one commit.** It was developed from 12 to 14 November 2026 in a private repository and published here as a single commit, so the commit history does not show the order of the work. The dates in the records under `data/`, the transactions on NEAR and `HACKATHON.md` do.
 - **The enrolment trusts the browser for the public key.** A passkey's public key is taken from the browser at enrolment, behind a one-time invite; the attestation statement of the authenticator is not checked.
 - **Revisions, images and taste notes are tested, not yet used.** The conversation, the draft and the hand-over to the council were used for both real briefs, and both builds got the house kit. No member has yet revised a product, attached an image or added a taste note; those are proven by tests with a stand-in model and a test council. Attached images are kept but no screen shows them, and the builder does not see them. No check enforces that a build followed the house kit. A revision can only be built when the build it revises was made by this repository's build path.
 - **No build here has failed yet.** Both council-signed builds passed on the first attempt. The path from a failed build to a lesson a member signs, and to the next brief being checked against it, is covered by tests and has not run on a real build of this repository.
