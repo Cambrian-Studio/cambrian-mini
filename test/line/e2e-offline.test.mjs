@@ -285,3 +285,30 @@ test('a revision rebuilds from the build it revises, not from main; without that
     assert.equal(v3.state, 'blocked'); assert.match(v3.waiting_on, /the build this revises \(facts-page-9\) has no branch/);
   } finally { s.cleanup(); }
 });
+
+test('a build never commits a workflow file, and has no network unless its brief asks for the registry', needsWall, async () => {
+  const { execFileSync } = await import('node:child_process');
+  const s = scratch('e2e-door');
+  try {
+    const cfg = offlineConfig(s.dir);
+    // the fixture brief has a check that asks for the registry: its build may reach it
+    const open = fixtureTicket(); const a = release(open);
+    const withRegistry = await startRun(cfg, { ticket: open, approvals: a.approvals, council: a.council });
+    assert.match(withRegistry.state, /^green/);
+    const bare = bareOf(cfg, open.product);
+    const pushed = execFileSync('git', ['--git-dir', bare, 'ls-tree', '-r', '--name-only', `refs/heads/build/${open.id}`], { encoding: 'utf8' });
+    assert.doesNotMatch(pushed, /\.github/, 'the stand-in agent left .github/workflows/planted.yml behind; it is not in the commit');
+    assert.ok(pushed.trim().split('\n').length >= 2, 'the build\'s own files are in the commit');
+    // the same brief with no check that asks for the registry: the door is shut, and the probe proves it is
+    const shut = parseTicket({ ...open, id: 'facts-page-shut', branch: undefined,
+      green: open.green.map((c) => (c.kind === 'run' ? { ...c, network: 'none' } : c)) });
+    const b = release(shut);
+    const noNetwork = await startRun(cfg, { ticket: shut, approvals: b.approvals, council: b.council });
+    const probe = readFileSync(join(cfg.home, 'runs-work', shut.id, 'a1', 'sandbox-probe.txt'), 'utf8');
+    assert.match(probe, /registry\.npmjs\.org through the tunnel \(shut: the brief asks for no network\)/);
+    assert.doesNotMatch(probe, /^FAIL/m);
+    assert.match(noNetwork.attempts[0].walls, /0 failed/);
+    const told = readFileSync(join(cfg.home, 'runs-work', open.id, 'a1', 'sandbox-probe.txt'), 'utf8');
+    assert.doesNotMatch(told, /shut: the brief asks for no network/, 'the brief that asks for the registry gets it');
+  } finally { s.cleanup(); }
+});

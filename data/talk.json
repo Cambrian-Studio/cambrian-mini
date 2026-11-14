@@ -11,7 +11,7 @@
         "kind": "provider_tee",
         "signing_algo": "ecdsa",
         "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
-        "ok": false
+        "ok": true
       },
       "messages": [
         {
@@ -129,7 +129,7 @@
         "kind": "provider_tee",
         "signing_algo": "ecdsa",
         "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
-        "ok": false
+        "ok": true
       },
       "messages": [
         {

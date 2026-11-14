@@ -186,3 +186,38 @@ test('chat refuses streaming, a missing model, and an unreadable key before any 
   await assert.rejects(chat({ model: 'x/y', messages, keyFile: path.join(dir, 'absent'), fetchImpl }), /not found/);
   assert.equal(calls, 0);
 });
+
+test('two TEE reports name the same signing key: the signature verifies against the one that holds', async () => {
+  // NEAR AI can run one model in more than one TEE with the same signing key, and then its report names that key twice.
+  const { fetchReport, fetchAttestation, verifyAttestation, sha256Hex } = await import('../../near/nearai.mjs');
+  const fs = await import('node:fs'); const path = await import('node:path'); const os = await import('node:os');
+  const FIX = new URL('./fixtures/', import.meta.url);
+  const read = (n) => fs.readFileSync(new URL(n, FIX));
+  const source = JSON.parse(read('source.json').toString('utf8'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nearai-two-reports-')); const keyFile = path.join(dir, 'key');
+  fs.writeFileSync(keyFile, 'not-a-real-key', { mode: 0o600 });
+  try {
+    const serve = async (url) => new Response(read(new URL(url).pathname.endsWith('/attestation/report') ? 'report.ecdsa.json' : 'tool.sig.ecdsa.json'),
+      { status: 200, headers: { 'content-type': 'application/json' } });
+    const base = 'http://replay.invalid/v1'; const model = 'deepseek-ai/DeepSeek-V4.1-Flash-1017';
+    const hashes = { requestSha256: sha256Hex(read('tool.request.json')), responseSha256: sha256Hex(read('tool.response.json')) };
+    const get = async (attestations) => {
+      const report = await fetchReport({ model, signingAlgo: 'ecdsa', nonce: source.report.nonce, base, fetchImpl: serve });
+      report.fetched_at = source.report.fetched_at;
+      report.raw.model_attestations = attestations(report.raw.model_attestations[0]);
+      return fetchAttestation({ chatId: source.chats.tool.chat_id, model, ...hashes, keyFile, base, signingAlgo: 'ecdsa', report, fetchImpl: serve, retryMs: 1 });
+    };
+    // a second enclave's report for the same key, whose quote does not belong to this key
+    const flip = (q, i) => q.slice(0, i) + (q[i] === '0' ? '1' : '0') + q.slice(i + 1);
+    const other = (real) => ({ ...real, intel_quote: flip(flip(real.intel_quote, 300), 1200) });   // a quote that is not this key's
+    const twoOneGood = await get((real) => [other(real), real]);
+    assert.equal(verifyAttestation(twoOneGood, hashes).ok, true, 'the report that holds is the one kept, wherever it stands in the list');
+    const one = await get((real) => [real]);
+    assert.equal(verifyAttestation(one, hashes).ok, true);
+    const noneGood = await get((real) => [other(real), other(real)]);
+    const v = verifyAttestation(noneGood, hashes);
+    assert.equal(v.ok, false); assert.doesNotMatch(String(v.why), /no TEE report for this signer/, 'a report that fails is reported as failing, not as missing');
+    const none = await get(() => []);
+    assert.match(String(verifyAttestation(none, hashes).why), /no TEE report for this signer/);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});

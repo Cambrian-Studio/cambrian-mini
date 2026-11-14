@@ -14,6 +14,7 @@ import { appConfig } from '../app/config.mjs';
 import { listRuns, receiptOf, ticketIds } from '../app/store.mjs';
 import { loadCouncil } from '../approvals/council.mjs';
 import { verifyRelease } from '../approvals/release.mjs';
+import { FOUNDING_COUNCIL, checkCouncilBuild, councilKeysHash } from '../approvals/founding.mjs';
 import { makeTestCouncil } from '../approvals/test-authenticator.mjs';
 import { buildReceipt, receiptHash } from '../receipts/receipt.mjs';
 import { parseLessons, lintBrief } from '../lessons/lessons.mjs';
@@ -26,7 +27,7 @@ import { pushGuard } from '../line/github.mjs';
 import { ceilingDecision } from '../line/budget.mjs';
 import { sandboxAvailable } from '../line/kit/sandbox.mjs';
 import * as nearai from '../near/nearai.mjs';
-import { compareCodeHash, rpcUrlFor } from '../near/rpc.mjs';
+import { compareCodeHash, rpcUrlFor, viewCall } from '../near/rpc.mjs';
 import { verifyOnChain } from './verify-receipt.mjs';
 import { checkWasm } from './check-wasm.mjs';
 
@@ -255,6 +256,43 @@ await check('on chain: the deployed contract is the committed wasm, and each rec
   if (unread) return skip(title, `${unread} of ${recorded.length} recorded transaction(s) could not be read from the node`);
   ok('on chain: the deployed contract is the committed wasm, and each recorded receipt is in a transaction the recorder signed',
     `${chain.contract} on ${chain.network}; ${recorded.length} receipt(s) verified, signed by ${chain.recorder}`);
+});
+
+await check('on chain: the stake position named in data/stake.json is there, with that amount', async () => {
+  const title = 'on chain: the stake position read from the staking contract';
+  const stake = json(join(cfg.data, 'stake.json')).stake ?? {};
+  if (!stake.account || !stake.staked_with || stake.network !== 'mainnet') return skip(title, 'data/stake.json names no stake on mainnet');
+  const chain = existsSync(join(cfg.data, 'chain.json')) ? json(join(cfg.data, 'chain.json')) : {};
+  const v = await viewCall({ rpcUrl: chain.rpc_url ?? rpcUrlFor('mainnet'), contractId: stake.staked_with, method: 'get_farm_positions_for_account',
+    args: { account_id: stake.account, from_index: 0, limit: 20 } });
+  if (v.offline) return skip(title, `the RPC could not be reached (${v.why})`);
+  if (!v.ok || !Array.isArray(v.value)) return fail(title, `the staking contract did not answer with positions (${v.why ?? 'not a list'})`);
+  const yocto = BigInt(Math.round(Number(stake.amount_near))) * 10n ** 24n;
+  const found = v.value.find((x) => x.account_id === stake.account && BigInt(x.staked_near_amount ?? 0) === yocto);
+  if (!found) return fail(title, `${stake.staked_with} shows no position of ${stake.amount_near} NEAR for ${stake.account} (${v.value.length} position(s) read)`);
+  if (found.status !== 'Active') return fail(title, `the position of ${stake.amount_near} NEAR is ${found.status}, not Active`);
+  ok('on chain: the stake position named in data/stake.json is there, with that amount',
+    `${stake.account} holds ${Number(stake.amount_near).toLocaleString('en-US')} NEAR in ${stake.staked_with}, status ${found.status}, validator ${found.validator_id}`);
+});
+
+await check('each council build carries at least 2 valid passkey signatures over its brief hash, by the keys enrolled on 13 Nov', () => {
+  const title = 'council builds: at least 2 valid passkey signatures each, by the keys enrolled on 13 Nov';
+  const built = baby.filter((r) => r.state !== 'refused');
+  if (!built.length) return skip(title, 'no build of this line is recorded');
+  const council = loadCouncil(cfg.files.council); const bad = []; const who = [];
+  for (const r of built) {
+    const v = checkCouncilBuild({ run: r, ticket: json(join(cfg.files.runs, r.ticket.id, 'ticket.json')), council });
+    if (!v.ok) bad.push(`${r.ticket.id}: ${v.why}`); else who.push(`${r.ticket.id} by ${v.signers.join(' and ')}`);
+  }
+  if (bad.length) return fail(title, bad.join('; '));
+  // where the history is at hand, read the keys from that commit too; an export without history has only the pin
+  const old = spawnSync('git', ['-C', ROOT, 'show', `${FOUNDING_COUNCIL.commit}:data/council.json`], { encoding: 'utf8' });
+  let history = 'no git history here, so the keys are checked against the pinned hash only';
+  if (old.status === 0) {
+    if (councilKeysHash(JSON.parse(old.stdout)) !== FOUNDING_COUNCIL.members_digest) return fail(title, `the keys at commit ${FOUNDING_COUNCIL.commit.slice(0, 7)} are not the pinned ones`);
+    history = `the same keys are in data/council.json at commit ${FOUNDING_COUNCIL.commit.slice(0, 7)}`;
+  }
+  ok(title, `${who.join('; ')}; ${history}`);
 });
 
 rmSync(scratch, { recursive: true, force: true });

@@ -3,7 +3,7 @@
 // left out, never estimated.
 
 import * as api from '../lib/api.js';
-import { h, put, card, dot, capitalCards, councilLine, ACCESS, REPO } from '../lib/ui.js';
+import { h, put, card, dot, capitalCards, stakeLine, creditsLine, councilLine, ACCESS, REPO } from '../lib/ui.js';
 import { STEPS, compounding } from '../lib/mini.js';
 import { memberCard } from './approvals.js';
 
@@ -12,6 +12,16 @@ const COMPOUNDS = [
   ['How it looks.', 'Every product is built with the collective’s own design rules and tokens.', null],
   ['How it sells.', 'Which channels worked, which campaigns paid back, what users kept. Each launch teaches the next one.', 'Next'],
 ];
+
+// Credits earned, said once as text. "as reported by NEAR AI" opens what NEAR AI showed, on its own; the statement of it is on NEAR.
+function creditsNote(stake) {
+  const c = creditsLine(stake);
+  if (!c) return null;
+  const out = { target: '_blank', rel: 'noopener noreferrer' };
+  return h('p.sub', {}, `${c.text}, `,
+    c.evidence ? h('a.link', { href: c.evidence, ...out }, c.reported) : c.reported, ` on ${c.day}.`,
+    c.tx ? ' ' : null, c.tx ? h('a.link', { href: c.tx, ...out }, 'The statement on NEAR') : null);
+}
 
 const section = (name, title, body, ...kids) => h('section.beat', { 'data-section': name },
   h('h2.h2', {}, title), body ? h('p.body', {}, body) : null, kids);
@@ -31,12 +41,13 @@ export async function render(root) {
     h('section.beat.hero', { 'data-section': 'hero' },
       h('p.eyebrow', {}, 'CAMBRIAN MINI · NEAR HACKATHON'),
       h('h1', {}, 'Machines build. The collective decides.'),
-      h('p.lede', {}, 'Cambrian is a product studio run by one intelligence and owned by its members. '
-        + 'Members bring ideas, taste and capital. Cambrian turns them into products, and gets better with every one it ships.'),
+      h('p.lede', {}, 'Cambrian is a product studio run by one intelligence and governed by its members. '
+        + 'Members bring ideas, taste or capital; together they decide what gets built. '
+        + 'Cambrian turns their decisions into products, and gets better with every one it ships.'),
       h('div.actions', {},
         h('a.btn.tall', { href: '#/line' }, 'Watch an idea become a product'),
         h('a.btn.ghost.tall', { href: ACCESS, ...out }, 'Request access')),
-      h('p.sub.fine', {}, 'Cambrian Mini is the part of Cambrian we opened for the NEAR hackathon: '
+      h('p.sub.fine', {}, 'Cambrian Mini is what we built for NEAR HACKATHON: '
         + 'the path from an idea to a live product, with every step on the record.')),
 
     section('steps', 'From an idea to a live product, in seven steps.', null,
@@ -49,26 +60,30 @@ export async function render(root) {
     section('compounds', 'Every product makes the next one better.', null,
       h('div.trio', {}, COMPOUNDS.map(([title, line, next]) => card('div.pad.say', { br: next }, {},
         h('b', {}, title), h('span', {}, line)))),
-      card('div.pad.cb-card2.panel', {}, {}, compounding({ products, lessons, runs }).map(([label, value, note]) =>
-        h('div.stat', {}, h('span.cap', {}, label),
+      card('div.pad.cb-card2.panel', {}, {}, compounding({ lessons, runs }).map(([label, value, note, href]) =>
+        h('a.stat', { href, 'aria-label': `${label}: ${value || 'not recorded'}. ${note}. See where it comes from.` },
+          h('span.cap', {}, label),
           h('span.big', { class: value ? '' : 'is-none' }, value || 'Not recorded'), h('span.sub', {}, note))))),
 
     section('capital', 'Idle capital, put to work.',
       'Most capital in this ecosystem sits still, in treasuries, staked tokens and funds waiting to deploy. '
       + 'NEAR AI lets you stake NEAR and receive AI compute credits in return. The NEAR stays staked and stays yours. '
-      + 'Cambrian puts the credits to work, and the collective decides what they build.',
+      + 'The credits are there to pay for builds, and the collective decides what gets built. No build so far was paid from the stake.',
+      stakeLine(stake) ? h('p.body', {}, stakeLine(stake), ' ',
+        stake.stake?.tx_url ? h('a.link', { href: stake.stake.tx_url, ...out }, 'The stake transaction') : null) : null,
       capitalCards(stake),
+      creditsNote(stake),
       h('p.sub', {}, h('a.link', { href: '#/stake' }, 'See the figures'))),
 
     section('collective', 'A collective, not a crowd.',
       'Cambrian Collective is invitation-only. Builders, designers, engineers and backers shape what gets made, '
-      + 'with their work or their capital. Three founding members today. Built for a hundred.',
+      + 'with their taste or their capital. Three founding members today. Built for a hundred.',
       h('div.cb-members.flush.four', {},
         (council?.members || []).map((m) => memberCard(m, { bl: m.role || 'Council', br: [dot(), 'Team'] })),
         card('a.cb-member.invite', { br: 'By invitation' }, { href: ACCESS, ...out, 'aria-label': 'By invitation. Request access.' }))),
 
     section('check', 'Don’t take our word for it.',
-      'Every signature, every model call and every record of what a build cost can be checked without trusting our servers.',
+      'Every signature, every model call and every record of what a build cost can be checked on your own machine.',
       h('div.actions', {},
         h('a.btn.tall', { href: '#/receipts' }, 'Verify a build'),
         h('a.btn.ghost.tall', { href: REPO, ...out }, 'Run it yourself'))),

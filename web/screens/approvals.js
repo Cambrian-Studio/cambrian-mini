@@ -3,7 +3,8 @@
 
 import * as api from '../lib/api.js';
 import { hashOfAsync } from '../lib/canonical.mjs';
-import { verifyMemberSignature, ideaHash, approvalSubject, getAssertion, createPasskey, passkeysAvailable } from '../lib/webauthn.mjs';
+import { verifyMemberSignature, ideaHash, approvalSubject, approvalChallenge, getAssertion, createPasskey, passkeysAvailable }
+  from '../lib/webauthn.mjs';
 import {
   h, put, cap, card, dot, usd, when, short, stateChip, briefCard, failure, toast, openSheet, squircle, field, MARK, quorumLabel,
 } from '../lib/ui.js';
@@ -76,6 +77,10 @@ function sheetBody(entry, council) {
       // the note is signed with the brief: the server derives the challenge from both
       const taste_note = taste.value.replace(/\s+/g, ' ').trim().slice(0, 200) || undefined;
       const options = await api.post('approve/options', { ticket_id: t.id, member: member.id, taste_note });
+      // The passkey signs a challenge. This page works that challenge out itself, from the brief as it is shown here and the
+      // note as typed, and refuses to sign anything else: the server cannot ask for a signature over another brief.
+      const expected = await approvalChallenge(await approvalSubject(await hashOfAsync(t), taste_note));
+      if (options.challenge !== expected) throw new Error('the server asked for a signature over another brief than the one shown');
       const assertion = await getAssertion(options);
       const res = await api.post('approve', { ticket_id: t.id, member: member.id, taste_note, ...assertion });
       api.forgetAll();

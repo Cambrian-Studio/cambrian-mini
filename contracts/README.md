@@ -156,7 +156,8 @@ one numbered line each:
 
 Exit 0 means all ten passed. Exit 1 means one failed. Exit 3 is a printed `[skip]` (the node did not
 answer, or the transaction is not final yet); a skip is not a pass. With `--onchain` alone the
-signer is read from the file, so pass `--signer` to pin the account you expect. The answers are the
+expected signer is the recorder `data/chain.json` names for that contract, not the one in the file;
+for a contract of your own, pass `--signer`. The answers are the
 RPC node's; the script does not check light-client proofs.
 
 From code: `import { verifyOnChain } from './scripts/verify-receipt.mjs'` →

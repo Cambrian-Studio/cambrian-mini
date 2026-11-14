@@ -285,17 +285,17 @@ const sameSigner = (a, b) => Boolean(a && b) && a.signing_algo === b.signing_alg
   && typeof a.signing_address === 'string' && typeof b.signing_address === 'string'
   && a.signing_address.toLowerCase() === b.signing_address.toLowerCase();
 
-// Picks the one report the signature must match: the gateway's for kind "gateway", and for
-// "provider_tee" the single model report with the same signer. Absent or ambiguous -> null.
-function pickReport(reportResponse, sig) {
+// The reports the signature could match: the gateway's for kind "gateway", and for "provider_tee" every model
+// report that names the same signer. NEAR AI can run one model in more than one TEE with the same signing key, so
+// there may be several; each is a report for this signer.
+function reportCandidates(reportResponse, sig) {
   const raw = reportResponse && reportResponse.raw;
-  if (!raw) return null;
+  if (!raw) return [];
   const at = reportResponse.fetched_at || null;
   if (sig.signature_kind === 'gateway') {
-    return sameSigner(raw.gateway_attestation, sig) ? trimReport(raw.gateway_attestation, at) : null;
+    return sameSigner(raw.gateway_attestation, sig) ? [trimReport(raw.gateway_attestation, at)] : [];
   }
-  const hits = (raw.model_attestations || []).filter((c) => sameSigner(c, sig));
-  return hits.length === 1 ? trimReport(hits[0], at) : null;
+  return (raw.model_attestations || []).filter((c) => sameSigner(c, sig)).map((c) => trimReport(c, at));
 }
 
 // The signature NEAR AI Cloud recorded for one completion, with the TEE report of its
@@ -334,8 +334,7 @@ export async function fetchAttestation({
   const reportResponse = report || await fetchReport({
     model: sig.signature_kind === 'provider_tee' ? model : undefined, signingAlgo: sig.signing_algo, base, fetchImpl,
   });
-  const picked = pickReport(reportResponse, sig);
-  return {
+  const att = {
     kind: sig.signature_kind || null,
     model: model || null,
     chat_id: chatId,
@@ -345,9 +344,15 @@ export async function fetchAttestation({
     signature: sig.signature,
     request_sha256: requestSha256 || null,
     response_sha256: responseSha256 || null,
-    report: picked ? { ...picked, preflight } : null,
+    report: null,
     fetched_at: new Date().toISOString(),
   };
+  // Of the reports that name this signer, the first for which every offline check holds is kept; if none holds, the
+  // first is kept so that the failing check is the one reported.
+  const candidates = reportCandidates(reportResponse, sig).map((c) => ({ ...c, preflight }));
+  const hashes = { requestSha256, responseSha256 };
+  att.report = candidates.find((c) => verifyAttestation({ ...att, report: c }, hashes).ok) ?? candidates[0] ?? null;
+  return att;
 }
 
 // A run makes many calls against one report. detachReport returns the attestation with the

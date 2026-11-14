@@ -5,7 +5,7 @@
 # run before any model call.
 # Usage (inside the worktree):
 #   line-probe.sh <bridge-port> <proxy-port> <scratch-run-dir> <records-dir> <work-dir> <real-home>
-#                 <secrets-dir|-> <other-loopback-port> <registry: online|offline>
+#                 <secrets-dir|-> <other-loopback-port> <registry: online|offline|closed>
 # <other-loopback-port> is a port the build machine really listens on, outside the wall, for this probe.
 # An arm whose target does not exist on this machine is reported as SKIP with the reason, never as PASS.
 BRIDGE=$1; PROXY=$2; OUT=$3; RECORDS=$4; WORK=$5; REALHOME=$6; SECRETS=$7; OTHER=$8; REGISTRY=${9:-online}
@@ -37,6 +37,7 @@ if [ -e "$REALHOME/.ssh" ]; then try 'read ~/.ssh' refused ls "$REALHOME/.ssh"
 else skipped 'read ~/.ssh' 'no ~/.ssh visible from inside the wall'; fi
 try 'bridge port (loopback)'                ok      node "$NET" http "$BRIDGE"
 if [ "$REGISTRY" = online ]; then try 'registry.npmjs.org through the tunnel' ok node "$NET" tunnel "$PROXY" registry.npmjs.org:443
+elif [ "$REGISTRY" = closed ]; then try 'registry.npmjs.org through the tunnel (shut: the brief asks for no network)' refused node "$NET" tunnel "$PROXY" registry.npmjs.org:443
 else skipped 'registry.npmjs.org through the tunnel' 'the build machine itself is offline'; fi
 try 'example.com through the tunnel'        refused node "$NET" tunnel "$PROXY" example.com:443
 try 'github.com through the tunnel'         refused node "$NET" tunnel "$PROXY" github.com:443

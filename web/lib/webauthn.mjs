@@ -91,6 +91,7 @@ export async function verifyAssertion({
     return fail('the signature was made for another site (rp id hash differs)');
   }
   if (!(auth[32] & 0x01)) return fail('the user-present flag is not set');
+  if (!(auth[32] & 0x04)) return fail('the user-verified flag is not set: the passkey must check a fingerprint, a face or a PIN');
 
   let key;
   try {
@@ -150,7 +151,7 @@ export async function getAssertion(options) {
       challenge: b64urlToBytes(options.challenge),
       rpId: options.rpId,
       allowCredentials: (options.allowCredentials || []).map((c) => ({ type: 'public-key', id: b64urlToBytes(c.id) })),
-      userVerification: options.userVerification || 'preferred',
+      userVerification: options.userVerification || 'required',
       ...(options.timeout ? { timeout: options.timeout } : {}),
     },
   });
@@ -172,7 +173,7 @@ export async function createPasskey(options) {
       rp: options.rp,
       user: { id: b64urlToBytes(options.user.id), name: options.user.name, displayName: options.user.displayName },
       pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-      authenticatorSelection: options.authenticatorSelection || { residentKey: 'preferred', userVerification: 'preferred' },
+      authenticatorSelection: options.authenticatorSelection || { residentKey: 'preferred', userVerification: 'required' },
       attestation: 'none',
       ...(options.timeout ? { timeout: options.timeout } : {}),
     },

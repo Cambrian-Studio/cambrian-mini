@@ -1,0 +1,17 @@
+{
+  "kind": "cambrian-statement",
+  "v": 1,
+  "what": "NEAR AI credits earned from the stake, as shown on the NEAR AI dashboard",
+  "account": "cambriancollective.near",
+  "staked_near": 3045,
+  "credits_earned_usd": 1.85943039,
+  "rate_usd_per_month": 60.9,
+  "last_synced_as_shown": "14 Nov, 10:19",
+  "as_of": "2026-11-14",
+  "source": "NEAR AI dashboard, screenshot 14 Nov",
+  "evidence": {
+    "file": "web/assets/evidence/nearai-farmed-20261114.png",
+    "sha256": "4cd67b5967953474e213ba4500a73fc5a632ed1f7e39a4ed4256f244e54bdd07"
+  },
+  "says_nothing_about": "which credits paid for any build"
+}

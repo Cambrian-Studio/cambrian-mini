@@ -525,3 +525,14 @@ a.capcard { text-decoration: none; }
 /* Talk: a member's own open conversations */
 .mine { max-width: 760px; display: flex; flex-direction: column; gap: 6px; }
 .mine .rows li { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+
+/* Watch a build: the lessons that changed the brief; the home page's four figures are links */
+.story .applied { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; padding-left: 12px; border-left: 1px solid var(--edge); }
+.story .applied p { margin: 2px 0 0; font-size: 13.5px; line-height: 1.45; color: var(--caption); }
+.story [data-state="off"] .applied { visibility: hidden; }
+a.stat { text-decoration: none; color: inherit; }
+a.stat:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; }
+
+/* the brief card: the task in full and each check exactly as it runs */
+.brief .task { white-space: pre-wrap; font-size: 13.5px; line-height: 1.5; color: var(--caption); margin: 4px 0 0; }
+.brief .exact { display: block; font: 400 11.5px/1.4 var(--font-mono); color: var(--muted); overflow-wrap: anywhere; }

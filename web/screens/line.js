@@ -3,7 +3,7 @@
 
 import * as api from '../lib/api.js';
 import { h, put, plural, card, usd, when, short, seconds, stateChip, originChip, failure, isImported } from '../lib/ui.js';
-import { STEPS } from '../lib/mini.js';
+import { STEPS, lessonsApplied } from '../lib/mini.js';
 
 const STATIONS = ['brief', 'approved', 'build', 'test', 'preview', 'receipt'];
 const still = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -81,6 +81,12 @@ export function replaySteps(run) {
 // The name each station carries on the timeline.
 const STEP = { brief: 'Brief', approved: 'Council', build: 'Build', test: 'Checks', preview: 'Preview', receipt: 'Receipt' };
 
+// Signers are shown by the name the council file gives them. Until the council has been read, an id is shown as it is.
+let memberName = (id) => id;
+export function setMembers(council) {
+  memberName = (id) => council?.members?.find((m) => m.id === id)?.name || id;
+}
+
 // One line per station, as a plain report of what the record says happened there.
 export function stationReport(run, name, state) {
   const s = run.stations || {};
@@ -89,7 +95,7 @@ export function stationReport(run, name, state) {
   if (name === 'brief') return 'The brief was written.';
   if (name === 'approved') {
     if (state === 'red') return `Refused: ${run.release?.why || run.waiting_on || 'the signatures did not verify'}. Nothing ran.`;
-    const who = (run.release?.valid || []).join(', ');
+    const who = listed((run.release?.valid || []).map(memberName));
     if (who) return `Signed by ${who}. Cambrian verified the signatures.`;
     const note = run.release?.note;
     if (isImported(run)) return 'Signed by one council member on Cambrian’s private setup. That signature is not in this record.';
@@ -217,7 +223,7 @@ export function story(product, runs, { council = null, lessons = [], onChain = [
       : 'No signature is recorded.');
 
   const sealed = (first.attempts || []).some((x) => x.walls);
-  lines.push(`Agents built it${sealed ? ' in a sealed workspace' : ''}${imported ? '' : ' on NEAR AI'}. `
+  lines.push(`Agents built it${sealed ? ' in a sealed workspace' : ''}${imported ? '' : ', with every model call going through NEAR AI'}. `
     + `${plural(first.cost?.calls ?? 0, 'model call')}, ${usd(first.cost?.usd)}.`);
 
   const red = seq.find((r) => r.state === 'red');
@@ -270,7 +276,9 @@ export function liveStates(run) {
 export const STEP_MS = 2500;
 
 export async function render(root, arg) {
-  const { runs = [] } = await api.get('runs.json');
+  setMembers(await api.get('council.json').catch(() => null));
+  // builds made here; the earlier ones are under Lessons
+  const runs = ((await api.get('runs.json')).runs || []).filter((r) => !isImported(r));
   const list = h('div.runs');
   const rows = new Map();
   const live = api.isLive();
@@ -310,8 +318,9 @@ export async function render(root, arg) {
   const receipts = await Promise.allSettled(mine.map((r) => api.get(`receipts/${encodeURIComponent(r.ticket?.id)}.json`)));
   const first = [...mine].sort((x, y) => String(x.started).localeCompare(String(y.started)))[0];
   const briefs = await api.get('tickets.json').catch(() => ({}));
+  const brief = (briefs.tickets || []).find((e) => e.ticket?.id === first?.ticket?.id) || null;
   const steps = story(product, mine, {
-    brief: (briefs.tickets || []).find((e) => e.ticket?.id === first?.ticket?.id) || null,
+    brief,
     council: councilR.status === 'fulfilled' ? councilR.value : null,
     lessons: lessonsR.status === 'fulfilled' ? lessonsR.value.lessons || [] : [],
     onChain: receipts.filter((r) => r.status === 'fulfilled' && r.value?.on_chain),
@@ -320,6 +329,22 @@ export async function render(root, arg) {
   told.replaceChildren(...steps.map((st) => h('li', { id: `step-${st.n}`, 'data-state': 'on' }, h('i', { 'aria-hidden': 'true' }),
     h('div', {}, h('span.step', {}, `${String(st.n).padStart(2, '0')} · ${st.title.replace(/\.$/, '')}`), h('span.said', {}, st.line),
       st.link ? h('a.link', { href: st.link[0] }, st.link[1]) : null))));
+  // The learning loop, shown where it happened: under the brief, each lesson that changed it, what it changed and the earlier
+  // build that lesson came from; and the sentence where Cambrian cut the idea down by pointing at an earlier failure.
+  const loop = lessonsApplied(brief, lessonsR.status === 'fulfilled' ? lessonsR.value.lessons || [] : []);
+  const sender = councilR.status === 'fulfilled'
+    ? councilR.value.members?.find((m) => m.id === brief?.proposed_by?.member)?.name || 'the member' : 'the member';
+  if (loop.rows.length || loop.said) {
+    told.children[1]?.querySelector('div')?.append(h('div.applied', {},
+      h('span.step', {}, 'Lessons applied'),
+      loop.said ? h('span.said', {},
+        `In the conversation, ${loop.said_by === 'cambrian' ? 'Cambrian' : sender} wrote: “${loop.said}”`) : null,
+      // rows, not list items: a list item inside the timeline would take the timeline's own grid
+      h('div.rows-applied', {}, loop.rows.map((x) => h('p', {}, h('a.link', { href: '#/lessons' }, x.lesson), `: ${x.what}. `,
+        x.from_run ? ['Learned from the earlier build ',
+          h('a.link', { href: '#/receipts/' + encodeURIComponent(x.from_run) }, x.from_run), '.']
+          : 'Not tied to one build.')))));
+  }
   // ---- the player: the recorded build plays from the start, a step every few seconds; a build running now replaces it
   const items = [...told.children];
   const total = items.length;

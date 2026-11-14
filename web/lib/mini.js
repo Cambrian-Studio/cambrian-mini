@@ -1,7 +1,7 @@
 // What both the home page and the build replay say: the seven steps, and the compounding panel's four figures.
 // No browser API is used here, so the tests read the same module the screens do.
 
-import { usd, count } from './ui.js';
+import { usd, count, plural } from './ui.js';
 
 // The seven steps from an idea to a live product. The watch screen tells the same seven from a recorded build.
 export const STEPS = [
@@ -9,34 +9,47 @@ export const STEPS = [
   ['The brief.', 'Cambrian writes what it is, how it will be checked and what it may cost. '
     + 'An open model writes it inside verified hardware, so anyone can confirm which model wrote it.'],
   ['The collective decides.', 'Members sign the brief with passkeys. Nothing is built until enough of them do.'],
-  ['The build.', 'AI agents build it in a sealed workspace on NEAR AI, within the budget the members signed.'],
+  ['The build.', 'AI agents build it in a sealed workspace, every model call going through NEAR AI, within the budget the members signed.'],
   ['The checks.', 'Every check in the brief runs. If one fails, the build stops and Cambrian drafts a lesson.'],
   ['Live.', 'A preview link goes up, and the product ships.'],
-  ['On the record.', 'What it cost, which models did the work, who signed. Recorded on NEAR, so anyone can check it.'],
+  ['On the record.', 'What it cost, which models did the work, who signed: all in one record. '
+    + 'Its hash is logged on NEAR, so anyone can check the record has not changed.'],
 ];
 
 const isGreen = (r) => /^green/.test(String(r.state));
 
-// The compounding panel: four figures, each counted from the record and each saying what it counted.
-export function compounding({ products = [], lessons = [], runs = [] }) {
-  const done = runs.filter((r) => r.finished);
-  const working = done.filter(isGreen);
+// The compounding panel: four figures, counted only from builds made here, each with the screen that shows its source.
+export function compounding({ lessons = [], runs = [] }) {
+  const here = runs.filter((r) => r.finished && r.origin !== 'private-line');
+  const ids = new Set(here.map((r) => r.id));
+  const changed = lessons.filter((l) => (l.fired || []).some((f) => ids.has(f.brief) || ids.has(f.run)));
+  const working = here.filter(isGreen);
   const first = working.filter((r) => r.attempts === 1);
-  const built = products.filter((p) => (p.runs || []).length);   // a product with no build yet is not counted as built
-  const shipped = products.filter((p) => p.live_url);
-  const signed = lessons.filter((l) => l.accepted_by);
-  const spent = done.reduce((sum, r) => sum + (Number(r.usd) || 0), 0);
+  const spent = here.reduce((sum, r) => sum + (Number(r.usd) || 0), 0);
   return [
-    ['Products shipped', count(shipped.length),
-      built.length === shipped.length ? 'with a public link'
-        : `${count(built.length)} built, ${count(shipped.length)} with a public link`],
-    ['Lessons signed', count(signed.length),
-      `${count(lessons.length)} on record, ${count(signed.length)} signed by a member`],
-    ['First-try pass rate', done.length ? `${Math.round((first.length / done.length) * 100)}%` : null,
-      `${count(first.length)} of ${count(done.length)} recorded builds`],
+    ['Lessons in force', count(lessons.length), 'each new brief is checked against them', '#/lessons'],
+    ['Lessons that changed a brief', here.length ? count(changed.length) : null,
+      `of the ${plural(here.length, 'brief')} built here`, '#/line'],
+    ['First-try passes', here.length ? `${first.length} of ${here.length}` : null, 'builds made here', '#/receipts'],
     ['Cost per working build', working.length ? usd(spent / working.length) : null,
-      `${usd(spent)} over ${count(working.length)} working builds, failed builds included`],
+      `${usd(spent)} over ${plural(working.length, 'build')} made here`, '#/receipts'],
   ];
+}
+
+/**
+ * The learning loop on one brief: each lesson that changed it, what it changed, and the earlier build the lesson came from;
+ * and, when the conversation cut the idea down by pointing at an earlier failure, that sentence and who wrote it.
+ */
+export function lessonsApplied(brief, lessons = []) {
+  const rows = (brief?.lint?.applied || []).map((x) => {
+    const l = lessons.find((y) => y.id === x.lesson) || {};
+    return { lesson: x.lesson, what: x.what, rule: l.rule || null, from_run: l.from_run || null };
+  });
+  // the first sentence in the conversation, by either side, that points at an earlier failure
+  const hit = (brief?.conversation?.messages || [])
+    .flatMap((m) => String(m.text).split(/(?<=[.?!])\s+/).map((sentence) => ({ by: m.role, sentence: sentence.trim() })))
+    .find((x) => /\b(timed out|ran out of time|failed|did not pass)\b/i.test(x.sentence)) || null;
+  return { rows, said: hit ? hit.sentence : null, said_by: hit ? hit.by : null };
 }
 
 const REVISION = { 'design-pass': 'Design pass', fix: 'Fix', feature: 'Feature' };

@@ -4,7 +4,7 @@ import * as api from '../lib/api.js';
 import { hashOfAsync } from '../lib/canonical.mjs';
 import { revisionNote } from './products.js';
 import {
-  h, put, plural, cap, card, dot, usd, count, when, short, seconds, between, ext, stateChip, originChip, isImported, IMPORTED,
+  h, put, plural, cap, card, dot, usd, count, when, short, seconds, between, ext, stateChip, originChip, isImported, IMPORTED, EARLIER_HREF,
 } from '../lib/ui.js';
 
 // Two different things can sign a call, and the receipt says which. They are not the same strength of claim.
@@ -194,7 +194,8 @@ async function detail(root, id) {
 
 export async function render(root, arg) {
   if (arg) return detail(root, arg);
-  const { receipts = [] } = await api.get('receipts.json');
+  const all = (await api.get('receipts.json')).receipts || [];
+  const receipts = all.filter((r) => !isImported(r));
   put(root,
     h('header.head', {}, h('p.eyebrow', {}, 'Receipts'), h('h1.statement', {}, 'Every run leaves a receipt.'),
       h('p.lede', {}, 'Each model call with its tokens and price, the checks, the commit, the signatures. '
@@ -208,6 +209,8 @@ export async function render(root, arg) {
       originChip(r),
       h('span.cap.faint', {}, `${when(r.started)} · sha256 ${short(r.receipt_sha256)}…`)),
     h('span.cost', {}, usd(r.usd)))))
-      : h('p.plain', {}, 'No run has finished yet.'));
+      : h('p.plain', {}, 'No build has finished yet.'),
+    all.length > receipts.length ? h('p.small.dim', {}, 'Records of builds made before this repository are under ',
+      h('a.link', { href: EARLIER_HREF }, 'Where the lessons came from'), '.') : null);
   return undefined;
 }

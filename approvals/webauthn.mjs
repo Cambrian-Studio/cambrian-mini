@@ -41,6 +41,8 @@ export function verifyAssertion({ publicKeySpki, authenticatorData, clientDataJS
   if (!auth.subarray(0, 32).equals(sha256(Buffer.from(String(rpId), 'utf8')))) return fail('the signature was made for another site (rp id hash differs)');
   const flags = auth[32];
   if (!(flags & FLAG_USER_PRESENT)) return fail('the user-present flag is not set');
+  // a touch is not enough: the authenticator must have checked who is touching it
+  if (!(flags & FLAG_USER_VERIFIED)) return fail('the user-verified flag is not set: the passkey must check a fingerprint, a face or a PIN');
 
   let key;
   try { key = createPublicKey({ key: unb64u(publicKeySpki), format: 'der', type: 'spki' }); } catch { return fail('the stored public key cannot be read'); }
@@ -64,6 +66,9 @@ export function checkRegistration({ clientDataJSON, authenticatorData, publicKey
   if (!origins.includes(client.origin)) return fail(`origin ${JSON.stringify(client.origin)} is not allowed`);
   const auth = unb64u(authenticatorData);
   if (auth.length < 37 || !auth.subarray(0, 32).equals(sha256(Buffer.from(String(rpId), 'utf8')))) return fail('authenticator data is for another site');
+  if (!(auth[32] & FLAG_USER_PRESENT) || !(auth[32] & FLAG_USER_VERIFIED)) {
+    return fail('the passkey was created without user verification: it must check a fingerprint, a face or a PIN');
+  }
   let key;
   try { key = createPublicKey({ key: unb64u(publicKeySpki), format: 'der', type: 'spki' }); } catch { return fail('the public key cannot be read'); }
   if (key.asymmetricKeyType !== 'ec' || key.asymmetricKeyDetails?.namedCurve !== 'prime256v1') return fail('only ES256 (P-256) passkeys are accepted');

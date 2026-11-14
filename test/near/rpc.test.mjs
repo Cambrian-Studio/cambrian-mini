@@ -187,3 +187,78 @@ test('offline: a failed fetch, a timeout and a non-JSON gateway answer all give 
   const fine = await rpcCall({ rpcUrl: RPC, method: 'status', params: [], fetchImpl: up.fetchImpl });
   assert.deepEqual(fine, { ok: true, result: { chain_id: 'testnet' } });
 });
+
+// ---- a rate limit is asked again, then asked elsewhere, then skipped: never a FAIL ----
+function limited(plan) {
+  // plan: url → list of answers, one per request, the last one repeating. 'limit' | 'limit429' | 'ok' | 'wrong' | 'down'
+  const calls = [];
+  const fetchImpl = async (url) => {
+    calls.push(url);
+    const list = plan[url] || ['down']; const what = list[Math.min(calls.filter((u) => u === url).length - 1, list.length - 1)];
+    if (what === 'down') throw new TypeError('fetch failed');
+    if (what === 'limit429') return { status: 429, json: async () => { throw new Error('not json'); } };
+    if (what === 'limit') {
+      return { status: 200, json: async () => ({ error: { message: 'Rate limits exceeded. For higher rate limits get a subscription' } }) };
+    }
+    if (what === 'wrong') return { status: 200, json: async () => ({ error: { cause: { name: 'UNKNOWN_TRANSACTION' }, data: 'Transaction x not found' } }) };
+    return { status: 200, json: async () => ({ result: { chain_id: 'mainnet' } }) };
+  };
+  return { fetchImpl, calls };
+}
+async function quick(fn) {
+  const { retry } = await import('../../near/rpc.mjs'); const keep = { ...retry }; const waits = [];
+  retry.sleep = async (ms) => { waits.push(ms); };
+  try { return { out: await fn(), waits }; } finally { Object.assign(retry, keep); }
+}
+
+test('rate limit: the same node is asked again after 1, 3 and 9 s, and an answer on a later try is the answer', async () => {
+  const { rpcCall } = await import('../../near/rpc.mjs');
+  const node = limited({ 'http://a.test': ['limit', 'limit429', 'ok'] });
+  const { out, waits } = await quick(() => rpcCall({ rpcUrl: 'http://a.test', method: 'status', params: [], fetchImpl: node.fetchImpl }));
+  assert.equal(out.ok, true);
+  assert.deepEqual(waits, [1000, 3000]);
+  assert.equal(node.calls.length, 3);
+});
+
+test('rate limit: after the tries a second node is asked; its answer counts, right or wrong', async () => {
+  const { rpcCall, FALLBACK_RPC } = await import('../../near/rpc.mjs');
+  const node = limited({ 'http://a.test': ['limit'], 'http://b.test': ['ok'] });
+  const { out, waits } = await quick(() => rpcCall({ rpcUrl: 'http://a.test', fallbackUrl: 'http://b.test', method: 'status', params: [], fetchImpl: node.fetchImpl }));
+  assert.equal(out.ok, true);
+  assert.equal(out.via, 'http://b.test');
+  assert.deepEqual(waits, [1000, 3000, 9000]);
+  assert.deepEqual(node.calls, ['http://a.test', 'http://a.test', 'http://a.test', 'http://a.test', 'http://b.test']);
+  // a wrong answer from the second node is a wrong answer: it is passed on as an error, not turned into a skip
+  const bad = limited({ 'http://a.test': ['limit'], 'http://b.test': ['wrong'] });
+  const wrong = (await quick(() => rpcCall({ rpcUrl: 'http://a.test', fallbackUrl: 'http://b.test', method: 'tx', params: {}, fetchImpl: bad.fetchImpl }))).out;
+  assert.equal(wrong.ok, false);
+  assert.equal(wrong.offline, undefined);
+  assert.equal(wrong.error.cause.name, 'UNKNOWN_TRANSACTION');
+  // the node the repository names has a second node; a node given by hand has none unless one is named
+  assert.equal(FALLBACK_RPC['https://archival-rpc.mainnet.fastnear.com'], 'https://near.drpc.org');
+});
+
+test('rate limit: limited everywhere is "no answer" with the reason, which callers print as a skip, never a FAIL', async () => {
+  const { rpcCall, chainId } = await import('../../near/rpc.mjs');
+  for (const second of [['limit'], ['down']]) {
+    const node = limited({ 'http://a.test': ['limit'], 'http://b.test': second });
+    const { out } = await quick(() => rpcCall({ rpcUrl: 'http://a.test', fallbackUrl: 'http://b.test', method: 'status', params: [], fetchImpl: node.fetchImpl }));
+    assert.equal(out.ok, false);
+    assert.equal(out.offline, true);
+    assert.match(out.why, /^rate limited by http:\/\/a\.test after 3 more tries, and http:\/\/b\.test gave no answer/);
+  }
+  const alone = limited({ 'http://a.test': ['limit'] });
+  const { out } = await quick(() => chainId({ rpcUrl: 'http://a.test', fetchImpl: alone.fetchImpl }));
+  assert.equal(out.offline, true);
+  assert.match(out.why, /^rate limited by http:\/\/a\.test after 3 more tries/);
+});
+
+test('rate limit: a node that answers wrongly on the first try still fails at once, with no retry', async () => {
+  const { rpcCall } = await import('../../near/rpc.mjs');
+  const node = limited({ 'http://a.test': ['wrong'] });
+  const { out, waits } = await quick(() => rpcCall({ rpcUrl: 'http://a.test', fallbackUrl: 'http://b.test', method: 'tx', params: {}, fetchImpl: node.fetchImpl }));
+  assert.equal(out.ok, false);
+  assert.equal(out.offline, undefined);
+  assert.deepEqual(waits, []);
+  assert.equal(node.calls.length, 1);
+});

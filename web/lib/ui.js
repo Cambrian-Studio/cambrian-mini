@@ -104,6 +104,9 @@ export function stateChip(state) {
 
 export const IMPORTED = "earlier build on Cambrian's private setup";
 export const isImported = (x) => x?.origin === 'private-line';
+/** The one section where builds made before this repository are shown, and where every other screen points. */
+export const EARLIER = 'Where the lessons came from: earlier builds on Cambrian’s private system';
+export const EARLIER_HREF = '#/lessons/earlier';
 export const originChip = (x) => (isImported(x) ? h('span.origin', {}, IMPORTED) : null);
 
 export const cap = (text) => h('span.cap', {}, text);
@@ -170,6 +173,18 @@ export function provenance(drafted, att) {
 
 // The brief card: what a ticket asks for, in words a member can check.
 // `meta` names what the corners say: { from: the member who brought the idea, hash: the ticket hash }.
+// A check exactly as the builder and the checker get it: the command it runs or the file and patterns it reads.
+export function checkExact(c) {
+  if (!c || typeof c === 'string') return String(c || '');
+  if (c.kind === 'run') return `run: ${c.run}${c.network === 'registry' ? '  (package registry reachable)' : '  (no network)'}`;
+  if (c.kind === 'no_external_hosts') return `no other host named anywhere under ${c.dir}/`;
+  const parts = [`file: ${c.path}${c.exists === false ? ' must not exist' : ''}`];
+  if (c.contains) parts.push(`contains ${c.contains.map((x) => JSON.stringify(x)).join(' and ')}`);
+  if (c.matches) parts.push(`matches ${c.matches.map((x) => `/${x}/`).join(' and ')}`);
+  if (c.not_matches) parts.push(`matches none of ${c.not_matches.map((x) => `/${x}/`).join(', ')}`);
+  if (c.count) parts.push(`/${c.count.pattern}/ exactly ${c.count.equals} time(s)`);
+  return parts.join('; ');
+}
 export function briefCard(brief, lint, extra, att, meta = {}) {
   const b = brief || {};
   const budget = b.budget || {};
@@ -181,22 +196,25 @@ export function briefCard(brief, lint, extra, att, meta = {}) {
   }, {},
   h('h3', {}, b.title || b.id || 'Untitled brief'),
   b.product ? h('p.fragment', {}, String(b.product).toLowerCase()) : null,
-  b.goal ? h('p.goal', {}, b.goal) : (b.task ? h('p.goal', {}, b.task) : null),
+  b.goal ? h('p.goal', {}, b.goal) : null,
+  // The task is what the builder is told, word for word. A signature covers it, so it is shown in full, not summarised.
+  b.task ? h('div', {}, cap('what the builder is told, in full'), h('p.task', {}, b.task)) : null,
   checks.length ? h('div', {}, cap('done when'),
-    h('ul.checks', {}, checks.map((c) => h('li', {}, checkWords(c))))) : null,
+    h('ul.checks', {}, checks.map((c) => h('li', {}, checkWords(c),
+      typeof c === 'string' ? null : h('span.exact', {}, checkExact(c)))))) : null,
   (b.out_of_scope || []).length ? h('div', {}, cap('out of scope'),
     h('p.dim', {}, b.out_of_scope.join(' · '))) : null,
   h('div.kvs', {},
     kv('Budget', [usd(budget.usd), budget.calls ? `${budget.calls} calls` : null,
       budget.minutes ? `${budget.minutes} min` : null].filter(Boolean).join(' · ')),
-    kv('Compute', 'NEAR AI, built in a sealed workspace'),
+    kv('Compute', 'model calls through NEAR AI; built in a sealed workspace'),
     d ? kv('Brief model', modelSigned(att) ? 'model-signed, ' : 'not verified here, ', raw(d.model)) : null),
   lintChips(lint), provenance(d, att), extra || null);
 }
 
 // What the capital beat says. While the stake is a placeholder it says nothing about staking; once a stake
 // transaction is recorded it says how compute is paid for at the account level, never per build.
-export const CAPITAL_RECORDED = 'Staked NEAR earns compute credits on NEAR AI. Builds draw on them, topped up with credits we bought.';
+export const CAPITAL_RECORDED = 'Staked NEAR earns compute credits on NEAR AI.';
 export function capitalCopy(doc) {
   if (!doc || doc.placeholder === true || !doc.stake?.tx) {
     return { title: 'What the builds cost, from the receipts.',
@@ -229,18 +247,48 @@ export function capitalFigures(doc) {
   const out = [];
   if (real && s.amount_near && s.tx) {
     out.push({ label: 'Staked', value: `${num(s.amount_near) ? count(s.amount_near) : s.amount_near} NEAR`,
-      href: safeUrl(s.tx_url), note: 'See the transaction' });
+      href: safeUrl(s.tx_url),
+      note: typeof s.eur_when_staked === 'number' ? `about €${count(s.eur_when_staked)} when staked · see the transaction`
+        : 'See the transaction' });
   }
   const e = doc?.estimate || {};
   // An estimate is shown as NEAR AI's, with its date, and only beside a recorded stake. It is not credits received.
-  if (out.length && num(e.usd_per_month) && e.as_of) {
+  // Once NEAR AI's dashboard figure is recorded, it stands in for the earlier estimate.
+  const earned = real && num(c.earned_from_stake_usd) && Boolean(c.as_of);
+  if (out.length && num(e.usd_per_month) && e.as_of && !(earned && num(c.rate_usd_per_month))) {
     out.push({ label: 'NEAR AI’s estimate', value: `~${usd(e.usd_per_month).replace(/\.00$/, '')}/month in credits`, note: day(e.as_of) });
   }
-  if (real && num(c.earned_from_stake_usd)) out.push({ label: 'Credits received', value: usd(c.earned_from_stake_usd) });
-  if (num(spend.mini_line_usd) || num(spend.private_line_usd)) {
-    out.push({ label: 'Spent on products', value: usd((Number(spend.mini_line_usd) || 0) + (Number(spend.private_line_usd) || 0)) });
+  // credits are shown only with the day NEAR AI reported them; the card opens the evidence kept with the record
+  if (earned) {
+    // the corner holds one short line; the day and the words "as reported by NEAR AI" are in the sentence under the cards
+    const note = num(c.rate_usd_per_month) ? `NEAR AI reports ${usd(c.rate_usd_per_month)} a month`
+      : `as reported by NEAR AI on ${shortDay(c.as_of)}`;
+    out.push({ label: 'Credits earned', value: usd(c.earned_from_stake_usd), note,
+      href: safeUrl(c.evidence) });
+  }
+  // Only the builds made here. The imported builds' spend is on the Stake screen, as its own line.
+  if (num(spend.mini_line_usd) && spend.mini_line_usd > 0) {
+    out.push({ label: 'Spent on products', value: usd(spend.mini_line_usd), note: 'the builds made here' });
   }
   return out;
+}
+const SHORT = { day: 'numeric', month: 'short', timeZone: 'UTC' };
+const shortDay = (iso) => new Date(`${String(iso).slice(0, 10)}T00:00:00Z`).toLocaleDateString('en-GB', SHORT);
+/** "We staked our own capital first: 3,045 NEAR, about €10,000 when staked on 13 Nov, with NEAR AI." Null until a stake is recorded. */
+export function stakeLine(doc) {
+  const s = doc?.stake || {};
+  if (!doc || doc.placeholder === true || !s.amount_near || !s.tx) return null;
+  const eur = typeof s.eur_when_staked === 'number' ? `, about €${count(s.eur_when_staked)} when staked on ${shortDay(s.recorded_at)}` : '';
+  return `We staked our own capital first: ${count(s.amount_near)} NEAR${eur}, with NEAR AI.`;
+}
+/** "Credits earned $1.86 · NEAR AI reports $60.90 a month", as reported by NEAR AI on a day, with where to see it.
+ *  Null until a figure with its date is recorded. Says nothing about what paid for a build. */
+export function creditsLine(doc) {
+  const c = doc?.credits || {};
+  if (!doc || doc.placeholder === true || typeof c.earned_from_stake_usd !== 'number' || !c.as_of) return null;
+  const rate = typeof c.rate_usd_per_month === 'number' ? ` · NEAR AI reports ${usd(c.rate_usd_per_month)} a month` : '';
+  return { text: `Credits earned ${usd(c.earned_from_stake_usd)}${rate}`, reported: 'as reported by NEAR AI', day: shortDay(c.as_of),
+    evidence: safeUrl(c.evidence), tx: safeUrl(c.statement_tx_url) };
 }
 export function capitalCards(doc) {
   return h('div.capital', {}, capitalFigures(doc).map((f) => card(f.href ? 'a.pad.capcard' : 'div.pad.capcard',
@@ -250,7 +298,7 @@ export function capitalCards(doc) {
 
 // Where "Request access" and "Run it yourself" lead.
 export const ACCESS = 'https://members.cambriancollective.xyz';
-export const REPO = 'https://github.com/Cambrian-Studio/cambrian-line';
+export const REPO = 'https://github.com/Cambrian-Studio/cambrian-mini';
 
 /** The small label under "The collective decides", from the council file. */
 export const councilLine = (council) => {

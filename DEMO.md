@@ -2,7 +2,7 @@
 
 Each shot of the demo video, what it shows, and how to see the same thing yourself. Shots marked **LIVE** need the build machine (a NEAR AI key and enrolled council passkeys); everything else works from a clone with `npm start` or on the hosted replay.
 
-Status: the video is not recorded yet. Shots 2 to 6 can use the two builds of 14 November (Upread Mini and Postmark): their conversations, briefs, signatures, records and previews are in this repository and on the hosted replay. Shot 7 uses the imported Upread build that failed, because no build of this repository has failed yet. Shot 9 shows the stake transaction, recorded on 13 November. Shot 10 has no recorded example yet: no member has revised a product. The commands in the last column show the same behaviour offline.
+The film: its link is added here when the demo post is published. Shots 2 to 6 can use the two builds of 14 November (Upread Mini and Postmark): their conversations, briefs, signatures, records and previews are in this repository and on the hosted replay. Shot 7 uses the imported Upread build that failed, because no build of this repository has failed yet. Shot 9 shows the stake transaction, recorded on 13 November. Shot 10 has no recorded example yet: no member has revised a product. The commands in the last column show the same behaviour offline.
 
 | # | Shot | Screen | What it proves | See it yourself |
 |---|---|---|---|---|

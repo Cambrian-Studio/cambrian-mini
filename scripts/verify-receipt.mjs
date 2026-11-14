@@ -19,8 +19,9 @@
 //   - Ordinary nodes forget old transactions (after a few days). For an old record pass an
 //     archival node with --rpc-url; an unknown transaction is reported as a FAIL with that hint.
 //   - The contract lets anyone log any hash. The --signer check is what gives a record meaning.
-//     With --onchain alone the signer is read from that file; pass --signer to pin the account
-//     you expect.
+//     With --onchain alone the expected signer is the recorder that data/chain.json names for that
+//     contract, never the signer written in the file under check. For a contract data/chain.json
+//     does not name, --signer is required.
 //   - The code hash is the account's CURRENT code, not the code at the time of the transaction.
 //   - The answers are the RPC node's. This script does not verify light-client proofs.
 //
@@ -39,6 +40,11 @@ function committedRpc(network) {
     const c = JSON.parse(readFileSync(new URL('../data/chain.json', import.meta.url), 'utf8'));
     return c.network === network && typeof c.rpc_url === 'string' ? c.rpc_url : null;
   } catch { return null; }
+}
+
+// The recorder this repository names for a contract: the account whose signature gives a logged hash its meaning.
+function committedChain() {
+  try { return JSON.parse(readFileSync(new URL('../data/chain.json', import.meta.url), 'utf8')); } catch { return null; }
 }
 
 const WASM_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', 'contracts', 'receipts.wasm');
@@ -196,7 +202,9 @@ export function usage() {
     '   or: node scripts/verify-receipt.mjs --onchain <file> [--signer <account>] [--rpc-url <url>]',
     '',
     '  --onchain  a JSON file with { network, contract, signer, tx_hash, receipt_sha256 }, as',
-    '             record-receipt --out writes it. A flag given next to it must agree with the file.',
+    '             record-receipt --out writes it. The expected signer is the recorder data/chain.json names',
+    '             for that contract, not the one in the file; for another contract pass --signer.',
+    '             A flag given next to it must agree with the file.',
     '  --rpc-url  another node; an archival one is needed once the transaction is a few days old.',
     '',
     'Read-only. Exit 0: every check passed. 1: a check failed. 2: bad arguments. 3: [skip], the node',
@@ -215,7 +223,7 @@ const FILE_FIELDS = {
 };
 
 /** argv → { ok, input } or { ok: false, why }. Reads the --onchain file when one is given. */
-export function parseArgs(argv, { readFile = (path) => readFileSync(path, 'utf8') } = {}) {
+export function parseArgs(argv, { readFile = (path) => readFileSync(path, 'utf8'), chain = committedChain() } = {}) {
   const opts = {};
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
@@ -242,6 +250,20 @@ export function parseArgs(argv, { readFile = (path) => readFileSync(path, 'utf8'
         return { ok: false, mismatch: true, why };
       }
     }
+    // Who should have signed is not for the file under check to say. Without --signer it is the recorder data/chain.json
+    // names for this contract; a file that names another account fails here, before any request.
+    if (opts['--signer'] === undefined && values['--network'] !== undefined && values['--contract'] !== undefined) {
+      const named = chain && chain.network === values['--network'] && chain.contract === values['--contract']
+        && typeof chain.recorder === 'string' ? chain.recorder : null;
+      if (!named) {
+        return { ok: false, why: 'data/chain.json names no recorder for this contract: pass --signer with the account you expect' };
+      }
+      if (values['--signer'] !== undefined && values['--signer'] !== named) {
+        const why = `signer "${values['--signer']}" in the file is not the recorder data/chain.json names for this contract, ${named}`;
+        return { ok: false, mismatch: true, why };
+      }
+      values['--signer'] = named;
+    }
   }
   for (const flag of Object.keys(FILE_FIELDS)) if (opts[flag] !== undefined) values[flag] = opts[flag];
   const missing = Object.keys(FILE_FIELDS).filter((flag) => values[flag] === undefined);
@@ -260,8 +282,8 @@ export function parseArgs(argv, { readFile = (path) => readFileSync(path, 'utf8'
 }
 
 /** The whole command. Returns the exit code; prints through `out`. */
-export async function runCli(argv, { fetchImpl = globalThis.fetch, out = console.log, readFile, wasmBytes, timeoutMs } = {}) {
-  const parsed = parseArgs(argv, readFile ? { readFile } : undefined);
+export async function runCli(argv, { fetchImpl = globalThis.fetch, out = console.log, readFile, chain, wasmBytes, timeoutMs } = {}) {
+  const parsed = parseArgs(argv, { ...(readFile ? { readFile } : {}), ...(chain !== undefined ? { chain } : {}) });
   if (parsed.ok && parsed.help) {
     out(usage());
     return 0;

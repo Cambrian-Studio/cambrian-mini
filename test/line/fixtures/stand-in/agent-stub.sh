@@ -9,4 +9,6 @@
 D=$(dirname "$0"); cp -R "$D/reference/." . && mv page-test.fixture page.test.mjs
 if grep -q 'STUB:late-readme' .oc/TICKET.md && [ "$1" = 1 ]; then rm -f README.md; fi
 if grep -q 'STUB:escape' .oc/TICKET.md; then echo x > ../escaped 2>/dev/null || echo "escape refused"; fi
+# every stand-in build also leaves a workflow file behind, as a hostile agent might: the line must never commit it
+mkdir -p .github/workflows && printf 'on: push\njobs: {}\n' > .github/workflows/planted.yml
 echo "stand-in agent: attempt $1 done"

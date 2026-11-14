@@ -2,7 +2,7 @@
 
 import * as api from '../lib/api.js';
 import { verifyMemberSignature, getAssertion, passkeysAvailable } from '../lib/webauthn.mjs';
-import { h, put, cap, card, dot, kv, raw, when, short, toast } from '../lib/ui.js';
+import { h, put, cap, card, dot, kv, raw, usd, when, short, toast, stateChip, isImported, EARLIER } from '../lib/ui.js';
 
 const FIX = { refuse: 'a brief that breaks it is refused', replace: 'the brief is corrected', append: 'a line is added to the task',
   say: 'the rule is told to the builder' };
@@ -86,7 +86,31 @@ function lessonCard(l, council, draft, runs) {
   draft ? acceptBlock(l, council) : null);
 }
 
-export async function render(root) {
+// The builds the carried-over lessons came from. They were made on Cambrian's private system before this repository existed;
+// their records were imported unchanged and each record's hash is logged on NEAR.
+async function earlier(runs) {
+  const mine = runs.filter(isImported).sort((a, b) => String(a.finished).localeCompare(String(b.finished)));
+  if (!mine.length) return null;
+  const onChain = (r) => api.get(`receipts/${encodeURIComponent(r.id)}.json`).then((x) => x.on_chain || null).catch(() => null);
+  const chain = await Promise.all(mine.map(onChain));
+  const out = { target: '_blank', rel: 'noopener noreferrer' };
+  return h('section', { id: 'earlier' },
+    h('h2', {}, EARLIER),
+    h('p.lede', {}, 'These three builds of Upread were made on Cambrian’s private system on 9 November 2026, before this repository '
+      + 'existed. They were not built here. Their records were imported with their numbers unchanged, and the lessons above were '
+      + 'written from what happened in them.'),
+    h('ul.rows', {}, mine.map((r, i) => h('li', {},
+      h('a', { href: '#/receipts/' + encodeURIComponent(r.id) },
+        h('span', {}, r.title || r.id),
+        h('span.row.start', {}, stateChip(r.state), h('span.mono.small', {}, usd(r.usd)))),
+      h('span.small.dim', {}, when(r.finished), ' · built on Cambrian’s private system · ',
+        chain[i]?.tx_hash ? h('a.link', { href: `https://nearblocks.io/txns/${chain[i].tx_hash}`, ...out }, 'its record’s hash on NEAR')
+          : 'no on-chain record')))),
+    h('p.small.dim', {}, 'On NEAR each of these is labelled as imported and recorded on 13 November. One member approved them there; '
+      + 'that signature is not in this repository.'));
+}
+
+export async function render(root, arg) {
   const [doc, council, runsDoc] = await Promise.all([api.get('lessons.json'), api.get('council.json').catch(() => null),
     api.get('runs.json').catch(() => ({}))]);
   const rules = doc.lessons || [];
@@ -102,5 +126,7 @@ export async function render(root) {
       : h('p.plain', {}, 'No draft is waiting. The next red run on this line drafts one.'),
     h('h2', {}, `Rules in force (${rules.length})`),
     rules.length ? h('div.lessons', {}, rules.map((l) => lessonCard(l, council, false, runs)))
-      : h('p.plain', {}, 'No rule is recorded yet.'));
+      : h('p.plain', {}, 'No rule is recorded yet.'),
+    await earlier(runs));
+  if (arg === 'earlier') root.addEventListener('shown', () => document.getElementById('earlier')?.scrollIntoView(), { once: true });
 }

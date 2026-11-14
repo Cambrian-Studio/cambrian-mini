@@ -15,7 +15,7 @@ test('the capital beat: no stake line while the stake is a placeholder, the rule
     assert.doesNotMatch(words(capitalCopy(doc)), /stak|credit|earn/i, 'a placeholder says nothing about staking');
   }
   const recorded = capitalCopy({ placeholder: false, stake: { amount_near: 100, tx: 'abc' } });
-  assert.equal(recorded.title, 'Staked NEAR earns compute credits on NEAR AI. Builds draw on them, topped up with credits we bought.');
+  assert.equal(recorded.title, 'Staked NEAR earns compute credits on NEAR AI.', 'and nothing about what paid for a build');
   assert.equal(recorded.title, CAPITAL_RECORDED);
   assert.equal(recorded.body, null);
   for (const doc of [{ placeholder: true }, { placeholder: false }]) {
@@ -32,6 +32,6 @@ test('the credit split: a figure that is not in the record reads "not recorded y
   assert.deepEqual(some, [['earned from the stake', '$1.50'], ['bought', '$0.00'], ['spent', '$5.36']]);
   assert.deepEqual(creditSplit({ credits: { earned_from_stake_usd: '3', bought_usd: NaN } }).map((r) => r[1]).slice(0, 2),
     ['not recorded yet', 'not recorded yet'], 'only a recorded number is shown');
-  assert.equal(committed.credits.earned_from_stake_usd, null);
+  assert.equal(committed.credits.earned_from_stake_usd, 1.85943039, 'as NEAR AI\'s dashboard showed it on 14 Nov');
   assert.equal(committed.credits.bought_usd, null);
 });
