@@ -83,7 +83,7 @@ export async function render(root) {
         card('a.cb-member.invite', { br: 'By invitation' }, { href: ACCESS, ...out, 'aria-label': 'By invitation. Request access.' }))),
 
     section('check', 'Don’t take our word for it.',
-      'Every signature, every model call and every record of what a build cost can be checked without trusting our servers.',
+      'Every signature, every model call and every record of what a build cost can be checked on your own machine.',
       h('div.actions', {},
         h('a.btn.tall', { href: '#/receipts' }, 'Verify a build'),
         h('a.btn.ghost.tall', { href: REPO, ...out }, 'Run it yourself'))),

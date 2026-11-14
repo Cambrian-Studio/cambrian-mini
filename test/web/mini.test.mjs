@@ -32,8 +32,10 @@ test('the public nav has four items, and Request access is in the header', () =>
 
 test('capital cards: a figure the record does not hold leaves its card out', () => {
   const placeholder = { placeholder: true, stake: { amount_near: null, tx: null }, estimate: { usd_per_month: 60, as_of: '2026-11-13' },
-    inference_spend: { mini_line_usd: 0, private_line_usd: 5.363208 } };
-  assert.deepEqual(capitalFigures(placeholder).map((f) => [f.label, f.value]), [['Spent on products', '$5.36']]);
+    inference_spend: { mini_line_usd: 1.092438, private_line_usd: 5.363208 } };
+  assert.deepEqual(capitalFigures(placeholder).map((f) => [f.label, f.value, f.note]), [['Spent on products', '$1.09', 'the builds made here']],
+    'only the builds made here are counted; the imported builds are not');
+  assert.deepEqual(capitalFigures({ placeholder: true, inference_spend: { mini_line_usd: 0, private_line_usd: 5.363208 } }), []);
   assert.deepEqual(capitalFigures({ placeholder: true }), []);
   assert.deepEqual(capitalFigures(null), []);
   const recorded = capitalFigures({ placeholder: false, stake: { amount_near: 100, tx: 'abc', tx_url: 'https://example.org/tx/abc' },
@@ -41,9 +43,9 @@ test('capital cards: a figure the record does not hold leaves its card out', () 
   assert.deepEqual(recorded.map((f) => f.label), ['Staked', 'Credits earned', 'Spent on products']);
   assert.equal(recorded[0].value, '100 NEAR');
   assert.equal(recorded[0].href, 'https://example.org/tx/abc');
-  const committed = capitalFigures({ ...json('data/stake.json'), inference_spend: { mini_line_usd: 0, private_line_usd: 5.363208 } });
+  const committed = capitalFigures({ ...json('data/stake.json'), inference_spend: { mini_line_usd: 1.092438, private_line_usd: 5.363208 } });
   assert.deepEqual(committed.map((f) => [f.label, f.value, f.note]), [['Staked', '3,045 NEAR', 'about €10,000 when staked · see the transaction'],
-    ['Credits earned', '$1.86', 'NEAR AI reports $60.90 a month'], ['Spent on products', '$5.36', undefined]],
+    ['Credits earned', '$1.86', 'NEAR AI reports $60.90 a month'], ['Spent on products', '$1.09', 'the builds made here']],
     'the NEAR amount and its transaction first; credits as NEAR AI reported them, with the day; the earlier estimate gives way to the reported rate');
   const before = json('data/stake.json'); before.credits = { earned_from_stake_usd: null };
   assert.deepEqual(capitalFigures(before).map((f) => [f.label, f.value, f.note])[1], ['NEAR AI’s estimate', '~$60/month in credits', '13 Nov 2026'],

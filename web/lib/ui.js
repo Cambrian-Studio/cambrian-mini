@@ -266,8 +266,9 @@ export function capitalFigures(doc) {
     out.push({ label: 'Credits earned', value: usd(c.earned_from_stake_usd), note,
       href: safeUrl(c.evidence) });
   }
-  if (num(spend.mini_line_usd) || num(spend.private_line_usd)) {
-    out.push({ label: 'Spent on products', value: usd((Number(spend.mini_line_usd) || 0) + (Number(spend.private_line_usd) || 0)) });
+  // Only the builds made here. The imported builds' spend is on the Stake screen, as its own line.
+  if (num(spend.mini_line_usd) && spend.mini_line_usd > 0) {
+    out.push({ label: 'Spent on products', value: usd(spend.mini_line_usd), note: 'the builds made here' });
   }
   return out;
 }

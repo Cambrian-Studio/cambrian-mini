@@ -18,10 +18,10 @@ Cambrian Mini is a system in which a small group of people, a council, approves 
 Two products were built here on 14 November. Each brief came out of a conversation, was signed by two of the three council members with passkeys, and passed every check on the first attempt ([`data/runs`](data/runs)).
 
 - **Upread Mini** reads a text one word at a time. 2 min 44 s, 9 model calls, $0.43 of a $1 budget. [Open it](https://cambrian-upread-mini-crnw8wneo-cambrian-collective.vercel.app) · [its record](https://cambrian-line-replay.vercel.app/#/receipts/upread-mini-086cdf) · [the hash on NEAR](https://nearblocks.io/txns/CmFEiKKFuREVvmosTFMqiarbrekGyCSFHz2NnduWqBmv)
-- **Postmark** makes London postcards that unlock only within 150 m of the landmark. 4 min 4 s, 11 model calls, $0.66 of a $1.50 budget. [Open it](https://cambrian-postmark-m2x6yxrfp-cambrian-collective.vercel.app) · [its record](https://cambrian-line-replay.vercel.app/#/receipts/postmark-6ee0a5) · [the hash on NEAR](https://nearblocks.io/txns/4wYmP1KUzFGkz8dhWQAgnW1Q7Y3dsswhJDRofLf1F5Hz)
+- **Postmark** makes postcards of ten London landmarks: each opens only within 150 m of its landmark, and an eleventh card, Here, opens anywhere. 4 min 4 s, 11 model calls, $0.66 of a $1.50 budget. [Open it](https://cambrian-postmark-m2x6yxrfp-cambrian-collective.vercel.app) · [its record](https://cambrian-line-replay.vercel.app/#/receipts/postmark-6ee0a5) · [the hash on NEAR](https://nearblocks.io/txns/4wYmP1KUzFGkz8dhWQAgnW1Q7Y3dsswhJDRofLf1F5Hz)
 - All 20 build calls are signed by NEAR AI's gateway and the signatures verify offline (`npm run judge`, check 8). Both briefs are signed inside the model's TEE and verify offline (check 5) against a TEE report fetched about twelve hours after the calls. That shows the signing key is in a TEE now, not that it was at the moment of the call.
 - The contract that logs the hashes is on mainnet and locked: [`b9d43a06…`](https://nearblocks.io/address/b9d43a067f9063ac38b7adcbbdf900eb7841b82adef3de31ae0e21d4b64f6de2), source in [`contracts/receipts`](contracts/receipts). Five build records are logged through it: these two and the three imported ones (`npm run judge`, check 16).
-- Eight lessons were in force, carried over from the earlier builds. Two of them changed both briefs ([`lessons/`](lessons)). No build here has failed yet, so no lesson has been learned from this repository's own builds.
+- Eight lessons were in force, carried over from the earlier builds. Two of them fired on both briefs and added one closing sentence to each task ([`lessons/`](lessons)); nothing measures whether it helped. No build here has failed yet, so no lesson has been learned from this repository's own builds.
 
 ## The capital
 
@@ -52,7 +52,7 @@ Two products were built here on 14 November. Each brief came out of a conversati
 
 ## Trust model and known limits
 
-- What anyone can check without trusting us: the contract's code and that it cannot change, the five logged hashes and who signed them, that each record hashes to its logged value, that the approvals are valid passkey signatures by the keys in [`data/council.json`](data/council.json), and the stake.
+- What anyone can check without trusting us: the contract's code and that it cannot change, the logged hashes and who signed them, that each record hashes to its logged value, that the approvals are valid passkey signatures by the keys in [`data/council.json`](data/council.json), and the stake.
 - What you have to trust: the one build machine and its operator, the council file, the page a member signs on, the recorder key holder, NEAR AI's reported token counts and prices, and the hosting provider. The chain shows that a hash existed at a time. It does not show that the record is true. The full list is under [Trust model](README.md#trust-model).
 - An independent security review on 14 November found limits we did not fix. They are listed, not hidden, under [Known limits](README.md#known-limits).
 
