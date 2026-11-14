@@ -168,3 +168,11 @@ test('the signing screen shows what a signature covers: the task in full and eac
   assert.match(page, /const expected = await approvalChallenge\(await approvalSubject\(await hashOfAsync\(t\), taste_note\)\);/);
   assert.match(page, /if \(options\.challenge !== expected\) throw new Error/, 'the page refuses a challenge it did not work out itself');
 });
+
+test('every file the browser loads parses', async () => {
+  // a screen that no test imports can still be broken: each file is parsed here the way a browser would refuse it
+  const { execFileSync } = await import('node:child_process');
+  const files = ['web/app.js', ...['screens', 'lib'].flatMap((d) => readdirSync(at(`web/${d}`)).filter((n) => /\.m?js$/.test(n)).map((n) => `web/${d}/${n}`))];
+  assert.ok(files.length >= 12, String(files.length));
+  for (const f of files) assert.doesNotThrow(() => execFileSync(process.execPath, ['--check', at(f)], { stdio: 'pipe' }), f);
+});

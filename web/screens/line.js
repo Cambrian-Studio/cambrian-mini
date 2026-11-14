@@ -339,7 +339,8 @@ export async function render(root, arg) {
       h('span.step', {}, 'Lessons applied'),
       loop.said ? h('span.said', {},
         `In the conversation, ${loop.said_by === 'cambrian' ? 'Cambrian' : sender} wrote: “${loop.said}”`) : null,
-      h('ul', {}, loop.rows.map((x) => h('li', {}, h('a.link', { href: `#/lessons` }, x.lesson), `: ${x.what}. `,
+      // rows, not list items: a list item inside the timeline would take the timeline's own grid
+      h('div.rows-applied', {}, loop.rows.map((x) => h('p', {}, h('a.link', { href: '#/lessons' }, x.lesson), `: ${x.what}. `,
         x.from_run ? ['Learned from the earlier build ',
           h('a.link', { href: '#/receipts/' + encodeURIComponent(x.from_run) }, x.from_run), '.']
           : 'Not tied to one build.')))));
