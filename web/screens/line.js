@@ -301,7 +301,9 @@ export async function render(root, arg) {
   const [productsR, councilR, lessonsR] = await Promise.allSettled(
     ['products.json', 'council.json', 'lessons.json'].map((n) => api.get(n)));
   const products = productsR.status === 'fulfilled' ? productsR.value.products || [] : [];
-  const product = products.find((p) => full.some((r) => r.ticket?.product === p.id)) || null;
+  // the build that is told: a product built here when there is one, else the first product on record with a build
+  const builtHere = (p) => full.some((r) => r.ticket?.product === p.id && (r.origin ?? 'mini') === 'mini');
+  const product = products.find(builtHere) || products.find((p) => full.some((r) => r.ticket?.product === p.id)) || null;
   const mine = product ? full.filter((r) => r.ticket?.product === product.id) : full.slice(0, 1);
   const receipts = await Promise.allSettled(mine.map((r) => api.get(`receipts/${encodeURIComponent(r.ticket?.id)}.json`)));
   const steps = story(product, mine, {

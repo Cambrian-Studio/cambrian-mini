@@ -72,13 +72,14 @@ test('recordFired appends to one lesson and changes nothing else', (t) => {
   recordFired(file, 'write-files-early', { run: 'run-2', at: '2026-11-12T11:00:00.000Z', what: 'again' });
   const after = JSON.parse(readFileSync(file, 'utf8'));
   const l = after.lessons.find((x) => x.id === 'write-files-early');
-  assert.deepEqual(l.fired, [
+  const had = before.lessons.find((x) => x.id === 'write-files-early').fired ?? [];   // the committed lessons may already carry real entries
+  assert.deepEqual(l.fired.slice(had.length), [
     { at: '2026-11-12T10:00:00.000Z', what: 'task ends with the builder line', brief: 'brief-1' },
     { at: '2026-11-12T11:00:00.000Z', what: 'again', run: 'run-2' },
   ]);
-  l.fired = [];
+  l.fired = had;
   assert.deepEqual(after, before);
-  assert.equal(loadLessons(file).lessons.find((x) => x.id === 'write-files-early').fired.length, 2);
+  assert.equal(loadLessons(file).lessons.find((x) => x.id === 'write-files-early').fired.length, had.length + 2);
   assert.throws(() => recordFired(file, 'no-such-lesson', { run: 'r' }), /no lesson/);
   assert.throws(() => recordFired(file, 'write-files-early', { what: 'nowhere' }), /name the run or the brief/);
 });
